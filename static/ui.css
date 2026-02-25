@@ -217,6 +217,111 @@
     font-size: var(--font-size-sm);
 }
 
+/* Auth pages (claim, signin, verify) */
+
+.auth-page {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 80px var(--space-5);
+    color: #1a1a1a;
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.auth-subtitle {
+    color: #666;
+    font-size: var(--font-size-md);
+    margin-bottom: var(--space-5);
+}
+
+.auth-error {
+    color: #c0392b;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-3);
+}
+
+.auth-form {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.auth-input {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-md);
+    border: 1px solid #ddd;
+    border-radius: var(--radius-sm);
+    outline: none;
+}
+
+.auth-input:focus {
+    border-color: #999;
+}
+
+.auth-code {
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Claim banner */
+
+.claim-banner {
+    background: #111;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    padding: var(--space-2) var(--space-5);
+}
+
+.claim-btn {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.claim-btn:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    color: #fff;
+}
+
+/* Settings */
+
+.settings-section-title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    margin-bottom: var(--space-3);
+}
+
+.settings-sites {
+    margin-bottom: var(--space-5);
+}
+
+.settings-site {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) 0;
+}
+
+.settings-site a {
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.settings-visibility {
+    font-size: var(--font-size-sm);
+    color: #999;
+}
+
+.settings-signout {
+    margin-top: var(--space-3);
+}
+
 /* Revision banner */
 
 .revision-banner {
