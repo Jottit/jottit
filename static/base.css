@@ -87,6 +87,9 @@ table {
     --radius-sm: 6px;
     --radius-pill: 50px;
 
+    /* Content width */
+    --content-width: 720px;
+
     /* Breakpoints (used in media queries) */
     /* --bp-sm: 640px */
     /* --bp-md: 864px */
@@ -154,4 +157,9 @@ a {
 .btn-lg {
     padding: 12px var(--space-lg);
     font-size: var(--font-size-md);
+}
+
+.btn-publish {
+    background: var(--accent);
+    color: #fff;
 }

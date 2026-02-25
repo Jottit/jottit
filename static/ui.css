@@ -56,3 +56,120 @@
 .github-link:hover {
     color: var(--muted);
 }
+
+/* Editor */
+
+.editor {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #fff;
+    color: #111;
+}
+
+.editor-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: var(--content-width);
+    width: 100%;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.editor-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    border: none;
+    outline: none;
+    background: transparent;
+    margin-bottom: var(--space-md);
+}
+
+.editor-title::placeholder {
+    color: #ccc;
+}
+
+.editor-content {
+    flex: 1;
+    font-size: var(--font-size-md);
+    line-height: 1.7;
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+}
+
+.editor-content::placeholder {
+    color: #ccc;
+}
+
+.editor-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: var(--content-width);
+    width: 100%;
+    margin: 0 auto;
+    padding: var(--space-sm) var(--space-lg);
+    border-top: 1px solid #eee;
+}
+
+.editor-draft {
+    font-size: var(--font-size-sm);
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    cursor: pointer;
+}
+
+.editor-actions {
+    display: flex;
+    gap: var(--space-xs);
+}
+
+.editor .btn-outline {
+    color: #333;
+    border-color: #ddd;
+}
+
+.editor .btn-outline:hover {
+    border-color: #bbb;
+}
+
+/* Page actions (owner only) */
+
+.page-actions {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: var(--space-md) var(--space-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #eee;
+    background: #fff;
+}
+
+@media (min-width: 640px) {
+    .page-actions {
+        padding-inline: var(--space-xl);
+    }
+}
+
+.page-timestamp {
+    font-size: var(--font-size-sm);
+    color: #999;
+}
+
+.page-actions-buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.btn-sm {
+    padding: 4px 14px;
+    font-size: var(--font-size-sm);
+}
+
