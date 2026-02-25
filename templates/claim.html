@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Claim this page — Jottit{% endblock %}
+
+{% block head %}
+<style>body { background: #fff; }</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+    <h1 class="auth-title">Claim this page</h1>
+    <p class="auth-subtitle">Enter your email to claim <strong>{{ slug }}</strong>.</p>
+    {% if error %}
+    <p class="auth-error">{{ error }}</p>
+    {% endif %}
+    <form class="auth-form" method="post" action="/{{ slug }}/claim">
+        <input class="auth-input" type="email" name="email" placeholder="you@example.com" required autofocus>
+        <button class="btn btn-outline" type="submit">Claim</button>
+    </form>
+</div>
+{% endblock %}

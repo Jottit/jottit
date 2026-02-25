@@ -2,7 +2,11 @@
 
 {% block body %}
 <div class="home">
+    {% if signed_in %}
+    <a href="/settings" class="btn btn-outline signin-link">Settings</a>
+    {% else %}
     <a href="/signin" class="btn btn-outline signin-link">Sign in</a>
+    {% endif %}
 
     <main class="home-main">
         <h1 class="logo">Jottit</h1>

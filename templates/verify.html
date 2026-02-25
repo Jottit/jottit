@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Enter code — Jottit{% endblock %}
+
+{% block head %}
+<style>body { background: #fff; }</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+    <h1 class="auth-title">Check your email</h1>
+    <p class="auth-subtitle">We sent a 6-digit code to your email.</p>
+    {% if error %}
+    <p class="auth-error">{{ error }}</p>
+    {% endif %}
+    <form class="auth-form" method="post" action="{{ action }}">
+        <input class="auth-input auth-code" type="text" name="code" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required autofocus>
+        <button class="btn btn-solid" type="submit">Verify</button>
+    </form>
+</div>
+{% endblock %}

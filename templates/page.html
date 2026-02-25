@@ -7,6 +7,11 @@
 {% endblock %}
 
 {% block body %}
+{% if unclaimed %}
+<div class="claim-banner">
+    This page is unclaimed. <a href="/{{ slug }}/claim" class="btn btn-sm claim-btn">Claim it</a>
+</div>
+{% endif %}
 <main class="page-main">
     <article class="page">
         {{ content | safe }}

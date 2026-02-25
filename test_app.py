@@ -1,3 +1,4 @@
+from db import create_verification_code, find_or_create_user, claim_site, get_site
 from routes import _describe_change
 
 # -- Homepage --
@@ -161,3 +162,193 @@ def test_describe_changed_content():
 
 def test_describe_same_content():
     assert _describe_change("# T\n\nA", "# T\n\nA") == "Edited page"
+
+
+# -- Claim banner --
+
+
+def test_unclaimed_page_shows_claim_banner(client):
+    client.post("/uncl/edit", data={"title": "T", "content": "X"})
+    r = client.get("/uncl")
+    assert b"Claim it" in r.data
+
+
+def test_claimed_page_hides_claim_banner(client):
+    client.post("/clmd/edit", data={"title": "T", "content": "X"})
+    user_id = find_or_create_user("owner@example.com")
+    claim_site("clmd", user_id)
+    r = client.get("/clmd")
+    assert b"Claim it" not in r.data
+
+
+# -- Claim flow --
+
+
+def test_claim_page_shows_form(client):
+    client.post("/cf1/edit", data={"title": "T", "content": "X"})
+    r = client.get("/cf1/claim")
+    assert r.status_code == 200
+    assert b"email" in r.data
+
+
+def test_claim_already_claimed_redirects(client):
+    client.post("/cf2/edit", data={"title": "T", "content": "X"})
+    user_id = find_or_create_user("owner@example.com")
+    claim_site("cf2", user_id)
+    r = client.get("/cf2/claim")
+    assert r.status_code == 302
+
+
+def test_claim_full_flow(client):
+    client.post("/cf3/edit", data={"title": "T", "content": "X"})
+
+    # Submit email
+    r = client.post("/cf3/claim", data={"email": "user@example.com"})
+    assert r.status_code == 302
+    assert "/cf3/claim/verify" in r.headers["Location"]
+
+    # Get the code from the DB
+    code = create_verification_code("user@example.com", "claim")
+
+    # Submit code
+    r = client.post("/cf3/claim/verify", data={"code": code})
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/cf3"
+
+    # Site is now claimed
+    site = get_site("cf3")
+    assert site["user_id"] is not None
+
+    # Banner is gone
+    r = client.get("/cf3")
+    assert b"Claim it" not in r.data
+
+
+def test_claim_invalid_code_rejected(client):
+    client.post("/cf4/edit", data={"title": "T", "content": "X"})
+    client.post("/cf4/claim", data={"email": "user@example.com"})
+    r = client.post("/cf4/claim/verify", data={"code": "000000"})
+    assert r.status_code == 200
+    assert b"Invalid" in r.data
+
+
+# -- Edit protection --
+
+
+def test_non_owner_redirected_from_edit(client):
+    client.post("/prot1/edit", data={"title": "T", "content": "X"})
+    user_id = find_or_create_user("owner@example.com")
+    claim_site("prot1", user_id)
+
+    # Without session, should redirect
+    r = client.get("/prot1/edit")
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/prot1"
+
+
+def test_owner_can_edit(client):
+    client.post("/prot2/edit", data={"title": "T", "content": "X"})
+    user_id = find_or_create_user("owner@example.com")
+    claim_site("prot2", user_id)
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/prot2/edit")
+    assert r.status_code == 200
+
+
+def test_unclaimed_page_anyone_can_edit(client):
+    client.post("/prot3/edit", data={"title": "T", "content": "X"})
+    r = client.get("/prot3/edit")
+    assert r.status_code == 200
+
+
+# -- Sign in flow --
+
+
+def test_signin_page(client):
+    r = client.get("/signin")
+    assert r.status_code == 200
+    assert b"email" in r.data
+
+
+def test_signin_full_flow(client):
+    # Submit email
+    r = client.post("/signin", data={"email": "user@example.com"})
+    assert r.status_code == 302
+    assert "/signin/verify" in r.headers["Location"]
+
+    # Get code
+    code = create_verification_code("user@example.com", "signin")
+
+    # Submit code
+    r = client.post("/signin/verify", data={"code": code})
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/"
+
+    # Session has user_id
+    with client.session_transaction() as sess:
+        assert "user_id" in sess
+
+
+def test_signin_invalid_code(client):
+    client.post("/signin", data={"email": "user@example.com"})
+    r = client.post("/signin/verify", data={"code": "999999"})
+    assert r.status_code == 200
+    assert b"Invalid" in r.data
+
+
+# -- Sign out --
+
+
+def test_signout(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = 1
+
+    r = client.get("/signout")
+    assert r.status_code == 302
+
+    with client.session_transaction() as sess:
+        assert "user_id" not in sess
+
+
+# -- Settings --
+
+
+def test_settings_requires_signin(client):
+    r = client.get("/settings")
+    assert r.status_code == 302
+    assert "/signin" in r.headers["Location"]
+
+
+def test_settings_shows_owned_sites(client):
+    client.post("/set1/edit", data={"title": "T", "content": "X"})
+    user_id = find_or_create_user("owner@example.com")
+    claim_site("set1", user_id)
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/settings")
+    assert r.status_code == 200
+    assert b"set1" in r.data
+    assert b"owner@example.com" in r.data
+
+
+# -- Homepage sign in / settings link --
+
+
+def test_homepage_shows_signin_when_logged_out(client):
+    r = client.get("/")
+    assert b"Sign in" in r.data
+    assert b"Settings" not in r.data
+
+
+def test_homepage_shows_settings_when_logged_in(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = 1
+
+    r = client.get("/")
+    assert b"Settings" in r.data
+    assert b"Sign in" not in r.data

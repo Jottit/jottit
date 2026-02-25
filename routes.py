@@ -5,7 +5,21 @@ import string
 import markdown
 from flask import Blueprint, abort, redirect, render_template, request, session
 
-from db import get_latest_revision, get_page, get_revision, get_revisions, save_page
+from db import (
+    claim_site,
+    create_verification_code,
+    find_or_create_user,
+    get_latest_revision,
+    get_page,
+    get_revision,
+    get_revisions,
+    get_site,
+    get_sites_for_user,
+    get_user_email,
+    save_page,
+    verify_code,
+)
+from mail import send_verification_email
 
 bp = Blueprint("routes", __name__)
 
@@ -17,7 +31,8 @@ def generate_slug(length=5):
 
 @bp.route("/")
 def home():
-    return render_template("home.html")
+    signed_in = "user_id" in session
+    return render_template("home.html", signed_in=signed_in)
 
 
 @bp.route("/new")
@@ -28,6 +43,11 @@ def new_page():
 
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
 def edit_page(slug):
+    site = get_site(slug)
+    if site and site["user_id"] is not None:
+        if session.get("user_id") != site["user_id"]:
+            return redirect(f"/{slug}")
+
     if request.method == "GET":
         row = get_latest_revision(slug)
         content = row["content"] if row else ""
@@ -46,13 +66,103 @@ def edit_page(slug):
         content = f"# {title}\n\n{content}"
 
     save_page(slug, content, draft)
-
-    owned = session.get("owned_sites", [])
-    if slug not in owned:
-        owned.append(slug)
-        session["owned_sites"] = owned
-
     return redirect(f"/{slug}")
+
+
+@bp.route("/<slug>/claim", methods=["GET", "POST"])
+def claim_page(slug):
+    site = get_site(slug)
+    if not site or site["user_id"] is not None:
+        return redirect(f"/{slug}")
+
+    if request.method == "GET":
+        return render_template("claim.html", slug=slug)
+
+    email = request.form.get("email", "").strip().lower()
+    if not email:
+        return render_template("claim.html", slug=slug, error="Email is required.")
+
+    code = create_verification_code(email, "claim")
+    send_verification_email(email, code)
+    session["claim_email"] = email
+    return redirect(f"/{slug}/claim/verify")
+
+
+@bp.route("/<slug>/claim/verify", methods=["GET", "POST"])
+def claim_verify(slug):
+    site = get_site(slug)
+    if not site or site["user_id"] is not None:
+        return redirect(f"/{slug}")
+
+    email = session.get("claim_email")
+    if not email:
+        return redirect(f"/{slug}/claim")
+
+    if request.method == "GET":
+        return render_template("verify.html", slug=slug, action=f"/{slug}/claim/verify")
+
+    code = request.form.get("code", "").strip()
+    if not verify_code(email, code, "claim"):
+        return render_template(
+            "verify.html", slug=slug, action=f"/{slug}/claim/verify", error="Invalid or expired code."
+        )
+
+    user_id = find_or_create_user(email)
+    claim_site(slug, user_id)
+    session.pop("claim_email", None)
+    session["user_id"] = user_id
+    return redirect(f"/{slug}")
+
+
+@bp.route("/signin", methods=["GET", "POST"])
+def signin():
+    if request.method == "GET":
+        return render_template("signin.html")
+
+    email = request.form.get("email", "").strip().lower()
+    if not email:
+        return render_template("signin.html", error="Email is required.")
+
+    code = create_verification_code(email, "signin")
+    send_verification_email(email, code)
+    session["signin_email"] = email
+    return redirect("/signin/verify")
+
+
+@bp.route("/signin/verify", methods=["GET", "POST"])
+def signin_verify():
+    email = session.get("signin_email")
+    if not email:
+        return redirect("/signin")
+
+    if request.method == "GET":
+        return render_template("verify.html", action="/signin/verify")
+
+    code = request.form.get("code", "").strip()
+    if not verify_code(email, code, "signin"):
+        return render_template("verify.html", action="/signin/verify", error="Invalid or expired code.")
+
+    user_id = find_or_create_user(email)
+    session.pop("signin_email", None)
+    session["user_id"] = user_id
+    return redirect("/")
+
+
+@bp.route("/signout")
+def signout():
+    session.pop("user_id", None)
+    return redirect("/")
+
+
+@bp.route("/settings")
+def settings():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/signin")
+
+    sites = get_sites_for_user(user_id)
+    email = get_user_email(user_id)
+    return render_template("settings.html", sites=sites, email=email)
 
 
 def _get_title(content):
@@ -155,9 +265,8 @@ def view_page(slug):
     if not row:
         abort(404)
 
-    owned = session.get("owned_sites", [])
-    is_owner = slug in owned
     unclaimed = row["user_id"] is None
+    is_owner = session.get("user_id") == row["user_id"] and not unclaimed
     show_actions = is_owner or unclaimed
     html = markdown.markdown(row["content"])
     return render_template(
@@ -166,5 +275,6 @@ def view_page(slug):
         draft=row["draft"],
         slug=slug,
         show_actions=show_actions,
+        unclaimed=unclaimed,
         updated_at=row["created_at"],
     )

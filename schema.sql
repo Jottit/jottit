@@ -32,6 +32,16 @@ CREATE TABLE IF NOT EXISTS revisions (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS verification_codes (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    purpose TEXT NOT NULL CHECK (purpose IN ('claim', 'signin')),
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (email, purpose)
+);
+
 CREATE INDEX IF NOT EXISTS sites_user_id_idx ON sites (user_id);
 CREATE INDEX IF NOT EXISTS pages_site_id_idx ON pages (site_id);
 CREATE INDEX IF NOT EXISTS revisions_page_id_idx ON revisions (page_id);

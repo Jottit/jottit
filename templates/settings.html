@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — Jottit{% endblock %}
+
+{% block head %}
+<style>body { background: #fff; }</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+    <h1 class="auth-title">Settings</h1>
+    <p class="auth-subtitle">Signed in as {{ email }}.</p>
+
+    {% if sites %}
+    <h2 class="settings-section-title">Your pages</h2>
+    <ul class="settings-sites">
+        {% for site in sites %}
+        <li class="settings-site">
+            <a href="/{{ site.slug }}">{{ site.slug }}</a>
+            <span class="settings-visibility">{{ site.visibility }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="auth-subtitle">You haven't claimed any pages yet.</p>
+    {% endif %}
+
+    <a href="/signout" class="btn btn-outline settings-signout">Sign out</a>
+</div>
+{% endblock %}

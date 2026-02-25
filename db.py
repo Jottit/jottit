@@ -1,3 +1,5 @@
+import random
+
 import psycopg
 from psycopg.rows import dict_row
 
@@ -110,3 +112,82 @@ def get_revision(slug, revision):
     ).fetchone()
     conn.close()
     return row
+
+
+def get_site(slug):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, slug, user_id, visibility FROM sites WHERE slug = %s", (slug,)
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def find_or_create_user(email):
+    conn = get_db()
+    row = conn.execute("SELECT id FROM users WHERE email = %s", (email,)).fetchone()
+    if row:
+        user_id = row["id"]
+    else:
+        row = conn.execute(
+            "INSERT INTO users (email) VALUES (%s) RETURNING id", (email,)
+        ).fetchone()
+        user_id = row["id"]
+    conn.commit()
+    conn.close()
+    return user_id
+
+
+def claim_site(slug, user_id):
+    conn = get_db()
+    result = conn.execute(
+        "UPDATE sites SET user_id = %s WHERE slug = %s AND user_id IS NULL", (user_id, slug)
+    )
+    conn.commit()
+    claimed = result.rowcount > 0
+    conn.close()
+    return claimed
+
+
+def create_verification_code(email, purpose):
+    code = f"{random.randint(0, 999999):06d}"
+    conn = get_db()
+    conn.execute(
+        """INSERT INTO verification_codes (email, code, purpose, expires_at)
+           VALUES (%s, %s, %s, NOW() + INTERVAL '10 minutes')
+           ON CONFLICT (email, purpose)
+           DO UPDATE SET code = EXCLUDED.code, expires_at = EXCLUDED.expires_at""",
+        (email, code, purpose),
+    )
+    conn.commit()
+    conn.close()
+    return code
+
+
+def verify_code(email, code, purpose):
+    conn = get_db()
+    row = conn.execute(
+        """DELETE FROM verification_codes
+           WHERE email = %s AND code = %s AND purpose = %s AND expires_at > NOW()
+           RETURNING id""",
+        (email, code, purpose),
+    ).fetchone()
+    conn.commit()
+    conn.close()
+    return row is not None
+
+
+def get_sites_for_user(user_id):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT slug, visibility FROM sites WHERE user_id = %s ORDER BY created_at", (user_id,)
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_user_email(user_id):
+    conn = get_db()
+    row = conn.execute("SELECT email FROM users WHERE id = %s", (user_id,)).fetchone()
+    conn.close()
+    return row["email"] if row else None
