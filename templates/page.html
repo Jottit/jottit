@@ -7,19 +7,21 @@
 {% endblock %}
 
 {% block body %}
-<article class="page">
-    {{ content | safe }}
-</article>
-{% if show_actions %}
-<div class="page-actions">
-    <span class="page-timestamp">last edited {{ updated_at | relative_time }}</span>
-    <div class="page-actions-buttons">
-        <a href="/{{ slug }}/history" class="btn btn-outline btn-sm">History</a>
-        <a href="/{{ slug }}/edit" class="btn btn-outline btn-sm">Edit</a>
+<main class="page-main">
+    <article class="page">
+        {{ content | safe }}
+    </article>
+    {% if show_actions %}
+    <div class="page-actions">
+        <span class="page-timestamp">last edited {{ updated_at | relative_time }}</span>
+        <div class="page-actions-buttons">
+            <a href="/{{ slug }}/history" class="btn btn-outline btn-sm">History</a>
+            <a href="/{{ slug }}/edit" class="btn btn-outline btn-sm">Edit</a>
+        </div>
     </div>
-</div>
-{% endif %}
-<footer class="page-footer">
-    <span>powered by <a href="/">Jottit</a></span>
-</footer>
+    {% endif %}
+    <footer class="page-footer">
+        <span>powered by <a href="/">Jottit</a></span>
+    </footer>
+</main>
 {% endblock %}

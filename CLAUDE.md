@@ -61,15 +61,15 @@ Jottit
 ### Settings
 - Accessible from jottit.org after signing in ("settings" link replaces "sign in" in top right)
 - Public/private toggle
-- Recovery email
 - Slug change
 - Not a dashboard — one simple page
 
 ### Auth & Ownership
 - No account required to create a page — zero friction
-- Unclaimed pages show a "Claim this site" banner
-- Claiming sets a passcode and optionally an email for recovery
-- Once claimed: passcode required to edit
+- Unclaimed pages show a "Claim this page" banner
+- Claiming: enter your email, receive a 6-digit code, enter the code. Page is yours.
+- Every sign-in uses the same flow: email → code. No passwords.
+- Once claimed: sign-in required to edit
 - Unclaimed pages are editable by anyone with the URL
 
 ### Visibility
@@ -117,7 +117,7 @@ Jottit
 
 - Python: simple, readable, no clever abstractions
 - HTML: semantic, minimal classes
-- CSS: prefer reusable components over page-specific styling. Before adding CSS, check what's already defined. Use utilities (mt-1, mb-1, etc.) in base.css for small adjustments. Never use inline styles — always use classes. CSS architecture: base.css (reset, tokens, classless element styles, utilities), theme.css (site styling), ui.css (owner-only UI).
+- CSS: reuse existing classes and variables before adding new ones. Check what's already defined in stylesheets first. Never use inline styles — always use classes.
 - JS: vanilla only, no build step, no frameworks. Editor page only — no JS on published pages.
 - Keep files small and focused
 - Prefer explicit over clever

@@ -141,25 +141,16 @@
 /* Page actions (owner only) */
 
 .page-actions {
-    max-width: var(--content-width);
-    margin: 0 auto;
-    padding: var(--space-5) var(--space-5);
+    padding-top: var(--space-5);
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-top: 1px solid #eee;
-    background: #fff;
-}
-
-@media (min-width: 640px) {
-    .page-actions {
-        padding-inline: var(--space-10);
-    }
 }
 
 .page-timestamp {
     font-size: var(--font-size-sm);
-    color: #999;
+    color: var(--site-color-muted);
 }
 
 .page-actions-buttons {
@@ -176,7 +167,7 @@
 /* History */
 
 .history {
-    max-width: var(--content-width);
+    max-width: var(--site-max-width);
     margin: 0 auto;
     padding: var(--space-10) var(--space-5);
     color: #1a1a1a;
@@ -229,7 +220,7 @@
 /* Revision banner */
 
 .revision-banner {
-    max-width: var(--content-width);
+    max-width: var(--site-max-width);
     margin: 0 auto;
     padding: var(--space-3) var(--space-5);
     font-size: var(--font-size-sm);
