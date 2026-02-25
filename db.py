@@ -15,3 +15,96 @@ def init_db():
         conn.execute(f.read())
     conn.commit()
     conn.close()
+
+
+def get_latest_revision(slug):
+    conn = get_db()
+    row = conn.execute(
+        """SELECT r.content, r.draft FROM revisions r
+           JOIN pages p ON r.page_id = p.id
+           JOIN sites s ON p.site_id = s.id
+           WHERE s.slug = %s
+           ORDER BY r.revision DESC LIMIT 1""",
+        (slug,),
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def save_page(slug, content, draft):
+    conn = get_db()
+    site = conn.execute("SELECT id FROM sites WHERE slug = %s", (slug,)).fetchone()
+
+    if site:
+        page = conn.execute(
+            "SELECT id FROM pages WHERE site_id = %s", (site["id"],)
+        ).fetchone()
+        next_rev = conn.execute(
+            "SELECT COALESCE(MAX(revision), 0) + 1 AS next_rev FROM revisions WHERE page_id = %s",
+            (page["id"],),
+        ).fetchone()["next_rev"]
+        conn.execute(
+            "INSERT INTO revisions (page_id, revision, content, draft) VALUES (%s, %s, %s, %s)",
+            (page["id"], next_rev, content, draft),
+        )
+        conn.execute(
+            "UPDATE pages SET updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (page["id"],),
+        )
+    else:
+        cursor = conn.execute("INSERT INTO sites (slug) VALUES (%s) RETURNING id", (slug,))
+        site_id = cursor.fetchone()["id"]
+        cursor = conn.execute(
+            "INSERT INTO pages (site_id, slug) VALUES (%s, '-') RETURNING id",
+            (site_id,),
+        )
+        page_id = cursor.fetchone()["id"]
+        conn.execute(
+            "INSERT INTO revisions (page_id, revision, content, draft) VALUES (%s, 1, %s, %s)",
+            (page_id, content, draft),
+        )
+
+    conn.commit()
+    conn.close()
+
+
+def get_page(slug):
+    conn = get_db()
+    row = conn.execute(
+        """SELECT r.content, r.draft, r.created_at, s.user_id
+           FROM revisions r
+           JOIN pages p ON r.page_id = p.id
+           JOIN sites s ON p.site_id = s.id
+           WHERE s.slug = %s
+           ORDER BY r.revision DESC LIMIT 1""",
+        (slug,),
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def get_revisions(slug):
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT r.revision, r.created_at, r.content FROM revisions r
+           JOIN pages p ON r.page_id = p.id
+           JOIN sites s ON p.site_id = s.id
+           WHERE s.slug = %s
+           ORDER BY r.revision ASC""",
+        (slug,),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_revision(slug, revision):
+    conn = get_db()
+    row = conn.execute(
+        """SELECT r.content, r.created_at, r.revision FROM revisions r
+           JOIN pages p ON r.page_id = p.id
+           JOIN sites s ON p.site_id = s.id
+           WHERE s.slug = %s AND r.revision = %s""",
+        (slug, revision),
+    ).fetchone()
+    conn.close()
+    return row

@@ -76,12 +76,17 @@ table {
     --font-size-md: 1rem;
     --font-size-logo: 4.5rem;
 
-    /* Spacing */
-    --space-xs: 8px;
-    --space-sm: 14px;
-    --space-md: 20px;
-    --space-lg: 32px;
-    --space-xl: 40px;
+    /* Spacing (4px grid) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+    --space-9: 36px;
+    --space-10: 40px;
 
     /* Border radius */
     --radius-sm: 6px;
@@ -126,7 +131,7 @@ a {
 
 .btn {
     display: inline-block;
-    padding: var(--space-xs) var(--space-md);
+    padding: var(--space-2) var(--space-5);
     font-size: var(--font-size-sm);
     font-weight: 600;
     border: 1px solid transparent;
@@ -155,7 +160,7 @@ a {
 }
 
 .btn-lg {
-    padding: 12px var(--space-lg);
+    padding: 12px var(--space-8);
     font-size: var(--font-size-md);
 }
 

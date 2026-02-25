@@ -3,7 +3,7 @@
 .page {
     max-width: var(--content-width);
     margin: 0 auto;
-    padding: var(--space-xl) var(--space-md);
+    padding: var(--space-10) var(--space-5);
     font-family: Georgia, "Times New Roman", Times, serif;
     font-size: 1.25rem;
     line-height: 1.8;
@@ -13,7 +13,7 @@
 
 @media (min-width: 640px) {
     .page {
-        padding: 80px var(--space-xl);
+        padding: 80px var(--space-10);
     }
 }
 
@@ -110,7 +110,7 @@
 .page-footer {
     max-width: var(--content-width);
     margin: 0 auto;
-    padding: var(--space-md);
+    padding: var(--space-5);
     font-size: var(--font-size-sm);
     color: #999;
     background: #fff;

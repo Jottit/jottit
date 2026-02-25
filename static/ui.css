@@ -3,7 +3,7 @@
 .signin-link {
     position: absolute;
     top: 24px;
-    right: var(--space-lg);
+    right: var(--space-8);
 }
 
 /* Homepage */
@@ -20,7 +20,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-md);
+    gap: var(--space-5);
 }
 
 .logo {
@@ -43,7 +43,7 @@
 }
 
 .home-footer {
-    padding: var(--space-lg);
+    padding: var(--space-8);
     text-align: center;
 }
 
@@ -74,7 +74,7 @@
     max-width: var(--content-width);
     width: 100%;
     margin: 0 auto;
-    padding: var(--space-xl) var(--space-lg);
+    padding: var(--space-10) var(--space-8);
 }
 
 .editor-title {
@@ -83,7 +83,7 @@
     border: none;
     outline: none;
     background: transparent;
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-5);
 }
 
 .editor-title::placeholder {
@@ -111,7 +111,7 @@
     max-width: var(--content-width);
     width: 100%;
     margin: 0 auto;
-    padding: var(--space-sm) var(--space-lg);
+    padding: var(--space-3) var(--space-8);
     border-top: 1px solid #eee;
 }
 
@@ -120,13 +120,13 @@
     color: #999;
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: var(--space-2);
     cursor: pointer;
 }
 
 .editor-actions {
     display: flex;
-    gap: var(--space-xs);
+    gap: var(--space-2);
 }
 
 .editor .btn-outline {
@@ -143,7 +143,7 @@
 .page-actions {
     max-width: var(--content-width);
     margin: 0 auto;
-    padding: var(--space-md) var(--space-md);
+    padding: var(--space-5) var(--space-5);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -153,7 +153,7 @@
 
 @media (min-width: 640px) {
     .page-actions {
-        padding-inline: var(--space-xl);
+        padding-inline: var(--space-10);
     }
 }
 
@@ -165,11 +165,85 @@
 .page-actions-buttons {
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: var(--space-2);
 }
 
 .btn-sm {
     padding: 4px 14px;
     font-size: var(--font-size-sm);
+}
+
+/* History */
+
+.history {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: var(--space-10) var(--space-5);
+    color: #1a1a1a;
+}
+
+@media (min-width: 640px) {
+    .history {
+        padding: 80px var(--space-10);
+    }
+}
+
+.history-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: var(--space-3);
+}
+
+.history-subtitle {
+    color: #999;
+    margin-bottom: var(--space-5);
+}
+
+.history-subtitle a {
+    color: #1a1a1a;
+    text-decoration: underline;
+}
+
+.history-list {
+    margin-bottom: 0;
+}
+
+.history-item {
+    padding: var(--space-3) 0;
+    font-size: var(--font-size-md);
+    display: flex;
+    gap: var(--space-5);
+    align-items: baseline;
+}
+
+.history-item a {
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.history-time {
+    color: #999;
+    font-size: var(--font-size-sm);
+}
+
+/* Revision banner */
+
+.revision-banner {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--font-size-sm);
+    color: #666;
+}
+
+.revision-banner a {
+    text-decoration: underline;
+}
+
+@media (min-width: 640px) {
+    .revision-banner {
+        padding: var(--space-3) var(--space-10);
+        margin-top: var(--space-10);
+    }
 }
 

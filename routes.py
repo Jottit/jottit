@@ -1,10 +1,11 @@
+import difflib
 import secrets
 import string
 
 import markdown
 from flask import Blueprint, abort, redirect, render_template, request, session
 
-from db import get_db
+from db import get_latest_revision, get_page, get_revision, get_revisions, save_page
 
 bp = Blueprint("routes", __name__)
 
@@ -28,16 +29,7 @@ def new_page():
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
 def edit_page(slug):
     if request.method == "GET":
-        db = get_db()
-        row = db.execute(
-            """SELECT r.content, r.draft FROM revisions r
-               JOIN pages p ON r.page_id = p.id
-               JOIN sites s ON p.site_id = s.id
-               WHERE s.slug = %s
-               ORDER BY r.revision DESC LIMIT 1""",
-            (slug,),
-        ).fetchone()
-        db.close()
+        row = get_latest_revision(slug)
         content = row["content"] if row else ""
         title = ""
         if content.startswith("# "):
@@ -53,40 +45,7 @@ def edit_page(slug):
     if title:
         content = f"# {title}\n\n{content}"
 
-    db = get_db()
-    site = db.execute("SELECT id FROM sites WHERE slug = %s", (slug,)).fetchone()
-
-    if site:
-        page = db.execute(
-            "SELECT id FROM pages WHERE site_id = %s", (site["id"],)
-        ).fetchone()
-        next_rev = db.execute(
-            "SELECT COALESCE(MAX(revision), 0) + 1 AS next_rev FROM revisions WHERE page_id = %s",
-            (page["id"],),
-        ).fetchone()["next_rev"]
-        db.execute(
-            "INSERT INTO revisions (page_id, revision, content, draft) VALUES (%s, %s, %s, %s)",
-            (page["id"], next_rev, content, draft),
-        )
-        db.execute(
-            "UPDATE pages SET updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-            (page["id"],),
-        )
-    else:
-        cursor = db.execute("INSERT INTO sites (slug) VALUES (%s) RETURNING id", (slug,))
-        site_id = cursor.fetchone()["id"]
-        cursor = db.execute(
-            "INSERT INTO pages (site_id, slug) VALUES (%s, '-') RETURNING id",
-            (site_id,),
-        )
-        page_id = cursor.fetchone()["id"]
-        db.execute(
-            "INSERT INTO revisions (page_id, revision, content, draft) VALUES (%s, 1, %s, %s)",
-            (page_id, content, draft),
-        )
-
-    db.commit()
-    db.close()
+    save_page(slug, content, draft)
 
     owned = session.get("owned_sites", [])
     if slug not in owned:
@@ -96,19 +55,98 @@ def edit_page(slug):
     return redirect(f"/{slug}")
 
 
+def _get_title(content):
+    if content.startswith("# "):
+        return content.split("\n", 1)[0][2:]
+    return None
+
+
+def _describe_change(prev, curr):
+    old_title = _get_title(prev)
+    new_title = _get_title(curr)
+
+    if new_title != old_title and new_title:
+        return f"Changed title to \u201c{new_title}\u201d"
+
+    old_lines = prev.splitlines()
+    new_lines = curr.splitlines()
+    added = []
+    removed = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, old_lines, new_lines).get_opcodes():
+        if tag == "insert":
+            added.extend(new_lines[j1:j2])
+        elif tag == "delete":
+            removed.extend(old_lines[i1:i2])
+        elif tag == "replace":
+            removed.extend(old_lines[i1:i2])
+            added.extend(new_lines[j1:j2])
+
+    # Skip the title line from snippets
+    added = [l for l in added if not l.startswith("# ")]
+    removed = [l for l in removed if not l.startswith("# ")]
+
+    if added and not removed:
+        snippet = added[0].strip()
+        if snippet:
+            return f"Added \u201c{snippet[:60]}\u201d"
+        return f"Added {len(added)} line{'s' if len(added) != 1 else ''}"
+    if removed and not added:
+        snippet = removed[0].strip()
+        if snippet:
+            return f"Removed \u201c{snippet[:60]}\u201d"
+        return f"Removed {len(removed)} line{'s' if len(removed) != 1 else ''}"
+    if added and removed:
+        old_snip = removed[0].strip()
+        new_snip = added[0].strip()
+        if old_snip and new_snip:
+            return f"Changed \u201c{old_snip[:40]}\u201d to \u201c{new_snip[:40]}\u201d"
+
+    return "Edited page"
+
+
+@bp.route("/<slug>/history")
+def page_history(slug):
+    revisions = get_revisions(slug)
+
+    if not revisions:
+        abort(404)
+
+    entries = []
+    for i, rev in enumerate(revisions):
+        if i == 0:
+            description = None
+        else:
+            description = _describe_change(revisions[i - 1]["content"], rev["content"])
+        entries.append({
+            "revision": rev["revision"],
+            "created_at": rev["created_at"],
+            "description": description,
+        })
+    entries.reverse()
+
+    return render_template("history.html", slug=slug, revisions=entries)
+
+
+@bp.route("/<slug>/history/<int:revision>")
+def view_revision(slug, revision):
+    row = get_revision(slug, revision)
+
+    if not row:
+        abort(404)
+
+    html = markdown.markdown(row["content"])
+    return render_template(
+        "revision.html",
+        content=html,
+        slug=slug,
+        revision=row["revision"],
+        created_at=row["created_at"],
+    )
+
+
 @bp.route("/<slug>")
 def view_page(slug):
-    db = get_db()
-    row = db.execute(
-        """SELECT r.content, r.draft, r.created_at, s.user_id
-           FROM revisions r
-           JOIN pages p ON r.page_id = p.id
-           JOIN sites s ON p.site_id = s.id
-           WHERE s.slug = %s
-           ORDER BY r.revision DESC LIMIT 1""",
-        (slug,),
-    ).fetchone()
-    db.close()
+    row = get_page(slug)
 
     if not row:
         abort(404)

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Revision #{{ revision }} — Jottit{% endblock %}
+
+{% block head %}
+<style>body { background: #fff; }</style>
+{% endblock %}
+
+{% block body %}
+<div class="revision-banner">
+    You're viewing revision #{{ revision }} from {{ created_at | relative_time }}.
+    <a href="/{{ slug }}">View current version</a>
+</div>
+<article class="page">
+    {{ content | safe }}
+</article>
+<footer class="page-footer">
+    <span>powered by <a href="/">Jottit</a></span>
+</footer>
+{% endblock %}

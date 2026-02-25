@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}History — Jottit{% endblock %}
+
+{% block head %}
+<style>body { background: #fff; }</style>
+{% endblock %}
+
+{% block body %}
+<div class="history">
+    <h1 class="history-title">Revision history</h1>
+    <p class="history-subtitle">You are viewing the history of <a href="/{{ slug }}">{{ slug }}</a>.</p>
+    <ul class="history-list">
+        {% for rev in revisions %}
+        <li class="history-item">
+            <a href="/{{ slug }}/history/{{ rev.revision }}">#{{ rev.revision }}</a>
+            <span class="history-time">{{ rev.created_at | relative_time }}</span>
+            {% if rev.description %}
+            <span>{{ rev.description }}</span>
+            {% else %}
+            <em>Created page</em>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+
+</div>
+<div class="page-actions">
+    <a href="/{{ slug }}" class="btn btn-outline btn-sm">Back to page</a>
+</div>
+<footer class="page-footer">
+    <span>powered by <a href="/">Jottit</a></span>
+</footer>
+{% endblock %}
