@@ -1,6 +1,5 @@
 from routes import _describe_change
 
-
 # -- Homepage --
 
 
@@ -43,7 +42,9 @@ def test_publish_creates_page(client):
 
 
 def test_publish_with_draft(client):
-    client.post("/draftpage/edit", data={"title": "Draft", "content": "WIP", "draft": "on"})
+    client.post(
+        "/draftpage/edit", data={"title": "Draft", "content": "WIP", "draft": "on"}
+    )
     r = client.get("/draftpage")
     assert r.status_code == 200
 

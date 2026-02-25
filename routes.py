@@ -72,7 +72,9 @@ def _describe_change(prev, curr):
     new_lines = curr.splitlines()
     added = []
     removed = []
-    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, old_lines, new_lines).get_opcodes():
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+        None, old_lines, new_lines
+    ).get_opcodes():
         if tag == "insert":
             added.extend(new_lines[j1:j2])
         elif tag == "delete":
@@ -82,8 +84,8 @@ def _describe_change(prev, curr):
             added.extend(new_lines[j1:j2])
 
     # Skip the title line from snippets
-    added = [l for l in added if not l.startswith("# ")]
-    removed = [l for l in removed if not l.startswith("# ")]
+    added = [line for line in added if not line.startswith("# ")]
+    removed = [line for line in removed if not line.startswith("# ")]
 
     if added and not removed:
         snippet = added[0].strip()
@@ -117,11 +119,13 @@ def page_history(slug):
             description = None
         else:
             description = _describe_change(revisions[i - 1]["content"], rev["content"])
-        entries.append({
-            "revision": rev["revision"],
-            "created_at": rev["created_at"],
-            "description": description,
-        })
+        entries.append(
+            {
+                "revision": rev["revision"],
+                "created_at": rev["created_at"],
+                "description": description,
+            }
+        )
     entries.reverse()
 
     return render_template("history.html", slug=slug, revisions=entries)

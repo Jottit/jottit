@@ -52,7 +52,9 @@ def save_page(slug, content, draft):
             (page["id"],),
         )
     else:
-        cursor = conn.execute("INSERT INTO sites (slug) VALUES (%s) RETURNING id", (slug,))
+        cursor = conn.execute(
+            "INSERT INTO sites (slug) VALUES (%s) RETURNING id", (slug,)
+        )
         site_id = cursor.fetchone()["id"]
         cursor = conn.execute(
             "INSERT INTO pages (site_id, slug) VALUES (%s, '-') RETURNING id",

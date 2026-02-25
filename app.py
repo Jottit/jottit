@@ -39,6 +39,7 @@ def relative_time_filter(value):
     years = days // 365
     return f"{years} year{'s' if years != 1 else ''} ago"
 
+
 with app.app_context():
     init_db()
 
