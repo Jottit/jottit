@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 
 from flask import Flask
@@ -8,6 +9,9 @@ from routes import bp
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-in-production"
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_DOMAIN"] = os.environ.get(
+    "SESSION_COOKIE_DOMAIN", ".jottit.localhost"
+)
 app.register_blueprint(bp)
 
 

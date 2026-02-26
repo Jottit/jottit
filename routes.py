@@ -326,7 +326,7 @@ def signin_verify():
 @bp.route("/signout")
 def signout():
     session.pop("user_id", None)
-    return redirect("/")
+    return redirect(request.referrer or "/")
 
 
 @bp.route("/settings")
@@ -611,14 +611,14 @@ def json_feed(slug):
 @bp.route("/<slug>/<page_slug>")
 def view_page(slug, page_slug=None):
     subdomain_site = g.subdomain_site
-    if subdomain_site:
+    if subdomain_site and slug != subdomain_site["slug"]:
         page_slug = slug
         slug = subdomain_site["slug"]
-    else:
-        site = get_site(slug)
-        if site and site["subdomain"]:
-            path = f"/{page_slug}" if page_slug else ""
-            return redirect(_subdomain_url(site["subdomain"], path))
+
+    site = get_site(slug)
+    if not subdomain_site and site and site["subdomain"]:
+        path = f"/{page_slug}" if page_slug else ""
+        return redirect(_subdomain_url(site["subdomain"], path))
 
     row = get_page(slug, page_slug)
 
