@@ -121,6 +121,8 @@ def edit_page(slug):
         content = f"# {title}\n\n{content}"
 
     save_page(slug, content, draft, page_slug)
+    if page_slug:
+        return redirect(f"/{slug}/{page_slug}")
     return redirect(f"/{slug}")
 
 
@@ -551,8 +553,9 @@ def json_feed(slug):
 
 
 @bp.route("/<slug>")
-def view_page(slug):
-    row = get_page(slug)
+@bp.route("/<slug>/<page_slug>")
+def view_page(slug, page_slug=None):
+    row = get_page(slug, page_slug)
 
     if not row:
         abort(404)

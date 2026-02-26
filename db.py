@@ -93,17 +93,28 @@ def save_page(slug, content, draft, page_slug=None):
     conn.close()
 
 
-def get_page(slug):
+def get_page(slug, page_slug=None):
     conn = get_db()
-    row = conn.execute(
-        """SELECT r.content, r.draft, r.created_at, s.user_id
-           FROM revisions r
-           JOIN pages p ON r.page_id = p.id
-           JOIN sites s ON p.site_id = s.id
-           WHERE s.slug = %s
-           ORDER BY r.revision DESC LIMIT 1""",
-        (slug,),
-    ).fetchone()
+    if page_slug:
+        row = conn.execute(
+            """SELECT r.content, r.draft, r.created_at, s.user_id
+               FROM revisions r
+               JOIN pages p ON r.page_id = p.id
+               JOIN sites s ON p.site_id = s.id
+               WHERE s.slug = %s AND p.slug = %s
+               ORDER BY r.revision DESC LIMIT 1""",
+            (slug, page_slug),
+        ).fetchone()
+    else:
+        row = conn.execute(
+            """SELECT r.content, r.draft, r.created_at, s.user_id
+               FROM revisions r
+               JOIN pages p ON r.page_id = p.id
+               JOIN sites s ON p.site_id = s.id
+               WHERE s.slug = %s
+               ORDER BY r.revision DESC LIMIT 1""",
+            (slug,),
+        ).fetchone()
     conn.close()
     return row
 

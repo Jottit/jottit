@@ -5,24 +5,27 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-<div class="auth-page">
-    <h1 class="auth-title">Settings</h1>
-    <p class="auth-subtitle">Signed in as {{ email }}.</p>
+<div class="panel-page">
+    <a href="/" class="panel-back">&larr; Jottit</a>
+    <div class="panel">
+        <h1 class="title">Settings</h1>
+        <p class="subtitle">Signed in as {{ email }}.</p>
 
-    {% if sites %}
-    <h2 class="settings-section-title">Your pages</h2>
-    <ul class="settings-sites">
-        {% for site in sites %}
-        <li class="settings-site">
-            <a href="/{{ site.slug }}">{{ site.slug }}</a>
-            <a href="/{{ site.slug }}/settings" class="btn btn-outline btn-sm">Settings</a>
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="auth-subtitle">You haven't claimed any pages yet.</p>
-    {% endif %}
+        {% if sites %}
+        <h2 class="section-title">Your pages</h2>
+        <ul class="item-list">
+            {% for site in sites %}
+            <li class="item">
+                <a href="/{{ site.slug }}">{{ site.slug }}</a>
+                <a href="/{{ site.slug }}/settings" class="btn btn-outline btn-sm">Settings</a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="subtitle">You haven't claimed any pages yet.</p>
+        {% endif %}
 
-    <a href="/signout" class="settings-signout-link">Sign out</a>
+        <a href="/signout" class="muted-link">Sign out</a>
+    </div>
 </div>
 {% endblock %}

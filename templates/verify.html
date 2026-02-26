@@ -5,11 +5,11 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-<div class="auth-page auth-page-centered">
-    <h1 class="auth-title">Check your email</h1>
-    <p class="auth-subtitle">We sent you a 6-digit code.</p>
+<div class="shell shell-centered">
+    <h1 class="title">Check your email</h1>
+    <p class="subtitle">We sent you a 6-digit code.</p>
     {% if error %}
-    <p class="auth-error">{{ error }}</p>
+    <p class="error">{{ error }}</p>
     {% endif %}
     <form class="auth-form" method="post" action="{{ action }}">
         <input type="hidden" name="code" id="code-value">

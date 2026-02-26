@@ -5,12 +5,12 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-<div class="history">
-    <h1 class="history-title">Revision history</h1>
-    <p class="history-subtitle">You are viewing the history of <a href="/{{ slug }}">{{ slug }}</a>.</p>
-    <ul class="history-list">
+<div class="shell shell-wide">
+    <h1 class="title">Revision history</h1>
+    <p class="subtitle">You are viewing the history of <a href="/{{ slug }}">{{ slug }}</a>.</p>
+    <ul class="item-list">
         {% for rev in revisions %}
-        <li class="history-item">
+        <li class="item history-item">
             <a href="/{{ slug }}/history/{{ rev.revision }}">#{{ rev.revision }}</a>
             <span class="history-time">{{ rev.created_at | relative_time }}</span>
             {% if rev.description %}

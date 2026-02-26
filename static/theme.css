@@ -4,7 +4,6 @@
     max-width: var(--site-max-width);
     margin: 0 auto;
     padding: var(--space-10) var(--space-5);
-    background: #fff;
 }
 
 @media (min-width: 640px) {

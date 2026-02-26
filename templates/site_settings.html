@@ -6,63 +6,65 @@
 {% endblock %}
 
 {% block body %}
-<div class="auth-page">
-    <h1 class="auth-title">Settings</h1>
-    <p class="auth-subtitle"><a href="/{{ slug }}">{{ slug }}</a></p>
+<div class="panel-page">
+    <a href="/{{ slug }}" class="panel-back">&larr; {{ slug }}</a>
+    <div class="panel">
+        <h1 class="title">Settings</h1>
+        <p class="subtitle"><a href="/{{ slug }}">{{ slug }}</a></p>
 
-    {% if error %}
-    <p class="auth-error">{{ error }}</p>
-    {% endif %}
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
 
-    <form method="post" action="/{{ slug }}/settings">
-        <div class="settings-field">
-            <label class="settings-label" for="title">Site title</label>
-            <input class="settings-input" type="text" id="title" name="title" value="{{ site.title or '' }}" placeholder="Optional">
-        </div>
-
-        <div class="settings-field">
-            <label class="settings-label" for="subdomain">Subdomain</label>
-            <div class="settings-subdomain-row">
-                <input class="settings-input" type="text" id="subdomain" name="subdomain" value="{{ site.subdomain or '' }}" placeholder="yourname">
-                <span class="settings-subdomain-suffix">.jottit.org</span>
+        <form method="post" action="/{{ slug }}/settings">
+            <div class="field">
+                <label class="label" for="title">Site title</label>
+                <input class="input" type="text" id="title" name="title" value="{{ site.title or '' }}" placeholder="Optional">
             </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary settings-save">Save</button>
-    </form>
+            <div class="field">
+                <label class="label" for="subdomain">Subdomain</label>
+                <div class="settings-subdomain-row">
+                    <input class="input" type="text" id="subdomain" name="subdomain" value="{{ site.subdomain or '' }}" placeholder="yourname">
+                    <span class="settings-subdomain-suffix">.jottit.org</span>
+                </div>
+            </div>
 
-    {% if pages|length > 0 %}
-    <h2 class="settings-section-title">Pages</h2>
-    <ul class="settings-nav-list">
-        {% for page in pages %}
-        <li class="settings-nav-item">
-            <a href="/{{ slug }}/edit?page={{ page.slug }}">{{ page.title }}</a>
-            {% if page.nav_order is not none %}
-            <form method="post" action="/{{ slug }}/settings/nav/remove/{{ page.id }}" class="settings-nav-inline">
-                <button type="submit" class="btn btn-outline btn-sm">Remove from nav</button>
-            </form>
-            {% else %}
-            <form method="post" action="/{{ slug }}/settings/nav" class="settings-nav-inline">
-                {% for p in pages %}
-                {% if p.nav_order is not none %}
-                <input type="hidden" name="page_ids" value="{{ p.id }}">
+            <button type="submit" class="btn btn-solid settings-save">Save</button>
+        </form>
+
+        {% if pages|length > 0 %}
+        <h2 class="section-title">Pages</h2>
+        <ul class="item-list">
+            {% for page in pages %}
+            <li class="item">
+                <a href="/{{ slug }}/edit?page={{ page.slug }}">{{ page.title }}</a>
+                {% if page.nav_order is not none %}
+                <form method="post" action="/{{ slug }}/settings/nav/remove/{{ page.id }}" class="settings-nav-inline">
+                    <button type="submit" class="btn btn-outline btn-sm">Remove from nav</button>
+                </form>
+                {% else %}
+                <form method="post" action="/{{ slug }}/settings/nav" class="settings-nav-inline">
+                    {% for p in pages %}
+                    {% if p.nav_order is not none %}
+                    <input type="hidden" name="page_ids" value="{{ p.id }}">
+                    {% endif %}
+                    {% endfor %}
+                    <input type="hidden" name="page_ids" value="{{ page.id }}">
+                    <button type="submit" class="btn btn-outline btn-sm">Add to nav</button>
+                </form>
                 {% endif %}
-                {% endfor %}
-                <input type="hidden" name="page_ids" value="{{ page.id }}">
-                <button type="submit" class="btn btn-outline btn-sm">Add to nav</button>
-            </form>
-            {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
-    {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
 
-    <form method="post" action="/{{ slug }}/settings/add-page" class="settings-add-page">
-        <button type="submit" class="btn btn-outline btn-sm">Add a page</button>
-    </form>
+        <form method="post" action="/{{ slug }}/settings/add-page" class="settings-add-page">
+            <button type="submit" class="btn btn-outline btn-sm">Add a page</button>
+        </form>
 
-    <h2 class="settings-section-title">Export</h2>
-    <a href="/{{ slug }}/export" class="btn btn-outline btn-sm">Download as zip</a>
-
+        <h2 class="section-title">Export</h2>
+        <a href="/{{ slug }}/export" class="btn btn-outline btn-sm">Download as zip</a>
+    </div>
 </div>
 {% endblock %}

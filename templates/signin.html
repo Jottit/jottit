@@ -5,11 +5,11 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-<div class="auth-page">
-    <h1 class="auth-title">Sign in</h1>
-    <p class="auth-subtitle">Enter your email to sign in.</p>
+<div class="shell">
+    <h1 class="title">Sign in</h1>
+    <p class="subtitle">Enter your email to sign in.</p>
     {% if error %}
-    <p class="auth-error">{{ error }}</p>
+    <p class="error">{{ error }}</p>
     {% endif %}
     <form class="auth-form" method="post" action="/signin">
         <input class="auth-input" type="email" name="email" placeholder="you@example.com" required autofocus>

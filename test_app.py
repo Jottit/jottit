@@ -697,3 +697,28 @@ def test_wikilink_preserves_regular_markdown(client):
     r = client.get("/wl3")
     assert b'href="http://example.com"' in r.data
     assert b"Wiki</a>" in r.data
+
+
+def test_view_subpage(client):
+    client.post("/sp1/edit", data={"title": "Main", "content": "Home"})
+    client.post(
+        "/sp1/edit", data={"title": "About", "content": "Info", "page": "about"}
+    )
+    r = client.get("/sp1/about")
+    assert r.status_code == 200
+    assert b"Info" in r.data
+
+
+def test_view_subpage_404(client):
+    client.post("/sp2/edit", data={"title": "Main", "content": "Home"})
+    r = client.get("/sp2/nope")
+    assert r.status_code == 404
+
+
+def test_edit_subpage_redirects_to_subpage(client):
+    client.post("/sp3/edit", data={"title": "Main", "content": "Home"})
+    r = client.post(
+        "/sp3/edit", data={"title": "About", "content": "Info", "page": "about"}
+    )
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/sp3/about"
