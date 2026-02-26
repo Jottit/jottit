@@ -8,6 +8,7 @@ from db import (
     create_verification_code,
     find_or_create_user,
     get_site,
+    save_page,
 )
 from routes import _describe_change, _parse_nav, _slugify
 
@@ -917,3 +918,62 @@ def test_settings_redirects_to_subdomain_after_save(client):
     assert r.status_code == 302
     assert "newname.jottit.localhost:8000" in r.headers["Location"]
     assert "/settings" in r.headers["Location"]
+
+
+# -- Home page sites limit --
+
+
+def _create_user_with_sites(client, count):
+    user_id = find_or_create_user(f"limit{count}@example.com")
+    for i in range(count):
+        slug = f"limit{count}s{i}"
+        save_page(slug, f"# Site {i}\n\nContent", False)
+        claim_site(slug, user_id)
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    return user_id
+
+
+def test_home_shows_max_3_sites(client):
+    _create_user_with_sites(client, 5)
+    r = client.get("/")
+    body = r.data.decode()
+    assert body.count("home-sites-domain") == 3
+
+
+def test_home_view_all_link_when_more_than_3(client):
+    _create_user_with_sites(client, 4)
+    r = client.get("/")
+    assert b"View all sites" in r.data
+    assert b"/sites" in r.data
+
+
+def test_home_no_view_all_link_when_3_or_fewer(client):
+    _create_user_with_sites(client, 3)
+    r = client.get("/")
+    assert b"View all sites" not in r.data
+
+
+def test_home_no_view_all_link_when_2(client):
+    _create_user_with_sites(client, 2)
+    r = client.get("/")
+    assert b"View all sites" not in r.data
+
+
+# -- /sites page --
+
+
+def test_sites_page_lists_all(client):
+    _create_user_with_sites(client, 5)
+    r = client.get("/sites")
+    assert r.status_code == 200
+    body = r.data.decode()
+    assert body.count("all-sites-list") >= 1
+    for i in range(5):
+        assert f"limit5s{i}" in body
+
+
+def test_sites_page_requires_signin(client):
+    r = client.get("/sites")
+    assert r.status_code == 302
+    assert "/signin" in r.headers["Location"]

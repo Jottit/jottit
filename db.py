@@ -1,9 +1,10 @@
+import os
 import random
 
 import psycopg
 from psycopg.rows import dict_row
 
-DATABASE = "dbname=jottit_dev"
+DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
 
 
 def get_db():
@@ -221,14 +222,32 @@ def verify_code(email, code, purpose):
     return row is not None
 
 
-def get_sites_for_user(user_id):
+def get_sites_for_user(user_id, limit=None):
     conn = get_db()
-    rows = conn.execute(
-        "SELECT slug, title, subdomain, visibility FROM sites WHERE user_id = %s ORDER BY created_at",
-        (user_id,),
-    ).fetchall()
+    query = """SELECT s.slug, s.title, s.subdomain, s.visibility
+               FROM sites s
+               LEFT JOIN pages p ON s.id = p.site_id
+               LEFT JOIN revisions r ON p.id = r.page_id
+               WHERE s.user_id = %s
+               GROUP BY s.id, s.slug, s.title, s.subdomain, s.visibility
+               ORDER BY MAX(r.created_at) DESC NULLS LAST"""
+    params = [user_id]
+    if limit is not None:
+        query += " LIMIT %s"
+        params.append(limit)
+    rows = conn.execute(query, params).fetchall()
     conn.close()
     return rows
+
+
+def count_sites_for_user(user_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT COUNT(*) AS count FROM sites WHERE user_id = %s",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+    return row["count"]
 
 
 def get_user_email(user_id):

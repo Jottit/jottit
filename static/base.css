@@ -77,6 +77,7 @@ table {
 
     /* Typography */
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 0.9375rem;
     --font-size-md: 1rem;
@@ -84,6 +85,11 @@ table {
     --font-size-xl: 1.5rem;
     --font-size-2xl: 2rem;
     --font-size-logo: 4.5rem;
+
+    /* Font weights */
+    --font-weight-semibold: 500;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
 
     /* Spacing (4px grid) */
     --space-1: 4px;
@@ -100,6 +106,7 @@ table {
 
     /* Border radius */
     --radius-sm: 6px;
+    --radius-lg: 16px;
     --radius-pill: 50px;
 
     /* Content width */
@@ -162,8 +169,8 @@ a {
 
 .btn-outline {
     background: transparent;
-    color: currentColor;
-    border-color: currentColor;
+    color: var(--muted);
+    border-color: var(--subtle);
 }
 
 .btn-outline:hover {
@@ -333,3 +340,5 @@ a {
     font-size: var(--font-size-sm);
     color: var(--site-color-muted);
 }
+
+.mb-8 { margin-bottom: var(--space-8); }

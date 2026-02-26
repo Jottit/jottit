@@ -51,18 +51,20 @@
 .home-sites-list {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0 0 var(--space-3) 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
 }
 
 .home-sites-list li {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-5);
+    flex-direction: column;
+    align-items: center;
     padding: var(--space-3) var(--space-6);
     border: 1px solid var(--subtle);
-    border-radius: var(--radius-pill);
-    margin-bottom: var(--space-3);
+    border-radius: var(--radius-lg);
 }
 
 .home-sites-list a {
@@ -73,6 +75,43 @@
     font-size: var(--font-size-sm);
     color: var(--muted);
     white-space: nowrap;
+}
+
+.all-sites-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.all-sites-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-5);
+    padding: var(--space-3) var(--space-6);
+    border: 1px solid var(--subtle);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-5);
+}
+
+.all-sites-list a {
+    font-size: var(--font-size-md);
+}
+
+.sites-back {
+    margin-bottom: var(--space-5);
+}
+
+.sites-list-container {
+    width: 100%;
+    max-width: 380px;
+}
+
+.view-all-link {
+    display: block;
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--muted);
 }
 
 .home-footer {
@@ -88,6 +127,22 @@
 
 .github-link:hover {
     color: var(--muted);
+}
+
+.home-footer-nav {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-5);
+    margin-top: var(--space-3);
+}
+
+.home-footer-nav a {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+}
+
+.home-footer-nav a:hover {
+    color: var(--text);
 }
 
 /* Editor */
@@ -207,6 +262,11 @@
     gap: var(--space-5);
     padding: var(--space-3) var(--space-8);
     border-bottom: 1px solid var(--subtle);
+}
+
+.admin-banner-home {
+    margin-right: auto;
+    font-weight: var(--font-weight-bold);
 }
 
 .admin-banner a {

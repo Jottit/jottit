@@ -26,6 +26,7 @@ from flask import (
 from db import (
     check_subdomain_available,
     claim_site,
+    count_sites_for_user,
     create_verification_code,
     find_or_create_user,
     get_export_pages,
@@ -127,9 +128,24 @@ def home():
         return view_page(site["slug"])
     signed_in = "user_id" in session
     sites = []
+    has_more_sites = False
     if signed_in:
-        sites = get_sites_for_user(session["user_id"])
-    return render_template("home.html", signed_in=signed_in, sites=sites)
+        user_id = session["user_id"]
+        sites = get_sites_for_user(user_id, limit=3)
+        if len(sites) == 3:
+            has_more_sites = count_sites_for_user(user_id) > 3
+    return render_template(
+        "home.html", signed_in=signed_in, sites=sites, has_more_sites=has_more_sites
+    )
+
+
+@bp.route("/sites")
+def sites_list():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/signin")
+    sites = get_sites_for_user(user_id)
+    return render_template("sites.html", sites=sites)
 
 
 def _require_subdomain_site():
@@ -669,4 +685,5 @@ def view_page(slug, page_slug=None):
         updated_at=row["created_at"],
         page_slug=page_slug,
         page_title=page_title,
+        base_url=f"{request.scheme}://{BASE_DOMAIN}",
     )

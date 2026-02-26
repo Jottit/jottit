@@ -7,7 +7,7 @@ from db import init_db
 from routes import bp
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key-change-in-production"
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_DOMAIN"] = os.environ.get(
     "SESSION_COOKIE_DOMAIN", ".jottit.localhost"

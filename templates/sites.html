@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Your sites — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/" class="sites-back">&larr; Back</a>
+    <div class="sites-list-container">
+        {% if sites %}
+        <ul class="all-sites-list">
+            {% for site in sites %}
+            <li>
+                <a href="/{{ site.slug }}">{{ site.title or site.slug }}</a>
+                <span class="home-sites-domain">{% if site.subdomain %}{{ site.subdomain }}.jottit.org{% else %}jottit.org/{{ site.slug }}{% endif %}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="subtitle">You haven't created any sites yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
