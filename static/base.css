@@ -66,8 +66,13 @@ table {
     --btn-bg: #222222;
     --btn-text: #f5f5f0;
     --muted: rgba(0, 0, 0, 0.4);
+    --text-secondary: #666;
     --subtle: rgba(0, 0, 0, 0.1);
     --subtle-hover: rgba(0, 0, 0, 0.2);
+    --border: #eee;
+    --error: #c0392b;
+    --placeholder: #ccc;
+    --code-bg: #f5f5f5;
 
     /* Typography */
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -163,7 +168,7 @@ a {
 }
 
 .btn-lg {
-    padding: 12px var(--space-8);
+    padding: var(--space-3) var(--space-8);
     font-size: var(--font-size-md);
 }
 
@@ -173,7 +178,7 @@ a {
 }
 
 .btn-sm {
-    padding: 4px 14px;
+    padding: var(--space-1) 14px;
     font-size: var(--font-size-sm);
 }
 
@@ -244,7 +249,7 @@ a {
 }
 
 .subtitle {
-    color: #666;
+    color: var(--text-secondary);
     font-size: var(--font-size-md);
     margin-bottom: var(--space-5);
 }
@@ -257,7 +262,7 @@ a {
 /* Feedback */
 
 .error {
-    color: #c0392b;
+    color: var(--error);
     font-size: var(--font-size-sm);
     margin-bottom: var(--space-3);
 }
@@ -273,7 +278,7 @@ a {
     font-size: var(--font-size-sm);
     font-weight: 600;
     margin-bottom: var(--space-2);
-    color: #333;
+    color: var(--text);
 }
 
 .input {
@@ -321,5 +326,5 @@ a {
     display: block;
     margin-top: var(--space-5);
     font-size: var(--font-size-sm);
-    color: #999;
+    color: var(--site-color-muted);
 }
