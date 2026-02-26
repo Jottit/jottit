@@ -11,7 +11,7 @@ from db import (
     get_site,
     update_nav_order,
 )
-from routes import _describe_change
+from routes import _describe_change, _slugify
 
 # -- Homepage --
 
@@ -657,3 +657,43 @@ def test_export_settings_has_link(client):
 
     r = client.get("/exp4/settings")
     assert b"/exp4/export" in r.data
+
+
+# -- Wikilinks --
+
+
+def test_slugify():
+    assert _slugify("Good Writing") == "good-writing"
+    assert _slugify("Hello World!") == "hello-world"
+    assert _slugify("  Multiple   Spaces  ") == "multiple-spaces"
+    assert _slugify("Already-Slugged") == "already-slugged"
+    assert _slugify("123 Numbers") == "123-numbers"
+
+
+def test_wikilink_existing_page(client):
+    user_id = _create_claimed_site(client, "wl1")
+    site = get_site("wl1")
+    create_page(site["id"], "about")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/wl1/edit", data={"title": "", "content": "See [[About]]"})
+    r = client.get("/wl1")
+    assert b'<a href="/wl1/about">About</a>' in r.data
+
+
+def test_wikilink_nonexisting_page(client):
+    client.post("/wl2/edit", data={"title": "", "content": "See [[New Page]]"})
+    r = client.get("/wl2")
+    assert b'class="wikilink-new"' in r.data
+    assert b'href="/wl2/edit?page=new-page"' in r.data
+    assert b"New Page</a>" in r.data
+
+
+def test_wikilink_preserves_regular_markdown(client):
+    client.post(
+        "/wl3/edit",
+        data={"title": "", "content": "A [link](http://example.com) and [[Wiki]]"},
+    )
+    r = client.get("/wl3")
+    assert b'href="http://example.com"' in r.data
+    assert b"Wiki</a>" in r.data

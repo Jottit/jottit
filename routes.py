@@ -6,6 +6,7 @@ import secrets
 import string
 import zipfile
 from email.utils import format_datetime
+from html import escape as html_escape
 from xml.sax.saxutils import escape as xml_escape
 
 import markdown
@@ -49,6 +50,30 @@ bp = Blueprint("routes", __name__)
 def generate_slug(length=6):
     alphabet = string.ascii_lowercase + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def _slugify(name):
+    s = name.lower().strip()
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
+    s = re.sub(r"\s+", "-", s)
+    s = re.sub(r"-+", "-", s)
+    return s.strip("-")
+
+
+def _process_wikilinks(content, site_slug, existing_page_slugs=None):
+    def replace(match):
+        name = match.group(1).strip()
+        if not name:
+            return match.group(0)
+        page_slug = _slugify(name)
+        if not page_slug:
+            return match.group(0)
+        display = html_escape(name)
+        if existing_page_slugs is not None and page_slug not in existing_page_slugs:
+            return f'<a href="/{site_slug}/edit?page={page_slug}" class="wikilink-new">{display}</a>'
+        return f'<a href="/{site_slug}/{page_slug}">{display}</a>'
+
+    return re.sub(r"\[\[([^\[\]]+)\]\]", replace, content)
 
 
 @bp.route("/")
@@ -421,7 +446,7 @@ def view_revision(slug, revision):
     if not row:
         abort(404)
 
-    html = markdown.markdown(row["content"])
+    html = markdown.markdown(_process_wikilinks(row["content"], slug))
     return render_template(
         "revision.html",
         content=html,
@@ -445,7 +470,7 @@ def _build_feed_entries(slug):
                 "title": _get_title(entry["content"]) or slug,
                 "url": page_url,
                 "body": body,
-                "body_html": markdown.markdown(body),
+                "body_html": markdown.markdown(_process_wikilinks(body, slug)),
                 "created_at": entry["created_at"],
             }
         )
@@ -536,15 +561,19 @@ def view_page(slug):
     unclaimed = row["user_id"] is None
     is_owner = session.get("user_id") == row["user_id"] and not unclaimed
     show_actions = is_owner or unclaimed
-    html = markdown.markdown(row["content"])
 
     nav_pages = []
+    existing_page_slugs = set()
     if site:
         pages = get_pages_for_site(site["id"])
+        existing_page_slugs = {p["slug"] for p in pages}
         for p in pages:
             if p["nav_order"] is not None:
                 title = _get_title(p["content"]) if p["content"] else None
                 nav_pages.append({"slug": p["slug"], "title": title or p["slug"]})
+
+    content = _process_wikilinks(row["content"], slug, existing_page_slugs)
+    html = markdown.markdown(content)
 
     return render_template(
         "page.html",
