@@ -6,10 +6,14 @@
 {% endblock %}
 
 {% block body %}
+{% for message in get_flashed_messages() %}
+<div class="toast" id="toast">{{ message }}</div>
+<script>setTimeout(function() { document.getElementById('toast').classList.add('toast-fade') }, 2000)</script>
+{% endfor %}
 <div class="panel-page">
     <a href="/{{ slug }}" class="panel-back">&larr; Back</a>
+    <h1 class="title">Settings</h1>
     <div class="panel">
-        <h1 class="title">Settings</h1>
 
         {% if error %}
         <p class="error">{{ error }}</p>
@@ -32,11 +36,11 @@
             <div class="field">
                 <label class="label" for="nav">Menu</label>
                 <textarea class="input" id="nav" name="nav" rows="6"
-                    placeholder="About&#10;Writing: blog">{{ nav_text }}</textarea>
+                    placeholder="Home: index&#10;About">{{ nav_text }}</textarea>
                 <p class="help-text">One page per line. Use Label: slug to set a custom label.</p>
             </div>
 
-            <button type="submit" class="btn btn-solid settings-save">Save</button>
+            <button type="submit" class="btn btn-solid settings-save">Save changes</button>
         </form>
 
         <h2 class="section-title">Export</h2>

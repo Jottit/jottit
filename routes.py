@@ -14,6 +14,7 @@ from flask import (
     Blueprint,
     Response,
     abort,
+    flash,
     redirect,
     render_template,
     request,
@@ -284,6 +285,7 @@ def site_settings(slug):
         )
 
     update_site_settings(site["id"], title, subdomain, nav)
+    flash("Changes saved")
     return redirect(f"/{slug}/settings")
 
 
@@ -526,11 +528,19 @@ def view_page(slug, page_slug=None):
         pages = get_pages_for_site(site["id"])
         existing_page_slugs = {p["slug"] for p in pages}
         for item in _parse_nav(site["nav"]):
+            item_slug = item["slug"]
+            is_index = item_slug == "index"
+            exists = (
+                "-" in existing_page_slugs
+                if is_index
+                else item_slug in existing_page_slugs
+            )
             nav_pages.append(
                 {
-                    "slug": item["slug"],
+                    "slug": item_slug,
                     "title": item["label"],
-                    "exists": item["slug"] in existing_page_slugs,
+                    "exists": exists,
+                    "is_index": is_index,
                 }
             )
 

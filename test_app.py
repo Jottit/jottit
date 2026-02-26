@@ -521,6 +521,21 @@ def test_nav_nonexisting_page(client):
     assert b"Ideas" in r.data
 
 
+def test_nav_index_links_to_home(client):
+    user_id = _create_claimed_site(client, "ss8d")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    client.post(
+        "/ss8d/settings",
+        data={"title": "", "subdomain": "", "nav": "Home: index"},
+    )
+    r = client.get("/ss8d")
+    assert b'href="/ss8d"' in r.data
+    assert b"Home" in r.data
+    assert b"wikilink-new" not in r.data
+
+
 def test_parse_nav():
     items = _parse_nav("About\nWriting: blog\n\nContact: contact")
     assert len(items) == 3

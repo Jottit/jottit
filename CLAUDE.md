@@ -117,7 +117,7 @@ Jottit
 
 - Python: simple, readable, no clever abstractions
 - HTML: semantic, minimal classes
-- CSS: reuse existing classes and variables before adding new ones. Check what's already defined in stylesheets first. Never use inline styles — always use classes.
+- CSS: reuse existing classes and variables before adding new ones. Check what's already defined in stylesheets first. Never use inline styles — always use classes. Never use hardcoded color values — always use design tokens (CSS custom properties).
 - JS: vanilla only, no build step, no frameworks. Editor page only — no JS on published pages.
 - Keep files small and focused
 - Prefer explicit over clever

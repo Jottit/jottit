@@ -23,7 +23,9 @@
         {% if nav_pages %}
         <nav class="site-nav">
             {% for page in nav_pages %}
-            {% if page.exists %}
+            {% if page.is_index %}
+            <a href="/{{ slug }}">{{ page.title }}</a>
+            {% elif page.exists %}
             <a href="/{{ slug }}/{{ page.slug }}">{{ page.title }}</a>
             {% else %}
             <a href="/{{ slug }}/edit?page={{ page.slug }}" class="wikilink-new">{{ page.title }}</a>

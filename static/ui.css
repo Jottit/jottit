@@ -20,7 +20,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-5);
+    gap: var(--space-2);
 }
 
 .logo {
@@ -40,6 +40,7 @@
 .tagline {
     font-size: var(--font-size-md);
     color: var(--muted);
+    margin-bottom: var(--space-2);
 }
 
 .home-footer {
@@ -171,18 +172,18 @@
 .admin-banner {
     display: flex;
     justify-content: flex-end;
-    gap: var(--space-3);
-    padding: var(--space-2) var(--space-8);
-    background: #111;
+    gap: var(--space-5);
+    padding: var(--space-3) var(--space-8);
+    border-bottom: 1px solid var(--subtle);
 }
 
 .admin-banner a {
-    font-size: var(--font-size-sm);
-    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-md);
+    color: var(--text);
 }
 
 .admin-banner a:hover {
-    color: #fff;
+    color: var(--text);
 }
 
 .site-header {
@@ -356,6 +357,30 @@
 
 .settings-save {
     margin-bottom: var(--space-8);
+}
+
+.toast {
+    position: fixed;
+    top: var(--space-5);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg-surface);
+    padding: var(--space-3) var(--space-8);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-md);
+    z-index: 100;
+    animation: toast-in 0.3s ease;
+    transition: opacity 0.5s;
+}
+
+.toast-fade {
+    opacity: 0;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 .help-text {
