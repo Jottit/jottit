@@ -7,10 +7,9 @@
 
 {% block body %}
 <div class="panel-page">
-    <a href="/{{ slug }}" class="panel-back">&larr; Return to your site</a>
+    <a href="/{{ slug }}" class="panel-back">&larr; Back</a>
     <div class="panel">
         <h1 class="title">Settings</h1>
-        <p class="subtitle"><a href="/{{ slug }}">{{ slug }}</a></p>
 
         {% if error %}
         <p class="error">{{ error }}</p>
@@ -19,7 +18,7 @@
         <form method="post" action="/{{ slug }}/settings">
             <div class="field">
                 <label class="label" for="title">Site title</label>
-                <input class="input" type="text" id="title" name="title" value="{{ site.title or '' }}" placeholder="Optional">
+                <input class="input" type="text" id="title" name="title" value="{{ site.title or '' }}">
             </div>
 
             <div class="field">
