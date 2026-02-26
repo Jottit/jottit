@@ -139,6 +139,11 @@ def home():
     )
 
 
+@bp.route("/about")
+def about():
+    return render_template("about.html", signed_in="user_id" in session)
+
+
 @bp.route("/sites")
 def sites_list():
     user_id = session.get("user_id")

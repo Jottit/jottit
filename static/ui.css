@@ -6,6 +6,37 @@
     right: var(--space-8);
 }
 
+/* About header */
+
+.public-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-5) var(--space-8);
+    border-bottom: 1px solid var(--subtle);
+}
+
+.public-header .public-header-logo {
+    margin-right: auto;
+    font-weight: 800;
+    font-size: var(--font-size-xl);
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, var(--brand-1), var(--brand-2), var(--brand-3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+}
+
+.public-header a {
+    font-size: var(--font-size-md);
+    color: var(--muted);
+}
+
+.public-header a:hover {
+    color: var(--text);
+}
+
 /* Homepage */
 
 .home {

@@ -1,0 +1,9 @@
+<header class="public-header">
+    <a href="/" class="public-header-logo">Jottit</a>
+    {% if signed_in %}
+    <a href="/sites">sites</a>
+    <a href="/signout">sign out</a>
+    {% else %}
+    <a href="/signin">sign in</a>
+    {% endif %}
+</header>
