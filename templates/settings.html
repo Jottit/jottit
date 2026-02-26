@@ -2,9 +2,7 @@
 
 {% block title %}Settings — Jottit{% endblock %}
 
-{% block head %}
-<style>body { background: #fff; }</style>
-{% endblock %}
+{% block head %}{% endblock %}
 
 {% block body %}
 <div class="auth-page">
@@ -17,7 +15,7 @@
         {% for site in sites %}
         <li class="settings-site">
             <a href="/{{ site.slug }}">{{ site.slug }}</a>
-            <span class="settings-visibility">{{ site.visibility }}</span>
+            <a href="/{{ site.slug }}/settings" class="btn btn-outline btn-sm">Settings</a>
         </li>
         {% endfor %}
     </ul>
@@ -25,6 +23,6 @@
     <p class="auth-subtitle">You haven't claimed any pages yet.</p>
     {% endif %}
 
-    <a href="/signout" class="btn btn-outline settings-signout">Sign out</a>
+    <a href="/signout" class="settings-signout-link">Sign out</a>
 </div>
 {% endblock %}

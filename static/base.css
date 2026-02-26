@@ -74,6 +74,8 @@ table {
     --font-size-sm: 0.875rem;
     --font-size-base: 0.9375rem;
     --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.5rem;
     --font-size-logo: 4.5rem;
 
     /* Spacing (4px grid) */
@@ -94,6 +96,7 @@ table {
 
     /* Content width */
     --content-width: 720px;
+    --measure: 70em;
 
     /* Published page typography */
     --site-font-body: Georgia, "Charter", "Bitstream Charter", "Sitka Text", Cambria, serif;
@@ -104,6 +107,7 @@ table {
     --site-color-text: #333;
     --site-color-heading: #111;
     --site-color-muted: #999;
+    --site-color-nav: #848484;
 
     /* Breakpoints (used in media queries) */
     /* --bp-sm: 640px */
@@ -111,17 +115,6 @@ table {
     /* --bp-lg: 1152px */
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg: #2b303b;
-        --text: #c0c5ce;
-        --btn-bg: #ffffff;
-        --btn-text: #2b303b;
-        --muted: rgba(255, 255, 255, 0.4);
-        --subtle: rgba(255, 255, 255, 0.15);
-        --subtle-hover: rgba(255, 255, 255, 0.35);
-    }
-}
 
 /* Classless base */
 

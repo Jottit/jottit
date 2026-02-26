@@ -2,20 +2,70 @@
 
 {% block title %}Enter code — Jottit{% endblock %}
 
-{% block head %}
-<style>body { background: #fff; }</style>
-{% endblock %}
+{% block head %}{% endblock %}
 
 {% block body %}
-<div class="auth-page">
+<div class="auth-page auth-page-centered">
     <h1 class="auth-title">Check your email</h1>
-    <p class="auth-subtitle">We sent a 6-digit code to your email.</p>
+    <p class="auth-subtitle">We sent you a 6-digit code.</p>
     {% if error %}
     <p class="auth-error">{{ error }}</p>
     {% endif %}
     <form class="auth-form" method="post" action="{{ action }}">
-        <input class="auth-input auth-code" type="text" name="code" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required autofocus>
-        <button class="btn btn-solid" type="submit">Verify</button>
+        <input type="hidden" name="code" id="code-value">
+        {% if email %}<input type="hidden" name="email" value="{{ email }}">{% endif %}
+        <div class="code-inputs">
+            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required autofocus>
+            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+        </div>
+        <button class="btn btn-outline" type="submit">Verify</button>
     </form>
+    <script>
+    (function() {
+        var digits = document.querySelectorAll('.auth-code-digit');
+        var hidden = document.getElementById('code-value');
+
+        var form = document.querySelector('.auth-form');
+
+        function syncHidden() {
+            var code = '';
+            digits.forEach(function(d) { code += d.value; });
+            hidden.value = code;
+            if (code.length === 6) {
+                form.submit();
+            }
+        }
+
+        digits.forEach(function(input, i) {
+            input.addEventListener('input', function() {
+                syncHidden();
+                if (input.value && i < digits.length - 1) {
+                    digits[i + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !input.value && i > 0) {
+                    digits[i - 1].focus();
+                }
+            });
+
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+                for (var j = 0; j < digits.length; j++) {
+                    digits[j].value = text[j] || '';
+                }
+                syncHidden();
+                var next = Math.min(text.length, digits.length - 1);
+                digits[next].focus();
+            });
+        });
+    })();
+    </script>
 </div>
 {% endblock %}

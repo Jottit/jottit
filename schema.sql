@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS sites (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     slug TEXT NOT NULL UNIQUE,
+    title TEXT,
+    subdomain TEXT UNIQUE,
     visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'private')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -18,6 +20,7 @@ CREATE TABLE IF NOT EXISTS pages (
     id SERIAL PRIMARY KEY,
     site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
     slug TEXT NOT NULL,
+    nav_order INTEGER,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (site_id, slug)

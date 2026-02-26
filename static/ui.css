@@ -434,6 +434,21 @@
     color: #333;
 }
 
+.settings-input {
+    width: 100%;
+    padding: var(--space-2);
+    font-size: var(--font-size-md);
+    border: 1px solid var(--muted);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.settings-input:focus {
+    outline: none;
+    border-color: var(--text);
+}
+
 .settings-subdomain-row {
     display: flex;
     align-items: center;

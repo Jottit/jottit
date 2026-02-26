@@ -363,12 +363,12 @@ def test_homepage_shows_signin_when_logged_out(client):
     assert b"Settings" not in r.data
 
 
-def test_homepage_shows_settings_when_logged_in(client):
+def test_homepage_shows_signout_when_logged_in(client):
     with client.session_transaction() as sess:
         sess["user_id"] = 1
 
     r = client.get("/")
-    assert b"Settings" in r.data
+    assert b"Sign out" in r.data
     assert b"Sign in" not in r.data
 
 

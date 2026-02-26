@@ -7,6 +7,7 @@ from routes import bp
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-in-production"
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.register_blueprint(bp)
 
 
