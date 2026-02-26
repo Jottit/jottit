@@ -334,14 +334,16 @@
 
 .admin-banner {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
     gap: var(--space-5);
     padding: var(--space-3) var(--space-8);
     border-bottom: 1px solid var(--subtle);
 }
 
-.admin-banner-home {
+.admin-banner .admin-banner-home {
     margin-right: auto;
+    font-size: var(--font-size-lg);
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(90deg, var(--brand-1), var(--brand-2), var(--brand-3));
@@ -351,7 +353,7 @@
 }
 
 .admin-banner a {
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-sm);
     color: var(--text);
 }
 
