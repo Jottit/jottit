@@ -144,6 +144,11 @@ def about():
     return render_template("about.html", signed_in="user_id" in session)
 
 
+@bp.route("/talk")
+def talk():
+    return render_template("talk.html", signed_in="user_id" in session)
+
+
 @bp.route("/sites")
 def sites_list():
     user_id = session.get("user_id")
