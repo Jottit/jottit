@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS sites (
     slug TEXT NOT NULL UNIQUE,
     title TEXT,
     subdomain TEXT UNIQUE,
+    nav TEXT,
     visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'private')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

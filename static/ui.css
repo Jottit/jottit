@@ -354,13 +354,10 @@
     margin-bottom: var(--space-8);
 }
 
-.settings-nav-inline {
-    display: inline;
-}
-
-.settings-add-page {
-    margin-top: var(--space-3);
-    margin-bottom: var(--space-8);
+.help-text {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    margin-top: var(--space-2);
 }
 
 /* Revision banner */

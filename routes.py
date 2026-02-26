@@ -23,7 +23,6 @@ from flask import (
 from db import (
     check_subdomain_available,
     claim_site,
-    create_page,
     create_verification_code,
     find_or_create_user,
     get_export_pages,
@@ -36,9 +35,7 @@ from db import (
     get_site,
     get_sites_for_user,
     get_user_email,
-    remove_from_nav,
     save_page,
-    update_nav_order,
     update_site_settings,
     verify_code,
 )
@@ -58,6 +55,23 @@ def _slugify(name):
     s = re.sub(r"\s+", "-", s)
     s = re.sub(r"-+", "-", s)
     return s.strip("-")
+
+
+def _parse_nav(text):
+    items = []
+    for line in (text or "").strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if ":" in line:
+            label, slug = line.split(":", 1)
+            label, slug = label.strip(), slug.strip()
+        else:
+            label = line
+            slug = _slugify(line)
+        if label and slug:
+            items.append({"label": label, "slug": slug})
+    return items
 
 
 def _process_wikilinks(content, site_slug, existing_page_slugs=None):
@@ -244,24 +258,14 @@ def site_settings(slug):
         return redirect(f"/{slug}")
 
     if request.method == "GET":
-        pages = get_pages_for_site(site["id"])
-        page_list = []
-        for p in pages:
-            title = _get_title(p["content"]) if p["content"] else None
-            page_list.append(
-                {
-                    "id": p["id"],
-                    "slug": p["slug"],
-                    "title": title or p["slug"],
-                    "nav_order": p["nav_order"],
-                }
-            )
+        nav_text = site["nav"] or ""
         return render_template(
-            "site_settings.html", site=site, pages=page_list, slug=slug
+            "site_settings.html", site=site, nav_text=nav_text, slug=slug
         )
 
     title = request.form.get("title", "").strip()
     subdomain = request.form.get("subdomain", "").strip().lower()
+    nav = request.form.get("nav", "").strip()
 
     error = None
     if subdomain:
@@ -271,65 +275,16 @@ def site_settings(slug):
             error = "That subdomain is already taken."
 
     if error:
-        pages = get_pages_for_site(site["id"])
-        page_list = []
-        for p in pages:
-            ptitle = _get_title(p["content"]) if p["content"] else None
-            page_list.append(
-                {
-                    "id": p["id"],
-                    "slug": p["slug"],
-                    "title": ptitle or p["slug"],
-                    "nav_order": p["nav_order"],
-                }
-            )
         return render_template(
             "site_settings.html",
             site={**site, "title": title, "subdomain": subdomain},
-            pages=page_list,
+            nav_text=nav,
             slug=slug,
             error=error,
         )
 
-    update_site_settings(site["id"], title, subdomain)
+    update_site_settings(site["id"], title, subdomain, nav)
     return redirect(f"/{slug}/settings")
-
-
-@bp.route("/<slug>/settings/nav", methods=["POST"])
-def update_nav(slug):
-    user_id = session.get("user_id")
-    site = get_site(slug)
-    if not site or not user_id or site["user_id"] != user_id:
-        return redirect(f"/{slug}")
-
-    page_ids = request.form.getlist("page_ids")
-    for i, page_id in enumerate(page_ids):
-        update_nav_order(int(page_id), i)
-
-    return redirect(f"/{slug}/settings")
-
-
-@bp.route("/<slug>/settings/nav/remove/<int:page_id>", methods=["POST"])
-def remove_nav(slug, page_id):
-    user_id = session.get("user_id")
-    site = get_site(slug)
-    if not site or not user_id or site["user_id"] != user_id:
-        return redirect(f"/{slug}")
-
-    remove_from_nav(page_id)
-    return redirect(f"/{slug}/settings")
-
-
-@bp.route("/<slug>/settings/add-page", methods=["POST"])
-def add_page(slug):
-    user_id = session.get("user_id")
-    site = get_site(slug)
-    if not site or not user_id or site["user_id"] != user_id:
-        return redirect(f"/{slug}")
-
-    page_slug = generate_slug()
-    create_page(site["id"], page_slug)
-    return redirect(f"/{slug}/edit?page={page_slug}")
 
 
 @bp.route("/<slug>/export")
@@ -570,10 +525,14 @@ def view_page(slug, page_slug=None):
     if site:
         pages = get_pages_for_site(site["id"])
         existing_page_slugs = {p["slug"] for p in pages}
-        for p in pages:
-            if p["nav_order"] is not None:
-                title = _get_title(p["content"]) if p["content"] else None
-                nav_pages.append({"slug": p["slug"], "title": title or p["slug"]})
+        for item in _parse_nav(site["nav"]):
+            nav_pages.append(
+                {
+                    "slug": item["slug"],
+                    "title": item["label"],
+                    "exists": item["slug"] in existing_page_slugs,
+                }
+            )
 
     raw_content = row["content"]
     page_title = _get_title(raw_content)

@@ -233,9 +233,9 @@ a {
 
 .panel {
     background: #fff;
-    border: 1px solid var(--subtle);
-    border-radius: var(--radius-sm);
-    padding: var(--space-8);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-pill);
+    padding: var(--space-10);
     width: 100%;
     max-width: 400px;
 }

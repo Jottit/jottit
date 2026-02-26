@@ -149,7 +149,7 @@ def get_revision(slug, revision):
 def get_site(slug):
     conn = get_db()
     row = conn.execute(
-        "SELECT id, slug, user_id, visibility, title, subdomain FROM sites WHERE slug = %s",
+        "SELECT id, slug, user_id, visibility, title, subdomain, nav FROM sites WHERE slug = %s",
         (slug,),
     ).fetchone()
     conn.close()
@@ -228,11 +228,11 @@ def get_user_email(user_id):
     return row["email"] if row else None
 
 
-def update_site_settings(site_id, title, subdomain):
+def update_site_settings(site_id, title, subdomain, nav=None):
     conn = get_db()
     conn.execute(
-        "UPDATE sites SET title = %s, subdomain = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-        (title or None, subdomain or None, site_id),
+        "UPDATE sites SET title = %s, subdomain = %s, nav = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+        (title or None, subdomain or None, nav or None, site_id),
     )
     conn.commit()
     conn.close()
@@ -250,20 +250,6 @@ def get_pages_for_site(site_id):
     ).fetchall()
     conn.close()
     return rows
-
-
-def update_nav_order(page_id, nav_order):
-    conn = get_db()
-    conn.execute("UPDATE pages SET nav_order = %s WHERE id = %s", (nav_order, page_id))
-    conn.commit()
-    conn.close()
-
-
-def remove_from_nav(page_id):
-    conn = get_db()
-    conn.execute("UPDATE pages SET nav_order = NULL WHERE id = %s", (page_id,))
-    conn.commit()
-    conn.close()
 
 
 def create_page(site_id, slug):

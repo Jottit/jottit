@@ -7,7 +7,7 @@
 
 {% block body %}
 <div class="panel-page">
-    <a href="/{{ slug }}" class="panel-back">&larr; Back</a>
+    <a href="/{{ slug }}" class="panel-back">&larr; Return to your site</a>
     <div class="panel">
         <h1 class="title">Settings</h1>
         <p class="subtitle"><a href="/{{ slug }}">{{ slug }}</a></p>
@@ -30,37 +30,14 @@
                 </div>
             </div>
 
+            <div class="field">
+                <label class="label" for="nav">Menu</label>
+                <textarea class="input" id="nav" name="nav" rows="6"
+                    placeholder="About&#10;Writing: blog">{{ nav_text }}</textarea>
+                <p class="help-text">One page per line. Use Label: slug to set a custom label.</p>
+            </div>
+
             <button type="submit" class="btn btn-solid settings-save">Save</button>
-        </form>
-
-        {% if pages|length > 0 %}
-        <h2 class="section-title">Pages</h2>
-        <ul class="item-list">
-            {% for page in pages %}
-            <li class="item">
-                <a href="/{{ slug }}/edit?page={{ page.slug }}">{{ page.title }}</a>
-                {% if page.nav_order is not none %}
-                <form method="post" action="/{{ slug }}/settings/nav/remove/{{ page.id }}" class="settings-nav-inline">
-                    <button type="submit" class="btn btn-outline btn-sm">Remove from nav</button>
-                </form>
-                {% else %}
-                <form method="post" action="/{{ slug }}/settings/nav" class="settings-nav-inline">
-                    {% for p in pages %}
-                    {% if p.nav_order is not none %}
-                    <input type="hidden" name="page_ids" value="{{ p.id }}">
-                    {% endif %}
-                    {% endfor %}
-                    <input type="hidden" name="page_ids" value="{{ page.id }}">
-                    <button type="submit" class="btn btn-outline btn-sm">Add to nav</button>
-                </form>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-
-        <form method="post" action="/{{ slug }}/settings/add-page" class="settings-add-page">
-            <button type="submit" class="btn btn-outline btn-sm">Add a page</button>
         </form>
 
         <h2 class="section-title">Export</h2>

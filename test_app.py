@@ -7,11 +7,9 @@ from db import (
     create_page,
     create_verification_code,
     find_or_create_user,
-    get_pages_for_site,
     get_site,
-    update_nav_order,
 )
-from routes import _describe_change, _slugify
+from routes import _describe_change, _parse_nav, _slugify
 
 # -- Homepage --
 
@@ -448,38 +446,87 @@ def test_subdomain_uniqueness(client):
     assert b"already taken" in r.data
 
 
-def test_nav_ordering(client):
-    _create_claimed_site(client, "ss8")
+def test_nav_via_textarea(client):
+    user_id = _create_claimed_site(client, "ss8")
     site = get_site("ss8")
-
-    page2_id = create_page(site["id"], "page2")
-    page3_id = create_page(site["id"], "page3")
-
-    update_nav_order(page2_id, 0)
-    update_nav_order(page3_id, 1)
-
-    pages = get_pages_for_site(site["id"])
-    nav_pages = [p for p in pages if p["nav_order"] is not None]
-    assert nav_pages[0]["id"] == page2_id
-    assert nav_pages[1]["id"] == page3_id
-
-
-def test_remove_from_nav(client):
-    user_id = _create_claimed_site(client, "ss9")
-    site = get_site("ss9")
-
-    page_id = create_page(site["id"], "navpage")
-    update_nav_order(page_id, 0)
-
+    create_page(site["id"], "about")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post(f"/ss9/settings/nav/remove/{page_id}")
-    assert r.status_code == 302
+    client.post(
+        "/ss8/edit", data={"title": "About", "content": "Info", "page": "about"}
+    )
+    client.post(
+        "/ss8/settings",
+        data={"title": "", "subdomain": "", "nav": "About: about"},
+    )
+    r = client.get("/ss8")
+    assert b"/ss8/about" in r.data
+    assert b"About" in r.data
 
-    pages = get_pages_for_site(site["id"])
-    navpage = [p for p in pages if p["id"] == page_id][0]
-    assert navpage["nav_order"] is None
+
+def test_nav_remove_item(client):
+    user_id = _create_claimed_site(client, "ss9")
+    site = get_site("ss9")
+    create_page(site["id"], "about")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    client.post(
+        "/ss9/edit", data={"title": "About", "content": "Info", "page": "about"}
+    )
+    client.post(
+        "/ss9/settings",
+        data={"title": "", "subdomain": "", "nav": "About: about"},
+    )
+    # Remove by saving empty nav
+    client.post(
+        "/ss9/settings",
+        data={"title": "", "subdomain": "", "nav": ""},
+    )
+    r = client.get("/ss9")
+    assert b"site-nav" not in r.data
+
+
+def test_nav_custom_label(client):
+    user_id = _create_claimed_site(client, "ss8b")
+    site = get_site("ss8b")
+    create_page(site["id"], "blog")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    client.post(
+        "/ss8b/edit", data={"title": "Blog", "content": "Posts", "page": "blog"}
+    )
+    client.post(
+        "/ss8b/settings",
+        data={"title": "", "subdomain": "", "nav": "Writing: blog"},
+    )
+    r = client.get("/ss8b")
+    assert b"Writing" in r.data
+    assert b"/ss8b/blog" in r.data
+
+
+def test_nav_nonexisting_page(client):
+    user_id = _create_claimed_site(client, "ss8c")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    client.post(
+        "/ss8c/settings",
+        data={"title": "", "subdomain": "", "nav": "Ideas: ideas"},
+    )
+    r = client.get("/ss8c")
+    assert b'class="wikilink-new"' in r.data
+    assert b"Ideas" in r.data
+
+
+def test_parse_nav():
+    items = _parse_nav("About\nWriting: blog\n\nContact: contact")
+    assert len(items) == 3
+    assert items[0] == {"label": "About", "slug": "about"}
+    assert items[1] == {"label": "Writing", "slug": "blog"}
+    assert items[2] == {"label": "Contact", "slug": "contact"}
 
 
 def test_page_shows_settings_link_for_owner(client):
