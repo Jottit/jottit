@@ -589,4 +589,5 @@ def view_page(slug, page_slug=None):
         site_title=site["title"] if site else None,
         nav_pages=nav_pages,
         updated_at=row["created_at"],
+        page_slug=page_slug,
     )
