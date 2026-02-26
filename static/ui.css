@@ -29,12 +29,49 @@
 }
 
 .public-header a {
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
     color: var(--muted);
 }
 
 .public-header a:hover {
     color: var(--text);
+}
+
+/* Public pages (about, sponsor, etc.) */
+
+.public-main {
+    max-width: var(--site-max-width);
+    margin: 0 auto;
+    padding: var(--space-10) var(--space-5) 0;
+}
+
+@media (min-width: 640px) {
+    .public-main {
+        padding: 80px var(--space-10) 0;
+    }
+}
+
+.public-content {
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: var(--text);
+}
+
+.public-content h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin-bottom: 2.5rem;
+}
+
+.public-content p {
+    margin-bottom: 1.5rem;
+}
+
+.public-content a {
+    color: inherit;
+    text-decoration: underline;
 }
 
 /* Homepage */
