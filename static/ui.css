@@ -62,9 +62,21 @@
 .editor {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
     background: #fff;
     color: #111;
+}
+
+.editor-split {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+}
+
+.editor-pane {
+    flex: 1;
+    display: flex;
+    overflow-y: auto;
 }
 
 .editor-form {
@@ -104,13 +116,29 @@
     color: #ccc;
 }
 
+.editor-preview {
+    display: none;
+}
+
+@media (min-width: 864px) {
+    .editor-preview {
+        display: block;
+        flex: 1;
+        overflow-y: auto;
+        border-left: 1px solid #f0f0f0;
+        padding: var(--space-10) var(--space-8);
+    }
+
+    .editor-preview .page {
+        max-width: var(--site-max-width);
+        margin: 0 auto;
+    }
+}
+
 .editor-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: var(--content-width);
-    width: 100%;
-    margin: 0 auto;
     padding: var(--space-3) var(--space-8);
     border-top: 1px solid #eee;
 }

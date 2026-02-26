@@ -2,13 +2,24 @@
 
 {% block title %}Edit — Jottit{% endblock %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+{% endblock %}
+
 {% block body %}
 <div class="editor">
-    <form id="editor-form" class="editor-form" method="post" action="/{{ slug }}/edit">
-        {% if page_slug %}<input type="hidden" name="page" value="{{ page_slug }}">{% endif %}
-        <input class="editor-title" type="text" name="title" placeholder="Title" value="{{ title }}" autofocus>
-        <textarea class="editor-content" name="content" placeholder="Write something...">{{ content }}</textarea>
-    </form>
+    <div class="editor-split">
+        <div class="editor-pane">
+            <form id="editor-form" class="editor-form" method="post" action="/{{ slug }}/edit">
+                {% if page_slug %}<input type="hidden" name="page" value="{{ page_slug }}">{% endif %}
+                <input class="editor-title" type="text" name="title" placeholder="Title" value="{{ title }}" autofocus>
+                <textarea class="editor-content" name="content" placeholder="Write something...">{{ content }}</textarea>
+            </form>
+        </div>
+        <div class="editor-preview">
+            <article class="page" id="preview"></article>
+        </div>
+    </div>
     <footer class="editor-footer">
         <label class="editor-draft">
             <input type="checkbox" name="draft" form="editor-form">
@@ -20,4 +31,22 @@
         </div>
     </footer>
 </div>
+<script>
+var titleInput = document.querySelector('.editor-title');
+var contentInput = document.querySelector('.editor-content');
+var preview = document.getElementById('preview');
+
+function updatePreview() {
+    var title = titleInput.value;
+    var body = contentInput.value;
+    var html = '';
+    if (title) html += '<h1>' + title.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</h1>';
+    if (body) html += marked.parse(body);
+    preview.innerHTML = html;
+}
+
+titleInput.addEventListener('input', updatePreview);
+contentInput.addEventListener('input', updatePreview);
+updatePreview();
+</script>
 {% endblock %}
