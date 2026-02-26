@@ -66,6 +66,8 @@ def _subdomain_url(subdomain, path=""):
 @bp.before_request
 def resolve_subdomain():
     subdomain = _get_subdomain()
+    if subdomain == "www":
+        return redirect(f"{request.scheme}://{BASE_DOMAIN}{request.full_path}", 301)
     if not subdomain:
         g.subdomain_site = None
         return
