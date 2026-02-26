@@ -18,7 +18,7 @@
 <header class="site-header">
     <div class="site-header-inner">
         {% if site_title %}
-        <h1 class="site-title">{{ site_title }}</h1>
+        <h1 class="site-title h-card"><a class="p-name u-url" href="/{{ slug }}">{{ site_title }}</a></h1>
         {% endif %}
         {% if nav_pages %}
         <nav class="site-nav">
@@ -36,12 +36,13 @@
 </div>
 {% endif %}
 <main class="page-main">
-    <article class="page">
-        {{ content | safe }}
+    <article class="page h-entry">
+        <div class="e-content">{{ content | safe }}</div>
+        <a class="u-url" href="/{{ slug }}{% if page_slug %}/{{ page_slug }}{% endif %}" hidden></a>
     </article>
     {% if show_actions %}
     <div class="page-actions">
-        <span class="page-timestamp">last edited {{ updated_at | relative_time }}</span>
+        <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">last edited {{ updated_at | relative_time }}</time>
         <div class="page-actions-buttons">
             <a href="/{{ slug }}/history" class="btn btn-outline btn-sm">History</a>
             <a href="/{{ slug }}/edit{% if page_slug %}?page={{ page_slug }}{% endif %}" class="btn btn-outline btn-sm">Edit</a>

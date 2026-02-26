@@ -206,6 +206,11 @@
     color: var(--site-color-text);
 }
 
+.site-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
 .site-nav {
     display: flex;
     gap: var(--space-5);

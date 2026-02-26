@@ -720,6 +720,43 @@ def test_view_subpage_404(client):
     assert r.status_code == 404
 
 
+# -- Microformats --
+
+
+def test_page_has_h_entry_markup(client):
+    client.post("/mf1/edit", data={"title": "Hello", "content": "World"})
+    r = client.get("/mf1")
+    body = r.data.decode()
+    assert 'class="page h-entry"' in body
+    assert 'class="p-name"' in body
+    assert 'class="e-content"' in body
+    assert 'class="dt-published' in body
+    assert "datetime=" in body
+    assert 'class="u-url"' in body
+    assert 'href="/mf1"' in body
+
+
+def test_site_header_has_h_card(client):
+    user_id = _create_claimed_site(client, "mf2")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/mf2/settings", data={"title": "My Site", "subdomain": ""})
+    r = client.get("/mf2")
+    body = r.data.decode()
+    assert "h-card" in body
+    assert 'class="p-name u-url"' in body
+    assert "My Site</a>" in body
+
+
+def test_subpage_u_url_includes_page_slug(client):
+    client.post("/mf3/edit", data={"title": "Main", "content": "Home"})
+    client.post(
+        "/mf3/edit", data={"title": "About", "content": "Info", "page": "about"}
+    )
+    r = client.get("/mf3/about")
+    assert b'href="/mf3/about" hidden' in r.data
+
+
 def test_edit_subpage_redirects_to_subpage(client):
     client.post("/sp3/edit", data={"title": "Main", "content": "Home"})
     r = client.post(

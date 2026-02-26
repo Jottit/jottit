@@ -575,8 +575,11 @@ def view_page(slug, page_slug=None):
                 title = _get_title(p["content"]) if p["content"] else None
                 nav_pages.append({"slug": p["slug"], "title": title or p["slug"]})
 
-    content = _process_wikilinks(row["content"], slug, existing_page_slugs)
+    raw_content = row["content"]
+    page_title = _get_title(raw_content)
+    content = _process_wikilinks(raw_content, slug, existing_page_slugs)
     html = markdown.markdown(content)
+    html = html.replace("<h1>", '<h1 class="p-name">', 1)
 
     return render_template(
         "page.html",
@@ -590,4 +593,5 @@ def view_page(slug, page_slug=None):
         nav_pages=nav_pages,
         updated_at=row["created_at"],
         page_slug=page_slug,
+        page_title=page_title,
     )

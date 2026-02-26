@@ -11,6 +11,15 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.register_blueprint(bp)
 
 
+@app.template_filter("isoformat")
+def isoformat_filter(value):
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return value.isoformat()
+
+
 @app.template_filter("relative_time")
 def relative_time_filter(value):
     if value is None:
