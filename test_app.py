@@ -1,4 +1,6 @@
+import io
 import json
+import zipfile
 
 from db import (
     claim_site,
@@ -599,3 +601,59 @@ def test_page_has_feed_discovery_links(client):
     assert b"/disc1/feed.xml" in r.data
     assert b'type="application/feed+json"' in r.data
     assert b"/disc1/feed.json" in r.data
+
+
+# -- Export --
+
+
+def test_export_requires_owner(client):
+    _create_claimed_site(client, "exp1")
+    r = client.get("/exp1/export")
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/exp1"
+
+
+def test_export_zip(client):
+    user_id = _create_claimed_site(client, "exp2")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/exp2/export")
+    assert r.status_code == 200
+    assert r.content_type == "application/zip"
+    assert 'filename="exp2.zip"' in r.headers["Content-Disposition"]
+
+    zf = zipfile.ZipFile(io.BytesIO(r.data))
+    names = zf.namelist()
+    assert "exp2/index.md" in names
+    content = zf.read("exp2/index.md").decode()
+    assert "title: T" in content
+    assert "date:" in content
+    assert "X" in content
+
+
+def test_export_excludes_drafts(client):
+    user_id = _create_claimed_site(client, "exp3")
+    # Add a draft-only page
+    site = get_site("exp3")
+    create_page(site["id"], "draftpage")
+    client.post(
+        "/exp3/edit",
+        data={"title": "Draft", "content": "Hidden", "page": "draftpage", "draft": "on"},
+    )
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/exp3/export")
+    zf = zipfile.ZipFile(io.BytesIO(r.data))
+    names = zf.namelist()
+    assert "exp3/draftpage.md" not in names
+
+
+def test_export_settings_has_link(client):
+    user_id = _create_claimed_site(client, "exp4")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/exp4/settings")
+    assert b"/exp4/export" in r.data

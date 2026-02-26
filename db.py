@@ -266,6 +266,27 @@ def create_page(site_id, slug):
     return row["id"]
 
 
+def get_export_pages(slug):
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT * FROM (
+               SELECT DISTINCT ON (p.id)
+                   p.slug AS page_slug,
+                   r.content,
+                   r.created_at
+               FROM pages p
+               JOIN revisions r ON r.page_id = p.id
+               JOIN sites s ON p.site_id = s.id
+               WHERE s.slug = %s AND r.draft = FALSE
+               ORDER BY p.id, r.revision DESC
+           ) sub
+           ORDER BY page_slug ASC""",
+        (slug,),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
 def get_feed_entries(slug):
     conn = get_db()
     rows = conn.execute(

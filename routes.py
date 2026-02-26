@@ -1,8 +1,10 @@
 import difflib
+import io
 import json
 import re
 import secrets
 import string
+import zipfile
 from email.utils import format_datetime
 from xml.sax.saxutils import escape as xml_escape
 
@@ -23,6 +25,7 @@ from db import (
     create_page,
     create_verification_code,
     find_or_create_user,
+    get_export_pages,
     get_feed_entries,
     get_latest_revision,
     get_page,
@@ -300,6 +303,32 @@ def add_page(slug):
     page_slug = generate_slug()
     create_page(site["id"], page_slug)
     return redirect(f"/{slug}/edit?page={page_slug}")
+
+
+@bp.route("/<slug>/export")
+def export_site(slug):
+    user_id = session.get("user_id")
+    site = get_site(slug)
+    if not site or not user_id or site["user_id"] != user_id:
+        return redirect(f"/{slug}")
+
+    pages = get_export_pages(slug)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for page in pages:
+            title = _get_title(page["content"]) or page["page_slug"]
+            body = _get_body(page["content"])
+            date = page["created_at"].strftime("%Y-%m-%d")
+            filename = page["page_slug"] if page["page_slug"] != "-" else "index"
+            md = f"---\ntitle: {title}\ndate: {date}\n---\n\n{body}\n"
+            zf.writestr(f"{slug}/{filename}.md", md)
+    buf.seek(0)
+
+    return Response(
+        buf.getvalue(),
+        content_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{slug}.zip"'},
+    )
 
 
 def _get_title(content):
