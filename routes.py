@@ -1,6 +1,7 @@
 import difflib
 import io
 import json
+import os
 import re
 import secrets
 import string
@@ -15,6 +16,7 @@ from flask import (
     Response,
     abort,
     flash,
+    g,
     redirect,
     render_template,
     request,
@@ -34,6 +36,7 @@ from db import (
     get_revision,
     get_revisions,
     get_site,
+    get_site_by_subdomain,
     get_sites_for_user,
     get_user_email,
     save_page,
@@ -43,6 +46,32 @@ from db import (
 from mail import send_verification_email
 
 bp = Blueprint("routes", __name__)
+
+BASE_DOMAIN = os.environ.get("BASE_DOMAIN", "jottit.localhost:8000")
+
+
+def _get_subdomain():
+    host = request.host
+    if host.endswith("." + BASE_DOMAIN):
+        return host[: -(len(BASE_DOMAIN) + 1)]
+    return None
+
+
+def _subdomain_url(subdomain, path=""):
+    scheme = request.scheme
+    return f"{scheme}://{subdomain}.{BASE_DOMAIN}{path}"
+
+
+@bp.before_request
+def resolve_subdomain():
+    subdomain = _get_subdomain()
+    if not subdomain:
+        g.subdomain_site = None
+        return
+    site = get_site_by_subdomain(subdomain)
+    if not site:
+        abort(404)
+    g.subdomain_site = site
 
 
 def generate_slug(length=6):
@@ -93,8 +122,69 @@ def _process_wikilinks(content, site_slug, existing_page_slugs=None):
 
 @bp.route("/")
 def home():
+    site = g.subdomain_site
+    if site:
+        return view_page(site["slug"])
     signed_in = "user_id" in session
-    return render_template("home.html", signed_in=signed_in)
+    sites = []
+    if signed_in:
+        sites = get_sites_for_user(session["user_id"])
+    return render_template("home.html", signed_in=signed_in, sites=sites)
+
+
+def _require_subdomain_site():
+    site = g.subdomain_site
+    if not site:
+        abort(404)
+    return site
+
+
+@bp.route("/edit", methods=["GET", "POST"])
+def subdomain_edit():
+    site = _require_subdomain_site()
+    return edit_page(site["slug"])
+
+
+@bp.route("/export")
+def subdomain_export():
+    site = _require_subdomain_site()
+    return export_site(site["slug"])
+
+
+@bp.route("/history")
+def subdomain_history():
+    site = _require_subdomain_site()
+    return page_history(site["slug"])
+
+
+@bp.route("/history/<int:revision>")
+def subdomain_revision(revision):
+    site = _require_subdomain_site()
+    return view_revision(site["slug"], revision)
+
+
+@bp.route("/claim", methods=["GET", "POST"])
+def subdomain_claim():
+    site = _require_subdomain_site()
+    return claim_page(site["slug"])
+
+
+@bp.route("/claim/verify", methods=["GET", "POST"])
+def subdomain_claim_verify():
+    site = _require_subdomain_site()
+    return claim_verify(site["slug"])
+
+
+@bp.route("/feed.xml")
+def subdomain_rss():
+    site = _require_subdomain_site()
+    return rss_feed(site["slug"])
+
+
+@bp.route("/feed.json")
+def subdomain_json_feed():
+    site = _require_subdomain_site()
+    return json_feed(site["slug"])
 
 
 @bp.route("/new")
@@ -135,7 +225,10 @@ def edit_page(slug):
     if title:
         content = f"# {title}\n\n{content}"
 
+    is_new = site is None
     save_page(slug, content, draft, page_slug)
+    if is_new and session.get("user_id"):
+        claim_site(slug, session["user_id"])
     if page_slug:
         return redirect(f"/{slug}/{page_slug}")
     return redirect(f"/{slug}")
@@ -238,6 +331,9 @@ def signout():
 
 @bp.route("/settings")
 def settings():
+    site = g.subdomain_site
+    if site:
+        return site_settings(site["slug"])
     user_id = session.get("user_id")
     if not user_id:
         return redirect("/signin")
@@ -286,6 +382,8 @@ def site_settings(slug):
 
     update_site_settings(site["id"], title, subdomain, nav)
     flash("Changes saved")
+    if subdomain:
+        return redirect(_subdomain_url(subdomain, "/settings"))
     return redirect(f"/{slug}/settings")
 
 
@@ -512,12 +610,20 @@ def json_feed(slug):
 @bp.route("/<slug>")
 @bp.route("/<slug>/<page_slug>")
 def view_page(slug, page_slug=None):
+    subdomain_site = g.subdomain_site
+    if subdomain_site:
+        page_slug = slug
+        slug = subdomain_site["slug"]
+    else:
+        site = get_site(slug)
+        if site and site["subdomain"]:
+            path = f"/{page_slug}" if page_slug else ""
+            return redirect(_subdomain_url(site["subdomain"], path))
+
     row = get_page(slug, page_slug)
 
     if not row:
         abort(404)
-
-    site = get_site(slug)
     unclaimed = row["user_id"] is None
     is_owner = session.get("user_id") == row["user_id"] and not unclaimed
     show_actions = is_owner or unclaimed

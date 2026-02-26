@@ -43,6 +43,38 @@
     margin-bottom: var(--space-2);
 }
 
+.home-sites {
+    margin-top: var(--space-8);
+    text-align: left;
+}
+
+.home-sites-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.home-sites-list li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-5);
+    padding: var(--space-3) var(--space-6);
+    border: 1px solid var(--subtle);
+    border-radius: var(--radius-pill);
+    margin-bottom: var(--space-3);
+}
+
+.home-sites-list a {
+    font-size: var(--font-size-md);
+}
+
+.home-sites-domain {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    white-space: nowrap;
+}
+
 .home-footer {
     padding: var(--space-8);
     text-align: center;

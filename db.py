@@ -156,6 +156,16 @@ def get_site(slug):
     return row
 
 
+def get_site_by_subdomain(subdomain):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, slug, user_id, visibility, title, subdomain, nav FROM sites WHERE subdomain = %s",
+        (subdomain,),
+    ).fetchone()
+    conn.close()
+    return row
+
+
 def find_or_create_user(email):
     conn = get_db()
     row = conn.execute("SELECT id FROM users WHERE email = %s", (email,)).fetchone()
@@ -214,7 +224,7 @@ def verify_code(email, code, purpose):
 def get_sites_for_user(user_id):
     conn = get_db()
     rows = conn.execute(
-        "SELECT slug, visibility FROM sites WHERE user_id = %s ORDER BY created_at",
+        "SELECT slug, title, subdomain, visibility FROM sites WHERE user_id = %s ORDER BY created_at",
         (user_id,),
     ).fetchall()
     conn.close()

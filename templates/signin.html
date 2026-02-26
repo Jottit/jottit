@@ -5,14 +5,14 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-<div class="shell">
+<div class="shell shell-centered">
     <h1 class="title">Sign in</h1>
     <p class="subtitle">Enter your email to sign in.</p>
     {% if error %}
     <p class="error">{{ error }}</p>
     {% endif %}
     <form class="auth-form" method="post" action="/signin">
-        <input class="auth-input" type="email" name="email" placeholder="you@example.com" required autofocus>
+        <input class="auth-input" type="email" name="email" required autofocus>
         <button class="btn btn-solid" type="submit">Send code</button>
     </form>
 </div>

@@ -278,6 +278,16 @@ def test_unclaimed_page_anyone_can_edit(client):
     assert r.status_code == 200
 
 
+def test_signed_in_user_auto_claims_new_page(client):
+    user_id = find_or_create_user("creator@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    client.post("/auto1/edit", data={"title": "Mine", "content": "Auto claimed"})
+    site = get_site("auto1")
+    assert site["user_id"] == user_id
+
+
 # -- Sign in flow --
 
 
@@ -368,6 +378,49 @@ def test_homepage_shows_signout_when_logged_in(client):
     r = client.get("/")
     assert b"Sign out" in r.data
     assert b"Sign in" not in r.data
+
+
+# -- Homepage sites list --
+
+
+def test_homepage_shows_sites_for_signed_in_user(client):
+    user_id = find_or_create_user("sites@example.com")
+    client.post("/mysite1/edit", data={"title": "First", "content": "A"})
+    claim_site("mysite1", user_id)
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/")
+    body = r.data.decode()
+    assert "/mysite1" in body
+    assert "jottit.org/mysite1" in body
+
+
+def test_homepage_shows_title_when_set(client):
+    user_id = find_or_create_user("sites2@example.com")
+    client.post("/titled1/edit", data={"title": "T", "content": "X"})
+    claim_site("titled1", user_id)
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    from db import get_site, update_site_settings
+
+    site = get_site("titled1")
+    update_site_settings(site["id"], "My Blog", None)
+
+    r = client.get("/")
+    assert b"My Blog" in r.data
+
+
+def test_homepage_no_sites_section_when_none(client):
+    user_id = find_or_create_user("nosites@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/")
+    assert b"home-sites" not in r.data
 
 
 # -- Per-site settings --
@@ -826,3 +879,41 @@ def test_edit_subpage_redirects_to_subpage(client):
     )
     assert r.status_code == 302
     assert r.headers["Location"] == "/sp3/about"
+
+
+# -- Subdomain routing --
+
+
+def test_slug_redirects_to_subdomain(client):
+    user_id = _create_claimed_site(client, "sd1")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/sd1/settings", data={"title": "", "subdomain": "mysite", "nav": ""})
+    r = client.get("/sd1")
+    assert r.status_code == 302
+    assert "mysite.jottit.localhost:8000" in r.headers["Location"]
+
+
+def test_slug_subpage_redirects_to_subdomain(client):
+    user_id = _create_claimed_site(client, "sd2")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/sd2/settings", data={"title": "", "subdomain": "sub2", "nav": ""})
+    client.post(
+        "/sd2/edit", data={"title": "About", "content": "Info", "page": "about"}
+    )
+    r = client.get("/sd2/about")
+    assert r.status_code == 302
+    assert "/about" in r.headers["Location"]
+
+
+def test_settings_redirects_to_subdomain_after_save(client):
+    user_id = _create_claimed_site(client, "sd3")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post(
+        "/sd3/settings", data={"title": "", "subdomain": "newname", "nav": ""}
+    )
+    assert r.status_code == 302
+    assert "newname.jottit.localhost:8000" in r.headers["Location"]
+    assert "/settings" in r.headers["Location"]
