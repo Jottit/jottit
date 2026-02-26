@@ -449,7 +449,7 @@ def test_subdomain_uniqueness(client):
 
 
 def test_nav_ordering(client):
-    user_id = _create_claimed_site(client, "ss8")
+    _create_claimed_site(client, "ss8")
     site = get_site("ss8")
 
     page2_id = create_page(site["id"], "page2")
@@ -639,7 +639,12 @@ def test_export_excludes_drafts(client):
     create_page(site["id"], "draftpage")
     client.post(
         "/exp3/edit",
-        data={"title": "Draft", "content": "Hidden", "page": "draftpage", "draft": "on"},
+        data={
+            "title": "Draft",
+            "content": "Hidden",
+            "page": "draftpage",
+            "draft": "on",
+        },
     )
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
