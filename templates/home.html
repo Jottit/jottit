@@ -11,21 +11,9 @@
     <main class="home-main">
         <h1 class="logo">Jottit</h1>
         <p class="tagline">The fastest way to publish on the web.</p>
-        <a href="/new" class="btn btn-solid btn-lg">Create a page</a>
+        <a href="/new" class="btn btn-solid btn-lg mb-2">Create a page</a>
         {% if sites %}
-        <section class="home-sites">
-            <ul class="home-sites-list">
-                {% for site in sites %}
-                <li>
-                    <a href="/{{ site.slug }}">{{ site.title or site.slug }}</a>
-                    <span class="home-sites-domain">{% if site.subdomain %}{{ site.subdomain }}.jottit.org{% else %}jottit.org/{{ site.slug }}{% endif %}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% if has_more_sites %}
-            <a href="/sites" class="view-all-link">View all sites &rarr;</a>
-            {% endif %}
-        </section>
+        <a href="/sites" class="btn btn-outline">My sites</a>
         {% endif %}
     </main>
 
