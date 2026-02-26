@@ -19,28 +19,49 @@ def init_db():
     conn.close()
 
 
-def get_latest_revision(slug):
+def get_latest_revision(slug, page_slug=None):
     conn = get_db()
-    row = conn.execute(
-        """SELECT r.content, r.draft FROM revisions r
-           JOIN pages p ON r.page_id = p.id
-           JOIN sites s ON p.site_id = s.id
-           WHERE s.slug = %s
-           ORDER BY r.revision DESC LIMIT 1""",
-        (slug,),
-    ).fetchone()
+    if page_slug:
+        row = conn.execute(
+            """SELECT r.content, r.draft FROM revisions r
+               JOIN pages p ON r.page_id = p.id
+               JOIN sites s ON p.site_id = s.id
+               WHERE s.slug = %s AND p.slug = %s
+               ORDER BY r.revision DESC LIMIT 1""",
+            (slug, page_slug),
+        ).fetchone()
+    else:
+        row = conn.execute(
+            """SELECT r.content, r.draft FROM revisions r
+               JOIN pages p ON r.page_id = p.id
+               JOIN sites s ON p.site_id = s.id
+               WHERE s.slug = %s
+               ORDER BY r.revision DESC LIMIT 1""",
+            (slug,),
+        ).fetchone()
     conn.close()
     return row
 
 
-def save_page(slug, content, draft):
+def save_page(slug, content, draft, page_slug=None):
     conn = get_db()
     site = conn.execute("SELECT id FROM sites WHERE slug = %s", (slug,)).fetchone()
 
     if site:
-        page = conn.execute(
-            "SELECT id FROM pages WHERE site_id = %s", (site["id"],)
-        ).fetchone()
+        if page_slug:
+            page = conn.execute(
+                "SELECT id FROM pages WHERE site_id = %s AND slug = %s",
+                (site["id"], page_slug),
+            ).fetchone()
+            if not page:
+                page = conn.execute(
+                    "INSERT INTO pages (site_id, slug) VALUES (%s, %s) RETURNING id",
+                    (site["id"], page_slug),
+                ).fetchone()
+        else:
+            page = conn.execute(
+                "SELECT id FROM pages WHERE site_id = %s", (site["id"],)
+            ).fetchone()
         next_rev = conn.execute(
             "SELECT COALESCE(MAX(revision), 0) + 1 AS next_rev FROM revisions WHERE page_id = %s",
             (page["id"],),
@@ -59,8 +80,8 @@ def save_page(slug, content, draft):
         )
         site_id = cursor.fetchone()["id"]
         cursor = conn.execute(
-            "INSERT INTO pages (site_id, slug) VALUES (%s, '-') RETURNING id",
-            (site_id,),
+            "INSERT INTO pages (site_id, slug) VALUES (%s, %s) RETURNING id",
+            (site_id, page_slug or "-"),
         )
         page_id = cursor.fetchone()["id"]
         conn.execute(
@@ -117,7 +138,8 @@ def get_revision(slug, revision):
 def get_site(slug):
     conn = get_db()
     row = conn.execute(
-        "SELECT id, slug, user_id, visibility FROM sites WHERE slug = %s", (slug,)
+        "SELECT id, slug, user_id, visibility, title, subdomain FROM sites WHERE slug = %s",
+        (slug,),
     ).fetchone()
     conn.close()
     return row
@@ -141,7 +163,8 @@ def find_or_create_user(email):
 def claim_site(slug, user_id):
     conn = get_db()
     result = conn.execute(
-        "UPDATE sites SET user_id = %s WHERE slug = %s AND user_id IS NULL", (user_id, slug)
+        "UPDATE sites SET user_id = %s WHERE slug = %s AND user_id IS NULL",
+        (user_id, slug),
     )
     conn.commit()
     claimed = result.rowcount > 0
@@ -180,7 +203,8 @@ def verify_code(email, code, purpose):
 def get_sites_for_user(user_id):
     conn = get_db()
     rows = conn.execute(
-        "SELECT slug, visibility FROM sites WHERE user_id = %s ORDER BY created_at", (user_id,)
+        "SELECT slug, visibility FROM sites WHERE user_id = %s ORDER BY created_at",
+        (user_id,),
     ).fetchall()
     conn.close()
     return rows
@@ -191,3 +215,91 @@ def get_user_email(user_id):
     row = conn.execute("SELECT email FROM users WHERE id = %s", (user_id,)).fetchone()
     conn.close()
     return row["email"] if row else None
+
+
+def update_site_settings(site_id, title, subdomain):
+    conn = get_db()
+    conn.execute(
+        "UPDATE sites SET title = %s, subdomain = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+        (title or None, subdomain or None, site_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_pages_for_site(site_id):
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT p.id, p.slug, p.nav_order,
+                  (SELECT r.content FROM revisions r WHERE r.page_id = p.id ORDER BY r.revision DESC LIMIT 1) AS content
+           FROM pages p
+           WHERE p.site_id = %s
+           ORDER BY p.nav_order ASC NULLS LAST, p.created_at ASC""",
+        (site_id,),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def update_nav_order(page_id, nav_order):
+    conn = get_db()
+    conn.execute(
+        "UPDATE pages SET nav_order = %s WHERE id = %s", (nav_order, page_id)
+    )
+    conn.commit()
+    conn.close()
+
+
+def remove_from_nav(page_id):
+    conn = get_db()
+    conn.execute("UPDATE pages SET nav_order = NULL WHERE id = %s", (page_id,))
+    conn.commit()
+    conn.close()
+
+
+def create_page(site_id, slug):
+    conn = get_db()
+    row = conn.execute(
+        "INSERT INTO pages (site_id, slug) VALUES (%s, %s) RETURNING id",
+        (site_id, slug),
+    ).fetchone()
+    conn.commit()
+    conn.close()
+    return row["id"]
+
+
+def get_feed_entries(slug):
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT * FROM (
+               SELECT DISTINCT ON (p.id)
+                   p.slug AS page_slug,
+                   r.content,
+                   r.created_at
+               FROM pages p
+               JOIN revisions r ON r.page_id = p.id
+               JOIN sites s ON p.site_id = s.id
+               WHERE s.slug = %s AND r.draft = FALSE
+               ORDER BY p.id, r.revision DESC
+           ) sub
+           ORDER BY created_at DESC
+           LIMIT 20""",
+        (slug,),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def check_subdomain_available(subdomain, exclude_site_id=None):
+    conn = get_db()
+    if exclude_site_id:
+        row = conn.execute(
+            "SELECT id FROM sites WHERE subdomain = %s AND id != %s",
+            (subdomain, exclude_site_id),
+        ).fetchone()
+    else:
+        row = conn.execute(
+            "SELECT id FROM sites WHERE subdomain = %s", (subdomain,)
+        ).fetchone()
+    conn.close()
+    return row is None

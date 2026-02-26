@@ -4,12 +4,36 @@
 
 {% block head %}
 <style>body { background: #fff; }</style>
+<link rel="alternate" type="application/rss+xml" href="/{{ slug }}/feed.xml" title="{{ site_title or 'Jottit' }}">
+<link rel="alternate" type="application/feed+json" href="/{{ slug }}/feed.json" title="{{ site_title or 'Jottit' }}">
 {% endblock %}
 
 {% block body %}
+{% if is_owner %}
+<div class="admin-banner">
+    <a href="/{{ slug }}/settings">Settings</a>
+    <a href="/signout">Sign out</a>
+</div>
+{% endif %}
+{% if site_title or nav_pages %}
+<header class="site-header">
+    <div class="site-header-inner">
+        {% if site_title %}
+        <h1 class="site-title">{{ site_title }}</h1>
+        {% endif %}
+        {% if nav_pages %}
+        <nav class="site-nav">
+            {% for page in nav_pages %}
+            <a href="/{{ page.slug }}">{{ page.title }}</a>
+            {% endfor %}
+        </nav>
+        {% endif %}
+    </div>
+</header>
+{% endif %}
 {% if unclaimed %}
 <div class="claim-banner">
-    This page is unclaimed. <a href="/{{ slug }}/claim" class="btn btn-sm claim-btn">Claim it</a>
+    This page is unclaimed. <a href="/{{ slug }}/claim" class="claim-btn">Make it yours</a>
 </div>
 {% endif %}
 <main class="page-main">

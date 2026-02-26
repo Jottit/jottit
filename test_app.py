@@ -1,4 +1,13 @@
-from db import create_verification_code, find_or_create_user, claim_site, get_site
+from db import (
+    claim_site,
+    create_page,
+    create_verification_code,
+    find_or_create_user,
+    get_pages_for_site,
+    get_site,
+    update_nav_order,
+    update_site_settings,
+)
 from routes import _describe_change
 
 # -- Homepage --
@@ -170,7 +179,7 @@ def test_describe_same_content():
 def test_unclaimed_page_shows_claim_banner(client):
     client.post("/uncl/edit", data={"title": "T", "content": "X"})
     r = client.get("/uncl")
-    assert b"Claim it" in r.data
+    assert b"Make it yours" in r.data
 
 
 def test_claimed_page_hides_claim_banner(client):
@@ -178,7 +187,7 @@ def test_claimed_page_hides_claim_banner(client):
     user_id = find_or_create_user("owner@example.com")
     claim_site("clmd", user_id)
     r = client.get("/clmd")
-    assert b"Claim it" not in r.data
+    assert b"Make it yours" not in r.data
 
 
 # -- Claim flow --
@@ -202,16 +211,16 @@ def test_claim_already_claimed_redirects(client):
 def test_claim_full_flow(client):
     client.post("/cf3/edit", data={"title": "T", "content": "X"})
 
-    # Submit email
+    # Submit email — renders verify page directly
     r = client.post("/cf3/claim", data={"email": "user@example.com"})
-    assert r.status_code == 302
-    assert "/cf3/claim/verify" in r.headers["Location"]
+    assert r.status_code == 200
+    assert b"Check your email" in r.data
 
     # Get the code from the DB
     code = create_verification_code("user@example.com", "claim")
 
     # Submit code
-    r = client.post("/cf3/claim/verify", data={"code": code})
+    r = client.post("/cf3/claim/verify", data={"code": code, "email": "user@example.com"})
     assert r.status_code == 302
     assert r.headers["Location"] == "/cf3"
 
@@ -221,13 +230,13 @@ def test_claim_full_flow(client):
 
     # Banner is gone
     r = client.get("/cf3")
-    assert b"Claim it" not in r.data
+    assert b"Make it yours" not in r.data
 
 
 def test_claim_invalid_code_rejected(client):
     client.post("/cf4/edit", data={"title": "T", "content": "X"})
     client.post("/cf4/claim", data={"email": "user@example.com"})
-    r = client.post("/cf4/claim/verify", data={"code": "000000"})
+    r = client.post("/cf4/claim/verify", data={"code": "000000", "email": "user@example.com"})
     assert r.status_code == 200
     assert b"Invalid" in r.data
 
@@ -274,16 +283,16 @@ def test_signin_page(client):
 
 
 def test_signin_full_flow(client):
-    # Submit email
+    # Submit email — renders verify page directly
     r = client.post("/signin", data={"email": "user@example.com"})
-    assert r.status_code == 302
-    assert "/signin/verify" in r.headers["Location"]
+    assert r.status_code == 200
+    assert b"Check your email" in r.data
 
     # Get code
     code = create_verification_code("user@example.com", "signin")
 
     # Submit code
-    r = client.post("/signin/verify", data={"code": code})
+    r = client.post("/signin/verify", data={"code": code, "email": "user@example.com"})
     assert r.status_code == 302
     assert r.headers["Location"] == "/"
 
@@ -294,7 +303,7 @@ def test_signin_full_flow(client):
 
 def test_signin_invalid_code(client):
     client.post("/signin", data={"email": "user@example.com"})
-    r = client.post("/signin/verify", data={"code": "999999"})
+    r = client.post("/signin/verify", data={"code": "999999", "email": "user@example.com"})
     assert r.status_code == 200
     assert b"Invalid" in r.data
 
@@ -352,3 +361,238 @@ def test_homepage_shows_settings_when_logged_in(client):
     r = client.get("/")
     assert b"Settings" in r.data
     assert b"Sign in" not in r.data
+
+
+# -- Per-site settings --
+
+
+def _create_claimed_site(client, slug="stest"):
+    client.post(f"/{slug}/edit", data={"title": "T", "content": "X"})
+    user_id = find_or_create_user("owner@example.com")
+    claim_site(slug, user_id)
+    return user_id
+
+
+def test_site_settings_requires_owner(client):
+    _create_claimed_site(client, "ss1")
+    r = client.get("/ss1/settings")
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/ss1"
+
+
+def test_site_settings_shows_form(client):
+    user_id = _create_claimed_site(client, "ss2")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/ss2/settings")
+    assert r.status_code == 200
+    assert b"Site title" in r.data
+    assert b"Subdomain" in r.data
+
+
+def test_site_settings_save_title(client):
+    user_id = _create_claimed_site(client, "ss3")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/ss3/settings", data={"title": "My Site", "subdomain": ""})
+    assert r.status_code == 302
+
+    site = get_site("ss3")
+    assert site["title"] == "My Site"
+
+
+def test_site_settings_save_subdomain(client):
+    user_id = _create_claimed_site(client, "ss4")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/ss4/settings", data={"title": "", "subdomain": "mysite"})
+    assert r.status_code == 302
+
+    site = get_site("ss4")
+    assert site["subdomain"] == "mysite"
+
+
+def test_subdomain_invalid_chars_rejected(client):
+    user_id = _create_claimed_site(client, "ss5")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/ss5/settings", data={"title": "", "subdomain": "My Site!"})
+    assert r.status_code == 200
+    assert b"lowercase" in r.data
+
+
+def test_subdomain_uniqueness(client):
+    user_id = _create_claimed_site(client, "ss6")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/ss6/settings", data={"title": "", "subdomain": "taken"})
+
+    user_id2 = _create_claimed_site(client, "ss7")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id2
+    r = client.post("/ss7/settings", data={"title": "", "subdomain": "taken"})
+    assert r.status_code == 200
+    assert b"already taken" in r.data
+
+
+def test_nav_ordering(client):
+    user_id = _create_claimed_site(client, "ss8")
+    site = get_site("ss8")
+
+    page2_id = create_page(site["id"], "page2")
+    page3_id = create_page(site["id"], "page3")
+
+    update_nav_order(page2_id, 0)
+    update_nav_order(page3_id, 1)
+
+    pages = get_pages_for_site(site["id"])
+    nav_pages = [p for p in pages if p["nav_order"] is not None]
+    assert nav_pages[0]["id"] == page2_id
+    assert nav_pages[1]["id"] == page3_id
+
+
+def test_remove_from_nav(client):
+    user_id = _create_claimed_site(client, "ss9")
+    site = get_site("ss9")
+
+    page_id = create_page(site["id"], "navpage")
+    update_nav_order(page_id, 0)
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post(f"/ss9/settings/nav/remove/{page_id}")
+    assert r.status_code == 302
+
+    pages = get_pages_for_site(site["id"])
+    navpage = [p for p in pages if p["id"] == page_id][0]
+    assert navpage["nav_order"] is None
+
+
+def test_page_shows_settings_link_for_owner(client):
+    user_id = _create_claimed_site(client, "ss10")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/ss10")
+    assert b"Settings" in r.data
+
+
+def test_page_hides_settings_link_for_non_owner(client):
+    _create_claimed_site(client, "ss11")
+    r = client.get("/ss11")
+    assert b"/ss11/settings" not in r.data
+
+
+def test_settings_page_links_to_site_settings(client):
+    user_id = _create_claimed_site(client, "ss12")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/settings")
+    assert b"/ss12/settings" in r.data
+
+
+# -- RSS Feed --
+
+
+def test_rss_feed(client):
+    client.post("/feed1/edit", data={"title": "Hello", "content": "World"})
+    r = client.get("/feed1/feed.xml")
+    assert r.status_code == 200
+    assert r.content_type == "application/rss+xml; charset=utf-8"
+    assert b"<title>Hello</title>" in r.data
+    assert b"World" in r.data
+    assert b'<rss version="2.0"' in r.data
+
+
+def test_rss_feed_nonexistent_site(client):
+    r = client.get("/nope/feed.xml")
+    assert r.status_code == 404
+
+
+def test_rss_feed_excludes_drafts(client):
+    client.post(
+        "/feed2/edit", data={"title": "Draft", "content": "Hidden", "draft": "on"}
+    )
+    r = client.get("/feed2/feed.xml")
+    assert r.status_code == 200
+    assert b"Hidden" not in r.data
+
+
+def test_rss_feed_latest_revision_only(client):
+    client.post("/feed3/edit", data={"title": "V1", "content": "Old"})
+    client.post("/feed3/edit", data={"title": "V2", "content": "New"})
+    r = client.get("/feed3/feed.xml")
+    body = r.data.decode()
+    assert body.count("<item>") == 1
+    assert "V2" in body
+    assert "New" in body
+
+
+def test_rss_feed_site_title(client):
+    user_id = _create_claimed_site(client, "feed4")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/feed4/settings", data={"title": "My Blog", "subdomain": ""})
+    r = client.get("/feed4/feed.xml")
+    body = r.data.decode()
+    assert "<title>My Blog</title>" in body
+
+
+def test_rss_feed_has_source_markdown(client):
+    client.post("/feed5/edit", data={"title": "T", "content": "**bold**"})
+    r = client.get("/feed5/feed.xml")
+    assert b"<source:markdown>" in r.data
+    assert b"**bold**" in r.data
+
+
+# -- JSON Feed --
+
+
+def test_json_feed(client):
+    client.post("/jf1/edit", data={"title": "Hello", "content": "World"})
+    r = client.get("/jf1/feed.json")
+    assert r.status_code == 200
+    assert r.content_type == "application/feed+json; charset=utf-8"
+    import json
+
+    feed = json.loads(r.data)
+    assert feed["version"] == "https://jsonfeed.org/version/1.1"
+    assert feed["title"] == "jf1"
+    assert len(feed["items"]) == 1
+    assert feed["items"][0]["title"] == "Hello"
+    assert "World" in feed["items"][0]["content_html"]
+    assert feed["items"][0]["_source_markdown"] == "World"
+
+
+def test_json_feed_nonexistent_site(client):
+    r = client.get("/nope/feed.json")
+    assert r.status_code == 404
+
+
+def test_json_feed_excludes_drafts(client):
+    client.post(
+        "/jf2/edit", data={"title": "Draft", "content": "Hidden", "draft": "on"}
+    )
+    r = client.get("/jf2/feed.json")
+    import json
+
+    feed = json.loads(r.data)
+    assert len(feed["items"]) == 0
+
+
+# -- Feed discovery --
+
+
+def test_page_has_feed_discovery_links(client):
+    client.post("/disc1/edit", data={"title": "T", "content": "X"})
+    r = client.get("/disc1")
+    assert b'type="application/rss+xml"' in r.data
+    assert b"/disc1/feed.xml" in r.data
+    assert b'type="application/feed+json"' in r.data
+    assert b"/disc1/feed.json" in r.data
