@@ -3,12 +3,12 @@
 {% block title %}Jottit{% endblock %}
 
 {% block head %}
-<style>body { background: #fff; }</style>
 <link rel="alternate" type="application/rss+xml" href="/{{ slug }}/feed.xml" title="{{ site_title or 'Jottit' }}">
 <link rel="alternate" type="application/feed+json" href="/{{ slug }}/feed.json" title="{{ site_title or 'Jottit' }}">
 {% endblock %}
 
 {% block body %}
+<div class="page-view">
 {% if is_owner %}
 <div class="admin-banner">
     <a href="/{{ slug }}/settings">Settings</a>
@@ -53,4 +53,5 @@
         <span>powered by <a href="/">Jottit</a></span>
     </footer>
 </main>
+</div>
 {% endblock %}

@@ -7,7 +7,15 @@ from email.utils import format_datetime
 from xml.sax.saxutils import escape as xml_escape
 
 import markdown
-from flask import Blueprint, Response, abort, redirect, render_template, request, session
+from flask import (
+    Blueprint,
+    Response,
+    abort,
+    redirect,
+    render_template,
+    request,
+    session,
+)
 
 from db import (
     check_subdomain_available,
@@ -59,7 +67,11 @@ def edit_page(slug):
         if session.get("user_id") != site["user_id"]:
             return redirect(f"/{slug}")
 
-    page_slug = request.args.get("page") if request.method == "GET" else request.form.get("page")
+    page_slug = (
+        request.args.get("page")
+        if request.method == "GET"
+        else request.form.get("page")
+    )
 
     if request.method == "GET":
         row = get_latest_revision(slug, page_slug)
@@ -69,7 +81,9 @@ def edit_page(slug):
             parts = content.split("\n", 1)
             title = parts[0][2:]
             content = parts[1].strip() if len(parts) > 1 else ""
-        return render_template("edit.html", slug=slug, title=title, content=content, page_slug=page_slug)
+        return render_template(
+            "edit.html", slug=slug, title=title, content=content, page_slug=page_slug
+        )
 
     title = request.form.get("title", "").strip()
     content = request.form.get("content", "").strip()
@@ -97,7 +111,9 @@ def claim_page(slug):
 
     code = create_verification_code(email, "claim")
     send_verification_email(email, code)
-    return render_template("verify.html", slug=slug, email=email, action=f"/{slug}/claim/verify")
+    return render_template(
+        "verify.html", slug=slug, email=email, action=f"/{slug}/claim/verify"
+    )
 
 
 @bp.route("/<slug>/claim/verify", methods=["GET", "POST"])
@@ -111,7 +127,9 @@ def claim_verify(slug):
         return redirect(f"/{slug}/claim")
 
     if request.method == "GET":
-        return render_template("verify.html", slug=slug, email=email, action=f"/{slug}/claim/verify")
+        return render_template(
+            "verify.html", slug=slug, email=email, action=f"/{slug}/claim/verify"
+        )
 
     code = request.form.get("code", "").strip()
     if not verify_code(email, code, "claim"):
@@ -155,7 +173,10 @@ def signin_verify():
     code = request.form.get("code", "").strip()
     if not verify_code(email, code, "signin"):
         return render_template(
-            "verify.html", email=email, action="/signin/verify", error="Invalid or expired code."
+            "verify.html",
+            email=email,
+            action="/signin/verify",
+            error="Invalid or expired code.",
         )
 
     user_id = find_or_create_user(email)
@@ -381,26 +402,21 @@ def view_revision(slug, revision):
     )
 
 
-def _build_feed_entries(slug, site):
+def _build_feed_entries(slug):
     entries = get_feed_entries(slug)
     base_url = request.url_root.rstrip("/")
     site_url = f"{base_url}/{slug}"
     items = []
     for entry in entries:
-        title = _get_title(entry["content"]) or slug
-        body = _get_body(entry["content"])
-        body_html = markdown.markdown(body)
         page_slug = entry["page_slug"]
-        if page_slug == "-":
-            page_url = site_url
-        else:
-            page_url = f"{base_url}/{page_slug}"
+        page_url = site_url if page_slug == "-" else f"{base_url}/{page_slug}"
+        body = _get_body(entry["content"])
         items.append(
             {
-                "title": title,
+                "title": _get_title(entry["content"]) or slug,
                 "url": page_url,
                 "body": body,
-                "body_html": body_html,
+                "body_html": markdown.markdown(body),
                 "created_at": entry["created_at"],
             }
         )
@@ -413,7 +429,7 @@ def rss_feed(slug):
     if not site:
         abort(404)
 
-    items, site_url = _build_feed_entries(slug, site)
+    items, site_url = _build_feed_entries(slug)
     site_title = site["title"] or slug
 
     last_build_date = format_datetime(items[0]["created_at"]) if items else ""
@@ -427,22 +443,23 @@ def rss_feed(slug):
             f"      <pubDate>{format_datetime(item['created_at'])}</pubDate>\n"
             f"      <description>{item['body_html']}</description>\n"
             f"      <source:markdown>{item['body']}</source:markdown>\n"
-            f"      <guid isPermaLink=\"true\">{xml_escape(item['url'])}</guid>\n"
+            f'      <guid isPermaLink="true">{xml_escape(item["url"])}</guid>\n'
             "    </item>"
         )
 
-    xml = (
-        '<?xml version="1.0" encoding="utf-8"?>\n'
-        '<rss version="2.0" xmlns:source="http://source.scripting.com/">\n'
-        "  <channel>\n"
-        f"    <title>{xml_escape(site_title)}</title>\n"
-        f"    <link>{xml_escape(site_url)}</link>\n"
-        "    <description></description>\n"
-        f"    <lastBuildDate>{last_build_date}</lastBuildDate>\n"
-        + "\n".join(items_xml)
-        + "\n  </channel>\n"
-        "</rss>"
-    )
+    parts = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<rss version="2.0" xmlns:source="http://source.scripting.com/">',
+        "  <channel>",
+        f"    <title>{xml_escape(site_title)}</title>",
+        f"    <link>{xml_escape(site_url)}</link>",
+        "    <description></description>",
+        f"    <lastBuildDate>{last_build_date}</lastBuildDate>",
+    ]
+    parts.extend(items_xml)
+    parts.append("  </channel>")
+    parts.append("</rss>")
+    xml = "\n".join(parts)
 
     return Response(xml, content_type="application/rss+xml; charset=utf-8")
 
@@ -453,7 +470,7 @@ def json_feed(slug):
     if not site:
         abort(404)
 
-    items, site_url = _build_feed_entries(slug, site)
+    items, site_url = _build_feed_entries(slug)
     site_title = site["title"] or slug
 
     feed = {

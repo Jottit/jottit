@@ -138,6 +138,68 @@
     border-color: #bbb;
 }
 
+/* Page view */
+
+.page-view {
+    background: #fff;
+    min-height: 100vh;
+}
+
+/* Site header */
+
+.admin-banner {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-8);
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
+}
+
+.admin-banner a {
+    font-size: var(--font-size-sm);
+    color: var(--site-color-nav);
+}
+
+.admin-banner a:hover {
+    color: var(--site-color-text);
+}
+
+.site-header {
+    border-bottom: 1px solid #eee;
+}
+
+.site-header-inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: var(--space-8);
+}
+
+.site-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+    color: var(--site-color-text);
+}
+
+.site-nav {
+    display: flex;
+    gap: var(--space-5);
+}
+
+.site-nav a {
+    font-size: var(--font-size-lg);
+    color: var(--site-color-nav);
+}
+
+.site-nav a:hover {
+    color: var(--site-color-text);
+}
+
 /* Page actions (owner only) */
 
 .page-actions {
@@ -223,7 +285,17 @@
     max-width: 400px;
     margin: 0 auto;
     padding: 80px var(--space-5);
-    color: #1a1a1a;
+    color: var(--text);
+}
+
+.auth-page-centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--space-8);
+    text-align: center;
 }
 
 .auth-title {
@@ -249,23 +321,56 @@
     gap: var(--space-3);
 }
 
+.auth-page-centered .auth-form {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.auth-page-centered .auth-input {
+    width: 100%;
+    text-align: center;
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-xl);
+}
+
 .auth-input {
     flex: 1;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) 0;
     font-size: var(--font-size-md);
-    border: 1px solid #ddd;
-    border-radius: var(--radius-sm);
+    border: none;
+    border-bottom: 1px dashed var(--muted);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--text);
     outline: none;
 }
 
 .auth-input:focus {
-    border-color: #999;
+    border-bottom-color: var(--text);
+}
+
+.auth-input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px var(--bg) inset;
+    -webkit-text-fill-color: var(--text);
 }
 
 .auth-code {
     font-size: 1.5rem;
     letter-spacing: 0.3em;
     text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.code-inputs {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.auth-code-digit {
+    width: 3rem;
+    text-align: center;
+    font-size: var(--font-size-xl);
     font-variant-numeric: tabular-nums;
 }
 
@@ -281,12 +386,7 @@
 
 .claim-btn {
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.claim-btn:hover {
-    border-color: rgba(255, 255, 255, 0.6);
-    color: #fff;
+    text-decoration: underline;
 }
 
 /* Settings */
@@ -320,6 +420,75 @@
 
 .settings-signout {
     margin-top: var(--space-3);
+}
+
+.settings-field {
+    margin-bottom: var(--space-5);
+}
+
+.settings-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    color: #333;
+}
+
+.settings-subdomain-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.settings-subdomain-suffix {
+    font-size: var(--font-size-sm);
+    color: #999;
+    white-space: nowrap;
+}
+
+.settings-save {
+    margin-bottom: var(--space-8);
+}
+
+.settings-nav-list {
+    margin-bottom: var(--space-3);
+}
+
+.settings-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) 0;
+}
+
+.settings-nav-item a {
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.settings-nav-title {
+    font-weight: 500;
+}
+
+.settings-nav-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.settings-nav-inline {
+    display: inline;
+}
+
+.settings-add-page {
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-8);
+}
+
+.settings-signout-link {
+    display: block;
+    margin-top: var(--space-5);
+    font-size: var(--font-size-sm);
+    color: #999;
 }
 
 /* Revision banner */

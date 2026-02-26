@@ -1,3 +1,5 @@
+import json
+
 from db import (
     claim_site,
     create_page,
@@ -6,7 +8,6 @@ from db import (
     get_pages_for_site,
     get_site,
     update_nav_order,
-    update_site_settings,
 )
 from routes import _describe_change
 
@@ -220,7 +221,9 @@ def test_claim_full_flow(client):
     code = create_verification_code("user@example.com", "claim")
 
     # Submit code
-    r = client.post("/cf3/claim/verify", data={"code": code, "email": "user@example.com"})
+    r = client.post(
+        "/cf3/claim/verify", data={"code": code, "email": "user@example.com"}
+    )
     assert r.status_code == 302
     assert r.headers["Location"] == "/cf3"
 
@@ -236,7 +239,9 @@ def test_claim_full_flow(client):
 def test_claim_invalid_code_rejected(client):
     client.post("/cf4/edit", data={"title": "T", "content": "X"})
     client.post("/cf4/claim", data={"email": "user@example.com"})
-    r = client.post("/cf4/claim/verify", data={"code": "000000", "email": "user@example.com"})
+    r = client.post(
+        "/cf4/claim/verify", data={"code": "000000", "email": "user@example.com"}
+    )
     assert r.status_code == 200
     assert b"Invalid" in r.data
 
@@ -303,7 +308,9 @@ def test_signin_full_flow(client):
 
 def test_signin_invalid_code(client):
     client.post("/signin", data={"email": "user@example.com"})
-    r = client.post("/signin/verify", data={"code": "999999", "email": "user@example.com"})
+    r = client.post(
+        "/signin/verify", data={"code": "999999", "email": "user@example.com"}
+    )
     assert r.status_code == 200
     assert b"Invalid" in r.data
 
@@ -559,8 +566,6 @@ def test_json_feed(client):
     r = client.get("/jf1/feed.json")
     assert r.status_code == 200
     assert r.content_type == "application/feed+json; charset=utf-8"
-    import json
-
     feed = json.loads(r.data)
     assert feed["version"] == "https://jsonfeed.org/version/1.1"
     assert feed["title"] == "jf1"
@@ -580,8 +585,6 @@ def test_json_feed_excludes_drafts(client):
         "/jf2/edit", data={"title": "Draft", "content": "Hidden", "draft": "on"}
     )
     r = client.get("/jf2/feed.json")
-    import json
-
     feed = json.loads(r.data)
     assert len(feed["items"]) == 0
 

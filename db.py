@@ -243,9 +243,7 @@ def get_pages_for_site(site_id):
 
 def update_nav_order(page_id, nav_order):
     conn = get_db()
-    conn.execute(
-        "UPDATE pages SET nav_order = %s WHERE id = %s", (nav_order, page_id)
-    )
+    conn.execute("UPDATE pages SET nav_order = %s WHERE id = %s", (nav_order, page_id))
     conn.commit()
     conn.close()
 
