@@ -85,7 +85,7 @@
 /* Homepage */
 
 .home {
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
 }
@@ -226,7 +226,7 @@
 .editor {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
     background: #fff;
     color: #111;
 }

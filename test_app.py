@@ -384,7 +384,7 @@ def test_homepage_shows_signout_when_logged_in(client):
 # -- Homepage sites list --
 
 
-def test_homepage_shows_sites_for_signed_in_user(client):
+def test_homepage_shows_my_sites_link(client):
     user_id = find_or_create_user("sites@example.com")
     client.post("/mysite1/edit", data={"title": "First", "content": "A"})
     claim_site("mysite1", user_id)
@@ -393,35 +393,17 @@ def test_homepage_shows_sites_for_signed_in_user(client):
         sess["user_id"] = user_id
 
     r = client.get("/")
-    body = r.data.decode()
-    assert "/mysite1" in body
-    assert "jottit.org/mysite1" in body
+    assert b"My sites" in r.data
+    assert b"/sites" in r.data
 
 
-def test_homepage_shows_title_when_set(client):
-    user_id = find_or_create_user("sites2@example.com")
-    client.post("/titled1/edit", data={"title": "T", "content": "X"})
-    claim_site("titled1", user_id)
-
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    from db import get_site, update_site_settings
-
-    site = get_site("titled1")
-    update_site_settings(site["id"], "My Blog", None)
-
-    r = client.get("/")
-    assert b"My Blog" in r.data
-
-
-def test_homepage_no_sites_section_when_none(client):
+def test_homepage_no_my_sites_link_when_none(client):
     user_id = find_or_create_user("nosites@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
     r = client.get("/")
-    assert b"home-sites" not in r.data
+    assert b"My sites" not in r.data
 
 
 # -- Per-site settings --
@@ -932,32 +914,6 @@ def _create_user_with_sites(client, count):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     return user_id
-
-
-def test_home_shows_max_3_sites(client):
-    _create_user_with_sites(client, 5)
-    r = client.get("/")
-    body = r.data.decode()
-    assert body.count("home-sites-domain") == 3
-
-
-def test_home_view_all_link_when_more_than_3(client):
-    _create_user_with_sites(client, 4)
-    r = client.get("/")
-    assert b"View all sites" in r.data
-    assert b"/sites" in r.data
-
-
-def test_home_no_view_all_link_when_3_or_fewer(client):
-    _create_user_with_sites(client, 3)
-    r = client.get("/")
-    assert b"View all sites" not in r.data
-
-
-def test_home_no_view_all_link_when_2(client):
-    _create_user_with_sites(client, 2)
-    r = client.get("/")
-    assert b"View all sites" not in r.data
 
 
 # -- /sites page --
