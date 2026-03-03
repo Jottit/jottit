@@ -1,1 +1,1 @@
-web: gunicorn app:app --bind 0.0.0.0:8080
+web: gunicorn app:app --bind 0.0.0.0:8080 --workers 2 --timeout 30
