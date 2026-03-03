@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timezone
 
 from flask import Flask
+from flask_wtf.csrf import CSRFProtect
 
 from db import init_db
 from routes import bp, limiter
@@ -19,6 +20,7 @@ app.config["SESSION_COOKIE_DOMAIN"] = os.environ.get(
     "SESSION_COOKIE_DOMAIN", ".jottit.localhost"
 )
 
+CSRFProtect(app)
 limiter.init_app(app)
 app.register_blueprint(bp)
 

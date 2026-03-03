@@ -12,6 +12,7 @@
     <p class="error">{{ error }}</p>
     {% endif %}
     <form class="auth-form" method="post" action="{{ action }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="code" id="code-value">
         {% if email %}<input type="hidden" name="email" value="{{ email }}">{% endif %}
         <div class="code-inputs">

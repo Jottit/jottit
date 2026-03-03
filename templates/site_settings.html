@@ -20,6 +20,7 @@
         {% endif %}
 
         <form method="post" action="/{{ slug }}/settings">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="field">
                 <label class="label" for="title">Site title</label>
                 <input class="input" type="text" id="title" name="title" value="{{ site.title or '' }}">

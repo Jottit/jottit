@@ -12,6 +12,7 @@
     <p class="error">{{ error }}</p>
     {% endif %}
     <form class="auth-form" method="post" action="/signin">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input class="auth-input" type="email" name="email" required autofocus>
         <button class="btn btn-solid" type="submit">Send code</button>
     </form>
