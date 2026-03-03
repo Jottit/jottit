@@ -333,7 +333,7 @@ def test_signout(client):
     with client.session_transaction() as sess:
         sess["user_id"] = 1
 
-    r = client.get("/signout")
+    r = client.post("/signout")
     assert r.status_code == 302
 
     with client.session_transaction() as sess:

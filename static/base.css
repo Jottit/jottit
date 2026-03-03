@@ -341,6 +341,20 @@ a {
     color: var(--site-color-muted);
 }
 
+.signout-form {
+    display: inline;
+}
+
+.link-btn {
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+}
+
+.link-btn:hover {
+    opacity: 0.7;
+}
+
 .mb-2 { margin-bottom: var(--space-2); }
 .mb-4 { margin-bottom: var(--space-4); }
 .mb-5 { margin-bottom: var(--space-5); }

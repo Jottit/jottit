@@ -403,10 +403,10 @@ def signin_verify():
     return redirect("/")
 
 
-@bp.route("/signout")
+@bp.route("/signout", methods=["POST"])
 def signout():
     session.pop("user_id", None)
-    return redirect(request.referrer or "/")
+    return redirect("/")
 
 
 @bp.route("/settings")

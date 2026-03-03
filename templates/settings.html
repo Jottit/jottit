@@ -25,7 +25,7 @@
         <p class="subtitle">You haven't claimed any pages yet.</p>
         {% endif %}
 
-        <a href="/signout" class="muted-link">Sign out</a>
+        <form method="post" action="/signout" class="signout-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="muted-link">Sign out</button></form>
     </div>
 </div>
 {% endblock %}
