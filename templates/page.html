@@ -12,7 +12,7 @@
 <div class="admin-banner">
     <a href="{{ base_url }}" class="admin-banner-home">Jottit</a>
     <a href="/{{ slug }}/settings">Settings</a>
-    <form method="post" action="/signout" class="signout-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="link-btn">Sign out</button></form>
+    {% include "_signout.html" %}
 </div>
 {% endif %}
 {% if site_title or nav_pages %}

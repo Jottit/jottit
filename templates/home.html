@@ -3,7 +3,7 @@
 {% block body %}
 <div class="home">
     {% if signed_in %}
-    <form method="post" action="/signout" class="signout-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="signin-link">Sign out</button></form>
+    {% with class="signin-link" %}{% include "_signout.html" %}{% endwith %}
     {% else %}
     <a href="/signin" class="signin-link">Sign in</a>
     {% endif %}
