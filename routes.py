@@ -634,8 +634,8 @@ def rss_feed(slug):
             f"      <title>{xml_escape(item['title'])}</title>\n"
             f"      <link>{xml_escape(item['url'])}</link>\n"
             f"      <pubDate>{format_datetime(item['created_at'])}</pubDate>\n"
-            f"      <description>{item['body_html']}</description>\n"
-            f"      <source:markdown>{item['body']}</source:markdown>\n"
+            f"      <description><![CDATA[{item['body_html']}]]></description>\n"
+            f"      <source:markdown>{xml_escape(item['body'])}</source:markdown>\n"
             f'      <guid isPermaLink="true">{xml_escape(item["url"])}</guid>\n'
             "    </item>"
         )
