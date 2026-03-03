@@ -14,6 +14,7 @@ if not app.secret_key:
     else:
         raise RuntimeError("SECRET_KEY environment variable is required")
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_DEBUG") != "1"
 app.config["SESSION_COOKIE_DOMAIN"] = os.environ.get(
     "SESSION_COOKIE_DOMAIN", ".jottit.localhost"
 )
