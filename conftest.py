@@ -20,11 +20,10 @@ def test_db():
 
     db_module.DATABASE = f"dbname={TEST_DB}"
 
-    conn = db_module.get_db()
-    with open("schema.sql") as f:
-        conn.execute(f.read())
-    conn.commit()
-    conn.close()
+    with db_module.get_db() as conn:
+        with open("schema.sql") as f:
+            conn.execute(f.read())
+        conn.commit()
 
     yield
 
