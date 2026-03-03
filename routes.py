@@ -11,6 +11,7 @@ from html import escape as html_escape
 from xml.sax.saxutils import escape as xml_escape
 
 import markdown
+import nh3
 from flask import (
     Blueprint,
     Response,
@@ -80,6 +81,14 @@ def resolve_subdomain():
 def generate_slug(length=6):
     alphabet = string.ascii_lowercase + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+_SANITIZE_ATTRIBUTES = {**nh3.ALLOWED_ATTRIBUTES, "*": {"class"}}
+
+
+def _render_markdown(text):
+    html = markdown.markdown(text)
+    return nh3.clean(html, link_rel=None, attributes=_SANITIZE_ATTRIBUTES)
 
 
 def _slugify(name):
@@ -531,7 +540,7 @@ def view_revision(slug, revision):
     if not row:
         abort(404)
 
-    html = markdown.markdown(_process_wikilinks(row["content"], slug))
+    html = _render_markdown(_process_wikilinks(row["content"], slug))
     return render_template(
         "revision.html",
         content=html,
@@ -555,7 +564,7 @@ def _build_feed_entries(slug):
                 "title": _get_title(entry["content"]) or slug,
                 "url": page_url,
                 "body": body,
-                "body_html": markdown.markdown(_process_wikilinks(body, slug)),
+                "body_html": _render_markdown(_process_wikilinks(body, slug)),
                 "created_at": entry["created_at"],
             }
         )
@@ -681,7 +690,7 @@ def view_page(slug, page_slug=None):
     raw_content = row["content"]
     page_title = _get_title(raw_content)
     content = _process_wikilinks(raw_content, slug, existing_page_slugs)
-    html = markdown.markdown(content)
+    html = _render_markdown(content)
     html = html.replace("<h1>", '<h1 class="p-name">', 1)
 
     return render_template(
