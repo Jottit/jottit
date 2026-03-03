@@ -8,7 +8,7 @@
 {% block body %}
 {% for message in get_flashed_messages() %}
 <div class="toast" id="toast">{{ message }}</div>
-<script>setTimeout(function() { document.getElementById('toast').classList.add('toast-fade') }, 2000)</script>
+<script src="/static/toast.js"></script>
 {% endfor %}
 <div class="panel-page">
     <a href="/{{ slug }}" class="panel-back">&larr; Back</a>
