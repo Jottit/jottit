@@ -1,5 +1,5 @@
 import os
-import random
+import secrets
 
 import psycopg
 from psycopg.rows import dict_row
@@ -195,7 +195,7 @@ def claim_site(slug, user_id):
 
 
 def create_verification_code(email, purpose):
-    code = f"{random.randint(0, 999999):06d}"
+    code = f"{secrets.randbelow(1000000):06d}"
     conn = get_db()
     conn.execute(
         """INSERT INTO verification_codes (email, code, purpose, expires_at)
