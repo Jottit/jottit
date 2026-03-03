@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("SECRET_KEY", "test-secret-key")
+
 import db as db_module
 import psycopg
 import pytest
