@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from flask import Flask
 
 from db import init_db
-from routes import bp
+from routes import bp, limiter
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
@@ -12,6 +12,8 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_DOMAIN"] = os.environ.get(
     "SESSION_COOKIE_DOMAIN", ".jottit.localhost"
 )
+
+limiter.init_app(app)
 app.register_blueprint(bp)
 
 

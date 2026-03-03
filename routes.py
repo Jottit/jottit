@@ -45,7 +45,12 @@ from db import (
     update_site_settings,
     verify_code,
 )
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 from mail import send_verification_email
+
+limiter = Limiter(get_remote_address, storage_uri="memory://")
 
 bp = Blueprint("routes", __name__)
 
@@ -272,6 +277,7 @@ def edit_page(slug):
 
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
 def claim_page(slug):
     site = get_site(slug)
     if not site or site["user_id"] is not None:
@@ -292,6 +298,7 @@ def claim_page(slug):
 
 
 @bp.route("/<slug>/claim/verify", methods=["GET", "POST"])
+@limiter.limit("5 per 10 minutes", methods=["POST"])
 def claim_verify(slug):
     site = get_site(slug)
     if not site or site["user_id"] is not None:
@@ -323,6 +330,7 @@ def claim_verify(slug):
 
 
 @bp.route("/signin", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
 def signin():
     if request.method == "GET":
         return render_template("signin.html")
@@ -337,6 +345,7 @@ def signin():
 
 
 @bp.route("/signin/verify", methods=["GET", "POST"])
+@limiter.limit("5 per 10 minutes", methods=["POST"])
 def signin_verify():
     email = request.form.get("email") or session.get("signin_email")
     if not email:
