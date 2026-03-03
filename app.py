@@ -25,6 +25,11 @@ limiter.init_app(app)
 app.register_blueprint(bp)
 
 
+_CSP = (
+    "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'"
+)
+
+
 @app.after_request
 def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -34,8 +39,7 @@ def set_security_headers(response):
         response.headers["Strict-Transport-Security"] = (
             "max-age=63072000; includeSubDomains"
         )
-    csp = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'"
-    response.headers["Content-Security-Policy"] = csp
+    response.headers["Content-Security-Policy"] = _CSP
     return response
 
 
