@@ -83,6 +83,38 @@ def resolve_subdomain():
     g.subdomain_site = site
 
 
+RESERVED_SLUGS = {
+    "new",
+    "signin",
+    "signout",
+    "settings",
+    "about",
+    "talk",
+    "sites",
+    "admin",
+    "api",
+    "static",
+    "favicon.ico",
+    "robots.txt",
+}
+
+RESERVED_SUBDOMAINS = {
+    "www",
+    "api",
+    "admin",
+    "mail",
+    "smtp",
+    "ftp",
+    "ns1",
+    "ns2",
+    "blog",
+    "app",
+    "static",
+    "cdn",
+    "assets",
+}
+
+
 def generate_slug(length=6):
     alphabet = string.ascii_lowercase + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
@@ -238,6 +270,8 @@ def new_page():
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
 def edit_page(slug):
     site = get_site(slug)
+    if not site and slug in RESERVED_SLUGS:
+        abort(404)
     if site and site["user_id"] is not None:
         if session.get("user_id") != site["user_id"]:
             return redirect(f"/{slug}")
@@ -414,6 +448,8 @@ def site_settings(slug):
     if subdomain:
         if not _valid_subdomain(subdomain):
             error = "Subdomain must be lowercase letters, numbers, and hyphens only."
+        elif subdomain in RESERVED_SUBDOMAINS:
+            error = "That subdomain is reserved."
         elif not check_subdomain_available(subdomain, site["id"]):
             error = "That subdomain is already taken."
 
