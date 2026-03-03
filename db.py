@@ -63,13 +63,10 @@ def save_page(slug, content, draft, page_slug=None):
             page = conn.execute(
                 "SELECT id FROM pages WHERE site_id = %s", (site["id"],)
             ).fetchone()
-        next_rev = conn.execute(
-            "SELECT COALESCE(MAX(revision), 0) + 1 AS next_rev FROM revisions WHERE page_id = %s",
-            (page["id"],),
-        ).fetchone()["next_rev"]
         conn.execute(
-            "INSERT INTO revisions (page_id, revision, content, draft) VALUES (%s, %s, %s, %s)",
-            (page["id"], next_rev, content, draft),
+            """INSERT INTO revisions (page_id, revision, content, draft)
+               VALUES (%s, (SELECT COALESCE(MAX(revision), 0) + 1 FROM revisions WHERE page_id = %s), %s, %s)""",
+            (page["id"], page["id"], content, draft),
         )
         conn.execute(
             "UPDATE pages SET updated_at = CURRENT_TIMESTAMP WHERE id = %s",

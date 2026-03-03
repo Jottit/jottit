@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS revisions (
     revision INTEGER NOT NULL,
     content TEXT NOT NULL,
     draft BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (page_id, revision)
 );
 
 CREATE TABLE IF NOT EXISTS verification_codes (
