@@ -14,7 +14,7 @@ def send_verification_email(email, code):
         {
             "from": "Jottit <noreply@jottit.org>",
             "to": email,
-            "subject": f"Your verification code: {code}",
+            "subject": "Your Jottit verification code",
             "text": f"Your Jottit verification code is: {code}\n\nThis code expires in 10 minutes.",
         }
     )
