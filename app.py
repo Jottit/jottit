@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from flask import Flask
+from flask import Flask, request
 from flask_wtf.csrf import CSRFProtect
 
 from db import init_db
@@ -23,6 +23,20 @@ app.config["SESSION_COOKIE_DOMAIN"] = os.environ.get(
 CSRFProtect(app)
 limiter.init_app(app)
 app.register_blueprint(bp)
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.is_secure:
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains"
+        )
+    csp = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'"
+    response.headers["Content-Security-Policy"] = csp
+    return response
 
 
 @app.template_filter("isoformat")
