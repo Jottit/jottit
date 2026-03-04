@@ -12,10 +12,10 @@
     <div class="panel">
 
         {% for message in get_flashed_messages() %}
-        <p class="settings-success">{{ message }}</p>
+        <p class="notice notice--success">{{ message }}</p>
         {% endfor %}
         {% if error %}
-        <p class="error">{{ error }}</p>
+        <p class="notice notice--error">{{ error }}</p>
         {% endif %}
 
         <form method="post" action="/{{ slug }}/settings">

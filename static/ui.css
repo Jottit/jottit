@@ -556,15 +556,23 @@
     white-space: nowrap;
 }
 
-.settings-success {
-    color: var(--success);
-    background: rgba(39, 174, 96, 0.1);
+.notice {
     font-size: var(--font-size-md);
     padding: var(--space-3) var(--space-12);
     margin: calc(-1 * var(--space-12));
     margin-bottom: var(--space-6);
     border-radius: var(--radius-pill) var(--radius-pill) 0 0;
     text-align: center;
+}
+
+.notice--success {
+    color: var(--success);
+    background: rgba(39, 174, 96, 0.1);
+}
+
+.notice--error {
+    color: var(--error);
+    background: rgba(192, 57, 43, 0.1);
 }
 
 .settings-save {
