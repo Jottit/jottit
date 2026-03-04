@@ -69,9 +69,12 @@ def _get_subdomain():
     return None
 
 
+def _base_url(path=""):
+    return f"{request.scheme}://{BASE_DOMAIN}{path}"
+
+
 def _subdomain_url(subdomain, path=""):
-    scheme = request.scheme
-    return f"{scheme}://{subdomain}.{BASE_DOMAIN}{path}"
+    return f"{request.scheme}://{subdomain}.{BASE_DOMAIN}{path}"
 
 
 def _site_path(slug, *parts):
@@ -411,7 +414,11 @@ def site_settings(slug, site):
     if request.method == "GET":
         nav_text = site["nav"] or ""
         return render_template(
-            "site_settings.html", site=site, nav_text=nav_text, slug=slug
+            "site_settings.html",
+            site=site,
+            nav_text=nav_text,
+            slug=slug,
+            site_path=_site_path,
         )
 
     title = request.form.get("title", "").strip()
@@ -433,6 +440,7 @@ def site_settings(slug, site):
             site={**site, "title": title, "subdomain": subdomain},
             nav_text=nav,
             slug=slug,
+            site_path=_site_path,
             error=error,
         )
 
@@ -440,7 +448,7 @@ def site_settings(slug, site):
     flash("Changes saved")
     if subdomain:
         return redirect(_subdomain_url(subdomain, "/settings"))
-    return redirect(f"/{slug}/settings")
+    return redirect(_base_url(f"/{slug}/settings"))
 
 
 @bp.route("/<slug>/export")
@@ -670,7 +678,7 @@ def delete_site_page_confirm(slug, site):
         )
 
     delete_site(site["id"])
-    return redirect(f"{request.scheme}://{BASE_DOMAIN}/")
+    return redirect(_base_url("/"))
 
 
 @bp.route("/<slug>")
