@@ -187,7 +187,7 @@ def test_unclaimed_page_shows_claim_banner(client):
 def test_claimed_page_hides_claim_banner(client):
     client.post("/clmd/edit", data={"title": "T", "content": "X"})
     user_id = find_or_create_user("owner@example.com")
-    claim_site("clmd", user_id)
+    claim_site(get_site("clmd")["id"], user_id)
     r = client.get("/clmd")
     assert b"Make it yours" not in r.data
 
@@ -205,7 +205,7 @@ def test_claim_page_shows_form(client):
 def test_claim_already_claimed_redirects(client):
     client.post("/cf2/edit", data={"title": "T", "content": "X"})
     user_id = find_or_create_user("owner@example.com")
-    claim_site("cf2", user_id)
+    claim_site(get_site("cf2")["id"], user_id)
     r = client.get("/cf2/claim")
     assert r.status_code == 302
 
@@ -253,7 +253,7 @@ def test_claim_invalid_code_rejected(client):
 def test_non_owner_redirected_from_edit(client):
     client.post("/prot1/edit", data={"title": "T", "content": "X"})
     user_id = find_or_create_user("owner@example.com")
-    claim_site("prot1", user_id)
+    claim_site(get_site("prot1")["id"], user_id)
 
     # Without session, should redirect
     r = client.get("/prot1/edit")
@@ -264,7 +264,7 @@ def test_non_owner_redirected_from_edit(client):
 def test_owner_can_edit(client):
     client.post("/prot2/edit", data={"title": "T", "content": "X"})
     user_id = find_or_create_user("owner@example.com")
-    claim_site("prot2", user_id)
+    claim_site(get_site("prot2")["id"], user_id)
 
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
@@ -372,7 +372,7 @@ def test_homepage_shows_signout_when_logged_in(client):
 def test_homepage_shows_my_sites_link(client):
     user_id = find_or_create_user("sites@example.com")
     client.post("/mysite1/edit", data={"title": "First", "content": "A"})
-    claim_site("mysite1", user_id)
+    claim_site(get_site("mysite1")["id"], user_id)
 
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
@@ -397,7 +397,8 @@ def test_homepage_no_my_sites_link_when_none(client):
 def _create_claimed_site(client, slug="stest"):
     client.post(f"/{slug}/edit", data={"title": "T", "content": "X"})
     user_id = find_or_create_user("owner@example.com")
-    claim_site(slug, user_id)
+    site = get_site(slug)
+    claim_site(site["id"], user_id)
     return user_id
 
 
@@ -886,7 +887,7 @@ def _create_user_with_sites(client, count):
     for i in range(count):
         slug = f"limit{count}s{i}"
         save_page(slug, f"# Site {i}\n\nContent", False)
-        claim_site(slug, user_id)
+        claim_site(get_site(slug)["id"], user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     return user_id

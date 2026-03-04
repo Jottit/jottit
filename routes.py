@@ -40,6 +40,7 @@ from db import (
 )
 from mail import send_verification_email
 from utils import (
+    INDEX_PAGE_SLUG,
     RESERVED_SLUGS,
     RESERVED_SUBDOMAINS,
     describe_change,
@@ -133,55 +134,55 @@ def _require_subdomain_site():
 @bp.route("/edit", methods=["GET", "POST"])
 def subdomain_edit():
     site = _require_subdomain_site()
-    return edit_page(site["slug"])
+    return edit_page(site["slug"], site=site)
 
 
 @bp.route("/export")
 def subdomain_export():
     site = _require_subdomain_site()
-    return export_site(site["slug"])
+    return export_site(site["slug"], site=site)
 
 
 @bp.route("/history")
 def subdomain_history():
     site = _require_subdomain_site()
-    return page_history(site["slug"])
+    return page_history(site["slug"], site=site)
 
 
 @bp.route("/history/<int:revision>")
 def subdomain_revision(revision):
     site = _require_subdomain_site()
-    return view_revision(site["slug"], revision)
+    return view_revision(site["slug"], revision, site=site)
 
 
 @bp.route("/claim", methods=["GET", "POST"])
 def subdomain_claim():
     site = _require_subdomain_site()
-    return claim_page(site["slug"])
+    return claim_page(site["slug"], site=site)
 
 
 @bp.route("/claim/verify", methods=["GET", "POST"])
 def subdomain_claim_verify():
     site = _require_subdomain_site()
-    return claim_verify(site["slug"])
+    return claim_verify(site["slug"], site=site)
 
 
 @bp.route("/settings")
 def subdomain_settings():
     site = _require_subdomain_site()
-    return site_settings(site["slug"])
+    return site_settings(site["slug"], site=site)
 
 
 @bp.route("/feed.xml")
 def subdomain_rss():
     site = _require_subdomain_site()
-    return rss_feed(site["slug"])
+    return rss_feed(site["slug"], site=site)
 
 
 @bp.route("/feed.json")
 def subdomain_json_feed():
     site = _require_subdomain_site()
-    return json_feed(site["slug"])
+    return json_feed(site["slug"], site=site)
 
 
 @bp.route("/new")
@@ -191,8 +192,10 @@ def new_page():
 
 
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
-def edit_page(slug):
-    site = get_site(slug)
+@limiter.limit("30 per hour", methods=["POST"])
+def edit_page(slug, site=None):
+    if site is None:
+        site = get_site(slug)
     if not site and slug in RESERVED_SLUGS:
         abort(404)
     if site and site["user_id"] is not None:
@@ -206,7 +209,7 @@ def edit_page(slug):
     )
 
     if request.method == "GET":
-        row = get_page(slug, page_slug)
+        row = get_page(site["id"], page_slug) if site else None
         content = row["content"] if row else ""
         title = get_title(content) or ""
         content = get_body(content)
@@ -224,7 +227,8 @@ def edit_page(slug):
     is_new = site is None
     save_page(slug, content, draft, page_slug)
     if is_new and session.get("user_id"):
-        claim_site(slug, session["user_id"])
+        new_site = get_site(slug)
+        claim_site(new_site["id"], session["user_id"])
     if page_slug:
         return redirect(f"/{slug}/{page_slug}")
     return redirect(f"/{slug}")
@@ -232,8 +236,9 @@ def edit_page(slug):
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])
 @limiter.limit("5 per hour", methods=["POST"])
-def claim_page(slug):
-    site = get_site(slug)
+def claim_page(slug, site=None):
+    if site is None:
+        site = get_site(slug)
     if not site or site["user_id"] is not None:
         return redirect(f"/{slug}")
 
@@ -253,8 +258,9 @@ def claim_page(slug):
 
 @bp.route("/<slug>/claim/verify", methods=["GET", "POST"])
 @limiter.limit("5 per 10 minutes", methods=["POST"])
-def claim_verify(slug):
-    site = get_site(slug)
+def claim_verify(slug, site=None):
+    if site is None:
+        site = get_site(slug)
     if not site or site["user_id"] is not None:
         return redirect(f"/{slug}")
 
@@ -278,7 +284,7 @@ def claim_verify(slug):
         )
 
     user_id = find_or_create_user(email)
-    claim_site(slug, user_id)
+    claim_site(site["id"], user_id)
     session["user_id"] = user_id
     return redirect(f"/{slug}")
 
@@ -333,7 +339,7 @@ def _require_site_owner(f):
     @wraps(f)
     def decorated(slug, *args, **kwargs):
         user_id = session.get("user_id")
-        site = get_site(slug)
+        site = kwargs.pop("site", None) or get_site(slug)
         if not site or not user_id or site["user_id"] != user_id:
             return redirect(f"/{slug}")
         return f(slug, site, *args, **kwargs)
@@ -390,7 +396,9 @@ def export_site(slug, site):
             title = get_title(page["content"]) or page["page_slug"]
             body = get_body(page["content"])
             date = page["created_at"].strftime("%Y-%m-%d")
-            filename = page["page_slug"] if page["page_slug"] != "-" else "index"
+            filename = (
+                page["page_slug"] if page["page_slug"] != INDEX_PAGE_SLUG else "index"
+            )
             md = f"---\ntitle: {title}\ndate: {date}\n---\n\n{body}\n"
             zf.writestr(f"{slug}/{filename}.md", md)
     buf.seek(0)
@@ -403,8 +411,12 @@ def export_site(slug, site):
 
 
 @bp.route("/<slug>/history")
-def page_history(slug):
-    revisions = get_revisions(slug)
+def page_history(slug, site=None):
+    if site is None:
+        site = get_site(slug)
+    if not site:
+        abort(404)
+    revisions = get_revisions(site["id"])
 
     if not revisions:
         abort(404)
@@ -428,8 +440,12 @@ def page_history(slug):
 
 
 @bp.route("/<slug>/history/<int:revision>")
-def view_revision(slug, revision):
-    row = get_revision(slug, revision)
+def view_revision(slug, revision, site=None):
+    if site is None:
+        site = get_site(slug)
+    if not site:
+        abort(404)
+    row = get_revision(site["id"], revision)
 
     if not row:
         abort(404)
@@ -444,14 +460,16 @@ def view_revision(slug, revision):
     )
 
 
-def _build_feed_entries(slug):
-    entries = get_feed_entries(slug)
+def _build_feed_entries(site_id, slug):
+    entries = get_feed_entries(site_id)
     base_url = request.url_root.rstrip("/")
     site_url = f"{base_url}/{slug}"
     items = []
     for entry in entries:
         page_slug = entry["page_slug"]
-        page_url = site_url if page_slug == "-" else f"{base_url}/{page_slug}"
+        page_url = (
+            site_url if page_slug == INDEX_PAGE_SLUG else f"{base_url}/{page_slug}"
+        )
         body = get_body(entry["content"])
         items.append(
             {
@@ -466,24 +484,26 @@ def _build_feed_entries(slug):
 
 
 @bp.route("/<slug>/feed.xml")
-def rss_feed(slug):
-    site = get_site(slug)
+def rss_feed(slug, site=None):
+    if site is None:
+        site = get_site(slug)
     if not site:
         abort(404)
 
-    items, site_url = _build_feed_entries(slug)
+    items, site_url = _build_feed_entries(site["id"], slug)
     site_title = site["title"] or slug
 
     last_build_date = format_datetime(items[0]["created_at"]) if items else ""
 
     items_xml = []
     for item in items:
+        cdata_body = item["body_html"].replace("]]>", "]]]]><![CDATA[>")
         items_xml.append(
             "    <item>\n"
             f"      <title>{xml_escape(item['title'])}</title>\n"
             f"      <link>{xml_escape(item['url'])}</link>\n"
             f"      <pubDate>{format_datetime(item['created_at'])}</pubDate>\n"
-            f"      <description><![CDATA[{item['body_html']}]]></description>\n"
+            f"      <description><![CDATA[{cdata_body}]]></description>\n"
             f"      <source:markdown>{xml_escape(item['body'])}</source:markdown>\n"
             f'      <guid isPermaLink="true">{xml_escape(item["url"])}</guid>\n'
             "    </item>"
@@ -507,12 +527,13 @@ def rss_feed(slug):
 
 
 @bp.route("/<slug>/feed.json")
-def json_feed(slug):
-    site = get_site(slug)
+def json_feed(slug, site=None):
+    if site is None:
+        site = get_site(slug)
     if not site:
         abort(404)
 
-    items, site_url = _build_feed_entries(slug)
+    items, site_url = _build_feed_entries(site["id"], slug)
     site_title = site["title"] or slug
 
     feed = {
@@ -551,12 +572,15 @@ def view_page(slug, page_slug=None):
         path = f"/{page_slug}" if page_slug else ""
         return redirect(_subdomain_url(site["subdomain"], path))
 
-    row = get_page(slug, page_slug)
+    if not site:
+        abort(404)
+
+    row = get_page(site["id"], page_slug)
 
     if not row:
         abort(404)
-    unclaimed = row["user_id"] is None
-    is_owner = session.get("user_id") == row["user_id"] and not unclaimed
+    unclaimed = site["user_id"] is None
+    is_owner = session.get("user_id") == site["user_id"] and not unclaimed
     show_actions = is_owner or unclaimed
 
     nav_pages = []
@@ -568,7 +592,7 @@ def view_page(slug, page_slug=None):
             item_slug = item["slug"]
             is_index = item_slug == "/"
             exists = (
-                "-" in existing_page_slugs
+                INDEX_PAGE_SLUG in existing_page_slugs
                 if is_index
                 else item_slug in existing_page_slugs
             )

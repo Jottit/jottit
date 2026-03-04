@@ -23,6 +23,44 @@ function updatePreview() {
     preview.innerHTML = html;
 }
 
-titleInput.addEventListener('input', updatePreview);
-contentInput.addEventListener('input', updatePreview);
+var storageKey = 'jottit-draft:' + window.location.pathname;
+
+function saveDraft() {
+    localStorage.setItem(storageKey, JSON.stringify({
+        title: titleInput.value,
+        content: contentInput.value
+    }));
+}
+
+function clearDraft() {
+    localStorage.removeItem(storageKey);
+}
+
+var saved = localStorage.getItem(storageKey);
+if (saved) {
+    try {
+        var draft = JSON.parse(saved);
+        if (draft.title !== undefined) titleInput.value = draft.title;
+        if (draft.content !== undefined) contentInput.value = draft.content;
+    } catch (e) {}
+}
+
+titleInput.addEventListener('input', function() {
+    updatePreview();
+    saveDraft();
+});
+contentInput.addEventListener('input', function() {
+    updatePreview();
+    saveDraft();
+});
 updatePreview();
+
+var form = document.querySelector('.editor-form');
+if (form) {
+    form.addEventListener('submit', clearDraft);
+}
+
+var cancelLink = document.querySelector('.editor-actions a');
+if (cancelLink) {
+    cancelLink.addEventListener('click', clearDraft);
+}
