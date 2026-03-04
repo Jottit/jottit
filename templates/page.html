@@ -49,7 +49,7 @@
     </article>
     {% if show_actions %}
     <div class="page-actions">
-        <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">last edited {{ updated_at | relative_time }}</time>
+        <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">{% if draft %}<span class="draft-pill">DRAFT</span> · {% endif %}last edited {{ updated_at | relative_time }}</time>
         <div class="page-actions-buttons">
             {% if is_owner and page_slug %}
             <form method="post" action="{{ site_path(slug, 'delete') }}" class="inline-form">

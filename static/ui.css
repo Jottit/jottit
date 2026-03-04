@@ -519,6 +519,20 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Draft pill */
+
+.draft-pill {
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--warning);
+    background: rgba(230, 126, 34, 0.1);
+    padding: 0.15em 0.6em;
+    border-radius: var(--radius-pill);
+    vertical-align: middle;
+}
+
 /* Claim banner */
 
 .claim-banner {

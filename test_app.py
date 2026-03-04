@@ -752,6 +752,35 @@ def test_page_has_feed_discovery_links(client):
     assert b"/disc1/feed.json" in r.data
 
 
+# -- Draft visibility --
+
+
+def test_draft_hidden_from_non_owner(client):
+    user_id = _create_claimed_site(client, "dv1")
+    save_page("dv1", "# Secret\n\nDraft content", True, "secret")
+    r = client.get("/dv1/secret")
+    assert r.status_code == 404
+
+
+def test_draft_visible_to_owner(client):
+    user_id = _create_claimed_site(client, "dv2")
+    save_page("dv2", "# Secret\n\nDraft content", True, "secret")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/dv2/secret")
+    assert r.status_code == 200
+    assert b"draft" in r.data.lower()
+
+
+def test_draft_checkbox_prechecked_when_editing_draft(client):
+    user_id = _create_claimed_site(client, "dv3")
+    save_page("dv3", "# Draft\n\nWIP", True, "wip")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/dv3/edit?page=wip")
+    assert b"checked" in r.data
+
+
 # -- Delete page --
 
 

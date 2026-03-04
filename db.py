@@ -64,8 +64,8 @@ def save_page(slug, content, draft, page_slug=None):
                 ).fetchone()
                 if not page:
                     page = conn.execute(
-                        "INSERT INTO pages (site_id, slug) VALUES (%s, %s) RETURNING id",
-                        (site["id"], page_slug),
+                        "INSERT INTO pages (site_id, slug, draft) VALUES (%s, %s, %s) RETURNING id",
+                        (site["id"], page_slug, draft),
                     ).fetchone()
             else:
                 page = conn.execute(
@@ -73,13 +73,13 @@ def save_page(slug, content, draft, page_slug=None):
                     (site["id"], INDEX_PAGE_SLUG),
                 ).fetchone()
             conn.execute(
-                """INSERT INTO revisions (page_id, revision, content, draft)
-                   VALUES (%s, (SELECT COALESCE(MAX(revision), 0) + 1 FROM revisions WHERE page_id = %s), %s, %s)""",
-                (page["id"], page["id"], content, draft),
+                """INSERT INTO revisions (page_id, revision, content)
+                   VALUES (%s, (SELECT COALESCE(MAX(revision), 0) + 1 FROM revisions WHERE page_id = %s), %s)""",
+                (page["id"], page["id"], content),
             )
             conn.execute(
-                "UPDATE pages SET updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-                (page["id"],),
+                "UPDATE pages SET draft = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                (draft, page["id"]),
             )
         else:
             cursor = conn.execute(
@@ -87,13 +87,13 @@ def save_page(slug, content, draft, page_slug=None):
             )
             site_id = cursor.fetchone()["id"]
             cursor = conn.execute(
-                "INSERT INTO pages (site_id, slug) VALUES (%s, %s) RETURNING id",
-                (site_id, page_slug or INDEX_PAGE_SLUG),
+                "INSERT INTO pages (site_id, slug, draft) VALUES (%s, %s, %s) RETURNING id",
+                (site_id, page_slug or INDEX_PAGE_SLUG, draft),
             )
             page_id = cursor.fetchone()["id"]
             conn.execute(
-                "INSERT INTO revisions (page_id, revision, content, draft) VALUES (%s, 1, %s, %s)",
-                (page_id, content, draft),
+                "INSERT INTO revisions (page_id, revision, content) VALUES (%s, 1, %s)",
+                (page_id, content),
             )
 
         conn.commit()
@@ -103,7 +103,7 @@ def get_page(site_id, page_slug=None):
     with get_db() as conn:
         if page_slug:
             return conn.execute(
-                """SELECT r.content, r.draft, r.created_at
+                """SELECT r.content, p.draft, r.created_at
                    FROM revisions r
                    JOIN pages p ON r.page_id = p.id
                    WHERE p.site_id = %s AND p.slug = %s
@@ -111,7 +111,7 @@ def get_page(site_id, page_slug=None):
                 (site_id, page_slug),
             ).fetchone()
         return conn.execute(
-            """SELECT r.content, r.draft, r.created_at
+            """SELECT r.content, p.draft, r.created_at
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
                WHERE p.site_id = %s
@@ -289,7 +289,7 @@ def get_export_pages(site_id):
                        r.created_at
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
-                   WHERE p.site_id = %s AND r.draft = FALSE
+                   WHERE p.site_id = %s AND p.draft = FALSE
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY page_slug ASC""",
@@ -307,7 +307,7 @@ def get_feed_entries(site_id):
                        r.created_at
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
-                   WHERE p.site_id = %s AND r.draft = FALSE
+                   WHERE p.site_id = %s AND p.draft = FALSE
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY created_at DESC

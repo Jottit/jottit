@@ -24,7 +24,7 @@
     <footer class="editor-footer">
         {% if page_slug %}
         <label class="editor-draft">
-            <input type="checkbox" name="draft" form="editor-form">
+            <input type="checkbox" name="draft" form="editor-form" {% if draft %}checked{% endif %}>
             Keep this a draft
         </label>
         {% else %}

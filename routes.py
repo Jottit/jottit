@@ -258,6 +258,7 @@ def edit_page(slug, site=None):
     if request.method == "GET":
         row = get_page(site["id"], page_slug) if site else None
         content = row["content"] if row else ""
+        draft = row["draft"] if row else False
         title = get_title(content) or ""
         content = get_body(content)
         if not row and not title:
@@ -267,6 +268,7 @@ def edit_page(slug, site=None):
             slug=slug,
             title=title,
             content=content,
+            draft=draft,
             page_slug=page_slug,
             site_path=_site_path,
         )
@@ -703,6 +705,9 @@ def view_page(slug, page_slug=None):
         abort(404)
     unclaimed = site["user_id"] is None
     is_owner = session.get("user_id") == site["user_id"] and not unclaimed
+
+    if row["draft"] and not is_owner and not unclaimed:
+        abort(404)
     show_actions = is_owner or unclaimed
 
     nav_pages = []
