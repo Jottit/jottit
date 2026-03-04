@@ -919,3 +919,108 @@ def test_sites_page_requires_signin(client):
     r = client.get("/sites")
     assert r.status_code == 302
     assert "/signin" in r.headers["Location"]
+
+
+# -- Subdomain page serving --
+
+
+def _create_subdomain_site(client, slug="sdsub", subdomain="testsub"):
+    """Create a claimed site with a subdomain and return (user_id, subdomain host)."""
+    user_id = _create_claimed_site(client, slug)
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post(
+        f"/{slug}/settings",
+        data={"title": "Test Site", "subdomain": subdomain, "nav": ""},
+    )
+    host = f"{subdomain}.jottit.localhost:8000"
+    return user_id, host
+
+
+def test_subdomain_serves_about_page(client):
+    host = _create_unclaimed_subdomain_site(client, "sdab", "aboutsub")
+    client.post(
+        "/sdab/edit",
+        data={"title": "About Us", "content": "Info here", "page": "about"},
+    )
+    r = client.get("/about", headers={"Host": host})
+    assert r.status_code == 200
+    assert b"Info here" in r.data
+
+
+def test_subdomain_serves_talk_page(client):
+    host = _create_unclaimed_subdomain_site(client, "sdtk", "talksub")
+    client.post(
+        "/sdtk/edit",
+        data={"title": "Talk", "content": "Discussion", "page": "talk"},
+    )
+    r = client.get("/talk", headers={"Host": host})
+    assert r.status_code == 200
+    assert b"Discussion" in r.data
+
+
+def _create_unclaimed_subdomain_site(client, slug="sdunc", subdomain="uncsub"):
+    """Create an unclaimed site with a subdomain (via direct DB setup)."""
+    from db import update_site_settings
+
+    client.post(f"/{slug}/edit", data={"title": "T", "content": "X"})
+    site = get_site(slug)
+    update_site_settings(site["id"], "", subdomain, "")
+    host = f"{subdomain}.jottit.localhost:8000"
+    return host
+
+
+def test_subdomain_edit_form_action(client):
+    host = _create_unclaimed_subdomain_site(client, "sdfe", "editsub")
+    r = client.get("/edit", headers={"Host": host})
+    assert r.status_code == 200
+    assert b'action="/edit"' in r.data
+
+
+def test_subdomain_edit_post_redirects_to_root(client):
+    host = _create_unclaimed_subdomain_site(client, "sdep", "editpost")
+    r = client.post(
+        "/edit",
+        data={"title": "New", "content": "Content"},
+        headers={"Host": host},
+    )
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/"
+
+
+def test_subdomain_links_omit_slug(client):
+    host = _create_unclaimed_subdomain_site(client, "sdln", "linksub")
+    # Create a second revision so history link appears
+    client.post(
+        "/sdln/edit",
+        data={"title": "V1", "content": "First"},
+    )
+    client.post(
+        "/sdln/edit",
+        data={"title": "V2", "content": "Second"},
+    )
+    r = client.get("/", headers={"Host": host})
+    assert r.status_code == 200
+    body = r.data.decode()
+    assert 'href="/edit"' in body or 'href="/edit?' in body
+    assert 'href="/history"' in body
+    # Should NOT contain the slug in links
+    assert "/sdln/edit" not in body
+    assert "/sdln/history" not in body
+
+
+def test_subdomain_subpage_links_omit_slug(client):
+    host = _create_unclaimed_subdomain_site(client, "sdsp", "subpagesub")
+    client.post(
+        "/sdsp/edit",
+        data={"title": "About", "content": "Info", "page": "about"},
+    )
+    client.post(
+        "/sdsp/edit",
+        data={"title": "About", "content": "Updated info", "page": "about"},
+    )
+    r = client.get("/about", headers={"Host": host})
+    assert r.status_code == 200
+    body = r.data.decode()
+    assert 'href="/about/history"' in body
+    assert "/sdsp/" not in body
