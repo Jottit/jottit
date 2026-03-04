@@ -10,7 +10,7 @@ from db import (
     get_site,
     save_page,
 )
-from routes import _describe_change, _parse_nav, _slugify
+from utils import describe_change, parse_nav, slugify
 
 # -- Homepage --
 
@@ -156,23 +156,23 @@ def test_view_revision_nonexistent(client):
 
 
 def test_describe_title_change():
-    assert "Changed title" in _describe_change("# Old\n\nBody", "# New\n\nBody")
+    assert "Changed title" in describe_change("# Old\n\nBody", "# New\n\nBody")
 
 
 def test_describe_added_content():
-    assert "Added" in _describe_change("# T\n\nA", "# T\n\nA\nB\nC")
+    assert "Added" in describe_change("# T\n\nA", "# T\n\nA\nB\nC")
 
 
 def test_describe_removed_content():
-    assert "Removed" in _describe_change("# T\n\nA\nB\nC", "# T\n\nA")
+    assert "Removed" in describe_change("# T\n\nA\nB\nC", "# T\n\nA")
 
 
-def test_describe_changed_content():
-    assert "Changed" in _describe_change("# T\n\nHello", "# T\n\nWorld")
+def testdescribe_changed_content():
+    assert "Changed" in describe_change("# T\n\nHello", "# T\n\nWorld")
 
 
 def test_describe_same_content():
-    assert _describe_change("# T\n\nA", "# T\n\nA") == "Edited page"
+    assert describe_change("# T\n\nA", "# T\n\nA") == "Edited page"
 
 
 # -- Claim banner --
@@ -572,8 +572,8 @@ def test_nav_index_links_to_home(client):
     assert b"wikilink-new" not in r.data
 
 
-def test_parse_nav():
-    items = _parse_nav("About\nWriting: blog\n\nContact: contact")
+def testparse_nav():
+    items = parse_nav("About\nWriting: blog\n\nContact: contact")
     assert len(items) == 3
     assert items[0] == {"label": "About", "slug": "about"}
     assert items[1] == {"label": "Writing", "slug": "blog"}
@@ -765,12 +765,12 @@ def test_export_settings_has_link(client):
 # -- Wikilinks --
 
 
-def test_slugify():
-    assert _slugify("Good Writing") == "good-writing"
-    assert _slugify("Hello World!") == "hello-world"
-    assert _slugify("  Multiple   Spaces  ") == "multiple-spaces"
-    assert _slugify("Already-Slugged") == "already-slugged"
-    assert _slugify("123 Numbers") == "123-numbers"
+def testslugify():
+    assert slugify("Good Writing") == "good-writing"
+    assert slugify("Hello World!") == "hello-world"
+    assert slugify("  Multiple   Spaces  ") == "multiple-spaces"
+    assert slugify("Already-Slugged") == "already-slugged"
+    assert slugify("123 Numbers") == "123-numbers"
 
 
 def test_wikilink_existing_page(client):

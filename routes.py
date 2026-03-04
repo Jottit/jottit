@@ -1,17 +1,10 @@
-import difflib
 import io
 import json
 import os
-import re
-import secrets
-import string
 import zipfile
 from email.utils import format_datetime
-from html import escape as html_escape
 from xml.sax.saxutils import escape as xml_escape
 
-import markdown
-import nh3
 from flask import (
     Blueprint,
     Response,
@@ -23,6 +16,8 @@ from flask import (
     request,
     session,
 )
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from db import (
     check_subdomain_available,
@@ -44,10 +39,19 @@ from db import (
     update_site_settings,
     verify_code,
 )
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
 from mail import send_verification_email
+from utils import (
+    RESERVED_SLUGS,
+    RESERVED_SUBDOMAINS,
+    describe_change,
+    generate_slug,
+    get_body,
+    get_title,
+    parse_nav,
+    process_wikilinks,
+    render_markdown,
+    valid_subdomain,
+)
 
 limiter = Limiter(get_remote_address, storage_uri="memory://")
 
@@ -80,92 +84,6 @@ def resolve_subdomain():
     if not site:
         abort(404)
     g.subdomain_site = site
-
-
-RESERVED_SLUGS = {
-    "new",
-    "signin",
-    "signout",
-    "settings",
-    "about",
-    "talk",
-    "sites",
-    "admin",
-    "api",
-    "static",
-    "favicon.ico",
-    "robots.txt",
-}
-
-RESERVED_SUBDOMAINS = {
-    "www",
-    "api",
-    "admin",
-    "mail",
-    "smtp",
-    "ftp",
-    "ns1",
-    "ns2",
-    "blog",
-    "app",
-    "static",
-    "cdn",
-    "assets",
-}
-
-
-def generate_slug(length=6):
-    alphabet = string.ascii_lowercase + string.digits
-    return "".join(secrets.choice(alphabet) for _ in range(length))
-
-
-_SANITIZE_ATTRIBUTES = {**nh3.ALLOWED_ATTRIBUTES, "*": {"class"}}
-
-
-def _render_markdown(text):
-    html = markdown.markdown(text)
-    return nh3.clean(html, link_rel=None, attributes=_SANITIZE_ATTRIBUTES)
-
-
-def _slugify(name):
-    s = name.lower().strip()
-    s = re.sub(r"[^a-z0-9\s-]", "", s)
-    s = re.sub(r"\s+", "-", s)
-    s = re.sub(r"-+", "-", s)
-    return s.strip("-")
-
-
-def _parse_nav(text):
-    items = []
-    for line in (text or "").strip().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        if ":" in line:
-            label, slug = line.split(":", 1)
-            label, slug = label.strip(), slug.strip()
-        else:
-            label = line
-            slug = _slugify(line)
-        if label and slug:
-            items.append({"label": label, "slug": slug})
-    return items
-
-
-def _process_wikilinks(content, site_slug, existing_page_slugs=None):
-    def replace(match):
-        name = match.group(1).strip()
-        if not name:
-            return match.group(0)
-        page_slug = _slugify(name)
-        if not page_slug:
-            return match.group(0)
-        display = html_escape(name)
-        if existing_page_slugs is not None and page_slug not in existing_page_slugs:
-            return f'<a href="/{site_slug}/edit?page={page_slug}" class="wikilink-new">{display}</a>'
-        return f'<a href="/{site_slug}/{page_slug}">{display}</a>'
-
-    return re.sub(r"\[\[([^\[\]]+)\]\]", replace, content)
 
 
 @bp.route("/")
@@ -422,10 +340,6 @@ def settings():
     return render_template("settings.html", sites=sites, email=email)
 
 
-def _valid_subdomain(s):
-    return bool(re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", s))
-
-
 @bp.route("/<slug>/settings", methods=["GET", "POST"])
 def site_settings(slug):
     user_id = session.get("user_id")
@@ -445,7 +359,7 @@ def site_settings(slug):
 
     error = None
     if subdomain:
-        if not _valid_subdomain(subdomain):
+        if not valid_subdomain(subdomain):
             error = "Subdomain must be lowercase letters, numbers, and hyphens only."
         elif subdomain in RESERVED_SUBDOMAINS:
             error = "That subdomain is reserved."
@@ -479,8 +393,8 @@ def export_site(slug):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for page in pages:
-            title = _get_title(page["content"]) or page["page_slug"]
-            body = _get_body(page["content"])
+            title = get_title(page["content"]) or page["page_slug"]
+            body = get_body(page["content"])
             date = page["created_at"].strftime("%Y-%m-%d")
             filename = page["page_slug"] if page["page_slug"] != "-" else "index"
             md = f"---\ntitle: {title}\ndate: {date}\n---\n\n{body}\n"
@@ -492,64 +406,6 @@ def export_site(slug):
         content_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{slug}.zip"'},
     )
-
-
-def _get_title(content):
-    if content.startswith("# "):
-        return content.split("\n", 1)[0][2:]
-    return None
-
-
-def _get_body(content):
-    if content.startswith("# "):
-        parts = content.split("\n", 1)
-        return parts[1].strip() if len(parts) > 1 else ""
-    return content
-
-
-def _describe_change(prev, curr):
-    old_title = _get_title(prev)
-    new_title = _get_title(curr)
-
-    if new_title != old_title and new_title:
-        return f"Changed title to \u201c{new_title}\u201d"
-
-    old_lines = prev.splitlines()
-    new_lines = curr.splitlines()
-    added = []
-    removed = []
-    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
-        None, old_lines, new_lines
-    ).get_opcodes():
-        if tag == "insert":
-            added.extend(new_lines[j1:j2])
-        elif tag == "delete":
-            removed.extend(old_lines[i1:i2])
-        elif tag == "replace":
-            removed.extend(old_lines[i1:i2])
-            added.extend(new_lines[j1:j2])
-
-    # Skip the title line from snippets
-    added = [line for line in added if not line.startswith("# ")]
-    removed = [line for line in removed if not line.startswith("# ")]
-
-    if added and not removed:
-        snippet = added[0].strip()
-        if snippet:
-            return f"Added \u201c{snippet[:60]}\u201d"
-        return f"Added {len(added)} line{'s' if len(added) != 1 else ''}"
-    if removed and not added:
-        snippet = removed[0].strip()
-        if snippet:
-            return f"Removed \u201c{snippet[:60]}\u201d"
-        return f"Removed {len(removed)} line{'s' if len(removed) != 1 else ''}"
-    if added and removed:
-        old_snip = removed[0].strip()
-        new_snip = added[0].strip()
-        if old_snip and new_snip:
-            return f"Changed \u201c{old_snip[:40]}\u201d to \u201c{new_snip[:40]}\u201d"
-
-    return "Edited page"
 
 
 @bp.route("/<slug>/history")
@@ -564,7 +420,7 @@ def page_history(slug):
         if i == 0:
             description = None
         else:
-            description = _describe_change(revisions[i - 1]["content"], rev["content"])
+            description = describe_change(revisions[i - 1]["content"], rev["content"])
         entries.append(
             {
                 "revision": rev["revision"],
@@ -584,7 +440,7 @@ def view_revision(slug, revision):
     if not row:
         abort(404)
 
-    html = _render_markdown(_process_wikilinks(row["content"], slug))
+    html = render_markdown(process_wikilinks(row["content"], slug))
     return render_template(
         "revision.html",
         content=html,
@@ -602,13 +458,13 @@ def _build_feed_entries(slug):
     for entry in entries:
         page_slug = entry["page_slug"]
         page_url = site_url if page_slug == "-" else f"{base_url}/{page_slug}"
-        body = _get_body(entry["content"])
+        body = get_body(entry["content"])
         items.append(
             {
-                "title": _get_title(entry["content"]) or slug,
+                "title": get_title(entry["content"]) or slug,
                 "url": page_url,
                 "body": body,
-                "body_html": _render_markdown(_process_wikilinks(body, slug)),
+                "body_html": render_markdown(process_wikilinks(body, slug)),
                 "created_at": entry["created_at"],
             }
         )
@@ -714,7 +570,7 @@ def view_page(slug, page_slug=None):
     if site:
         pages = get_pages_for_site(site["id"])
         existing_page_slugs = {p["slug"] for p in pages}
-        for item in _parse_nav(site["nav"]):
+        for item in parse_nav(site["nav"]):
             item_slug = item["slug"]
             is_index = item_slug == "index"
             exists = (
@@ -732,9 +588,9 @@ def view_page(slug, page_slug=None):
             )
 
     raw_content = row["content"]
-    page_title = _get_title(raw_content)
-    content = _process_wikilinks(raw_content, slug, existing_page_slugs)
-    html = _render_markdown(content)
+    page_title = get_title(raw_content)
+    content = process_wikilinks(raw_content, slug, existing_page_slugs)
+    html = render_markdown(content)
     html = html.replace("<h1>", '<h1 class="p-name">', 1)
 
     return render_template(
