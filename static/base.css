@@ -66,6 +66,8 @@ table {
     --text: #333333;
     --btn-bg: #222222;
     --btn-text: #f5f5f0;
+    --btn-outline-text: #555;
+    --btn-outline-border: rgba(0, 0, 0, 0.3);
     --muted: rgba(0, 0, 0, 0.4);
     --text-secondary: #666;
     --subtle: rgba(0, 0, 0, 0.1);
@@ -169,8 +171,8 @@ a {
 
 .btn--outline {
     background: transparent;
-    color: var(--muted);
-    border-color: var(--subtle);
+    color: var(--btn-outline-text);
+    border-color: var(--btn-outline-border);
 }
 
 .btn--outline:hover {
