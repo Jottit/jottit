@@ -350,13 +350,19 @@ a {
 }
 
 .signout-form {
-    display: inline;
+    display: flex;
+    align-items: center;
 }
 
 .link-btn {
     font: inherit;
     color: inherit;
     text-decoration: underline;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    vertical-align: baseline;
 }
 
 .link-btn:hover {
