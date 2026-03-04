@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timezone
 
 import sentry_sdk
-from flask import Flask, request
+from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFProtect
 
 from db import init_db
@@ -86,6 +86,11 @@ def relative_time_filter(value):
         return f"{months} month{'s' if months != 1 else ''} ago"
     years = days // 365
     return f"{years} year{'s' if years != 1 else ''} ago"
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html"), 404
 
 
 with app.app_context():

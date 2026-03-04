@@ -405,6 +405,33 @@ a {
     opacity: 0.7;
 }
 
+/* Error pages */
+
+.error-code {
+    font-size: 6rem;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: var(--space-3);
+}
+
+.error-message {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-8);
+}
+
+.error-link {
+    font-size: var(--font-size-md);
+    color: var(--site-color-muted);
+    text-decoration: underline;
+}
+
+.error-link:hover {
+    color: var(--text);
+}
+
 .mb-2 { margin-bottom: var(--space-2); }
 .mb-4 { margin-bottom: var(--space-4); }
 .mb-5 { margin-bottom: var(--space-5); }
