@@ -2,21 +2,47 @@ import os
 import secrets
 from contextlib import contextmanager
 
-import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from utils import INDEX_PAGE_SLUG
 
 DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
 
+_pool = None
+
+
+def _get_pool():
+    global _pool
+    if _pool is None:
+        _pool = ConnectionPool(
+            DATABASE,
+            min_size=2,
+            max_size=10,
+            open=True,
+            kwargs={"row_factory": dict_row, "autocommit": False},
+        )
+    return _pool
+
+
+def reset_pool():
+    """Close and reset the pool (used by tests when DATABASE changes)."""
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
+
 
 @contextmanager
 def get_db():
-    conn = psycopg.connect(DATABASE, row_factory=dict_row, autocommit=False)
+    pool = _get_pool()
+    conn = pool.getconn()
     try:
         yield conn
     finally:
-        conn.close()
+        if conn.info.transaction_status != 0:
+            conn.rollback()
+        pool.putconn(conn)
 
 
 def init_db():
@@ -102,6 +128,23 @@ def get_revisions(site_id, page_slug=None):
                WHERE p.site_id = %s AND p.slug = %s
                ORDER BY r.revision ASC""",
             (site_id, page_slug or INDEX_PAGE_SLUG),
+        ).fetchall()
+
+
+def get_revisions_paginated(site_id, page_slug=None, page=1, per_page=6):
+    offset = (page - 1) * per_page
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT r.revision, r.created_at,
+                      LENGTH(r.content) - LENGTH(REPLACE(r.content, ' ', '')) + 1 AS word_count,
+                      LAG(LENGTH(r.content) - LENGTH(REPLACE(r.content, ' ', '')) + 1)
+                          OVER (ORDER BY r.revision ASC) AS prev_word_count
+               FROM revisions r
+               JOIN pages p ON r.page_id = p.id
+               WHERE p.site_id = %s AND p.slug = %s
+               ORDER BY r.revision DESC
+               LIMIT %s OFFSET %s""",
+            (site_id, page_slug or INDEX_PAGE_SLUG, per_page, offset),
         ).fetchall()
 
 

@@ -58,6 +58,14 @@ def test_edit_subpage_shows_draft_checkbox(client):
     assert b"Keep this a draft" in r.data
 
 
+def test_edit_new_page_prefills_title_from_query(client):
+    client.post("/pf1/edit", data={"title": "Main", "content": "Home"})
+    r = client.get("/pf1/edit?page=about&title=About+me")
+    assert r.status_code == 200
+    assert b'value="About me"' in r.data
+    assert b"autofocus" in r.data.split(b"editor-content")[1]
+
+
 def test_publish_creates_page(client):
     r = client.post("/mypage/edit", data={"title": "Test", "content": "Body"})
     assert r.status_code == 302
@@ -172,6 +180,19 @@ def test_view_revision_nonexistent(client):
     assert r.status_code == 404
 
 
+def test_view_revision_subpage_link(client):
+    client.post("/vrev3/edit", data={"title": "Main", "content": "Home"})
+    client.post(
+        "/vrev3/edit", data={"title": "About V1", "content": "First", "page": "about"}
+    )
+    client.post(
+        "/vrev3/edit", data={"title": "About V2", "content": "Second", "page": "about"}
+    )
+    r = client.get("/vrev3/about/history/1")
+    assert r.status_code == 200
+    assert b'href="/vrev3/about"' in r.data
+
+
 # -- Change descriptions --
 
 
@@ -265,6 +286,39 @@ def test_claim_invalid_code_rejected(client):
     )
     assert r.status_code == 200
     assert b"Invalid" in r.data
+
+
+def test_claim_stores_email_in_session(client):
+    client.post("/cf5/edit", data={"title": "T", "content": "X"})
+    client.post("/cf5/claim", data={"email": "session@example.com"})
+    with client.session_transaction() as sess:
+        assert sess.get("claim_email") == "session@example.com"
+
+
+def test_claim_rejects_email_substitution(client):
+    client.post("/cf6/edit", data={"title": "T", "content": "X"})
+    client.post("/cf6/claim", data={"email": "real@example.com"})
+    code = create_verification_code("real@example.com", "claim")
+    r = client.post(
+        "/cf6/claim/verify", data={"code": code, "email": "attacker@example.com"}
+    )
+    assert r.status_code == 302
+    assert "/cf6/claim" in r.headers["Location"]
+
+
+def test_signin_stores_email_in_session(client):
+    client.post("/signin", data={"email": "signin@example.com"})
+    with client.session_transaction() as sess:
+        assert sess.get("signin_email") == "signin@example.com"
+
+
+def test_claim_cleans_up_session_email(client):
+    client.post("/cf7/edit", data={"title": "T", "content": "X"})
+    client.post("/cf7/claim", data={"email": "clean@example.com"})
+    code = create_verification_code("clean@example.com", "claim")
+    client.post("/cf7/claim/verify", data={"code": code, "email": "clean@example.com"})
+    with client.session_transaction() as sess:
+        assert "claim_email" not in sess
 
 
 # -- Edit protection --
@@ -785,7 +839,7 @@ def test_wikilink_nonexisting_page(client):
     client.post("/wl2/edit", data={"title": "", "content": "See [[New Page]]"})
     r = client.get("/wl2")
     assert b'class="wikilink-new"' in r.data
-    assert b'href="/wl2/edit?page=new-page"' in r.data
+    assert b'href="/wl2/edit?page=new-page&amp;title=New%20Page"' in r.data
     assert b"New Page</a>" in r.data
 
 

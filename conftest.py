@@ -22,6 +22,7 @@ def test_db():
     conn.close()
 
     db_module.DATABASE = f"dbname={TEST_DB}"
+    db_module.reset_pool()
 
     with db_module.get_db() as conn:
         with open("schema.sql") as f:
@@ -30,6 +31,7 @@ def test_db():
 
     yield
 
+    db_module.reset_pool()
     db_module.DATABASE = "dbname=jottit_dev"
 
     conn = psycopg.connect("dbname=postgres", autocommit=True)

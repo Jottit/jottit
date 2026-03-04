@@ -4,6 +4,7 @@ Flask-WTF==1.2.2
 Markdown==3.10.2
 nh3==0.2.21
 psycopg[binary]==3.3.3
+psycopg_pool==3.3.0
 gunicorn==25.1.0
 resend==2.7.0
 sentry-sdk[flask]

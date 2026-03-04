@@ -92,7 +92,9 @@ def process_wikilinks(content, site_slug, existing_page_slugs=None):
             return match.group(0)
         display = html_escape(name)
         if existing_page_slugs is not None and page_slug not in existing_page_slugs:
-            return f'<a href="/{site_slug}/edit?page={page_slug}" class="wikilink-new">{display}</a>'
+            from urllib.parse import quote
+
+            return f'<a href="/{site_slug}/edit?page={page_slug}&amp;title={quote(name)}" class="wikilink-new">{display}</a>'
         return f'<a href="/{site_slug}/{page_slug}">{display}</a>'
 
     return re.sub(r"\[\[([^\[\]]+)\]\]", replace, content)

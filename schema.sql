@@ -50,3 +50,5 @@ CREATE TABLE IF NOT EXISTS verification_codes (
 CREATE INDEX IF NOT EXISTS sites_user_id_idx ON sites (user_id);
 CREATE INDEX IF NOT EXISTS pages_site_id_idx ON pages (site_id);
 CREATE INDEX IF NOT EXISTS revisions_page_id_idx ON revisions (page_id);
+CREATE INDEX IF NOT EXISTS revisions_page_revision_idx ON revisions (page_id, revision DESC);
+CREATE INDEX IF NOT EXISTS revisions_draft_created_idx ON revisions (draft, created_at DESC);

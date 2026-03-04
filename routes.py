@@ -31,7 +31,7 @@ from db import (
     get_pages_for_site,
     get_revision,
     get_revision_count,
-    get_revisions,
+    get_revisions_paginated,
     get_site,
     get_site_by_subdomain,
     get_sites_for_user,
@@ -243,6 +243,8 @@ def edit_page(slug, site=None):
         content = row["content"] if row else ""
         title = get_title(content) or ""
         content = get_body(content)
+        if not row and not title:
+            title = request.args.get("title", "")
         return render_template(
             "edit.html",
             slug=slug,
@@ -284,6 +286,7 @@ def claim_page(slug, site=None):
 
     code = create_verification_code(email, "claim")
     send_verification_email(email, code)
+    session["claim_email"] = email
     return render_template(
         "verify.html", slug=slug, email=email, action=f"/{slug}/claim/verify"
     )
@@ -299,6 +302,11 @@ def claim_verify(slug, site=None):
 
     email = request.form.get("email") or session.get("claim_email")
     if not email:
+        return redirect(f"/{slug}/claim")
+
+    session_email = session.get("claim_email")
+    form_email = request.form.get("email")
+    if session_email and form_email and form_email != session_email:
         return redirect(f"/{slug}/claim")
 
     if request.method == "GET":
@@ -318,6 +326,7 @@ def claim_verify(slug, site=None):
 
     user_id = find_or_create_user(email)
     claim_site(site["id"], user_id)
+    session.pop("claim_email", None)
     session["user_id"] = user_id
     return redirect(f"/{slug}")
 
@@ -334,6 +343,7 @@ def signin():
 
     code = create_verification_code(email, "signin")
     send_verification_email(email, code)
+    session["signin_email"] = email
     return render_template("verify.html", email=email, action="/signin/verify")
 
 
@@ -455,33 +465,29 @@ def page_history(slug, page_slug=None, site=None):
         site = get_site(slug)
     if not site:
         abort(404)
-    revisions = get_revisions(site["id"], page_slug)
-
-    if not revisions:
+    total = get_revision_count(site["id"], page_slug)
+    if total == 0:
         abort(404)
 
-    entries = []
-    for i, rev in enumerate(revisions):
-        words = len(rev["content"].split())
-        if i == 0:
-            delta = None
-        else:
-            prev_words = len(revisions[i - 1]["content"].split())
-            delta = words - prev_words
-        entries.append(
+    per_page = 6
+    page = request.args.get("page", 1, type=int)
+    total_pages = (total + per_page - 1) // per_page
+    page = max(1, min(page, total_pages))
+
+    revisions = get_revisions_paginated(site["id"], page_slug, page, per_page)
+
+    paginated = []
+    for rev in revisions:
+        word_count = rev["word_count"]
+        prev_word_count = rev["prev_word_count"]
+        delta = word_count - prev_word_count if prev_word_count is not None else None
+        paginated.append(
             {
                 "revision": rev["revision"],
                 "created_at": rev["created_at"],
                 "delta": delta,
             }
         )
-    entries.reverse()
-
-    per_page = 6
-    page = request.args.get("page", 1, type=int)
-    total_pages = (len(entries) + per_page - 1) // per_page
-    page = max(1, min(page, total_pages))
-    paginated = entries[(page - 1) * per_page : page * per_page]
 
     return render_template(
         "history.html",
@@ -516,6 +522,8 @@ def view_revision(slug, revision, page_slug=None, site=None):
         "revision.html",
         content=html,
         slug=slug,
+        page_slug=page_slug,
+        site_path=_site_path,
         revision=row["revision"],
         created_at=row["created_at"],
     )

@@ -29,7 +29,7 @@
             {% elif page.exists %}
             <a href="{{ site_path(slug, page.slug) }}">{{ page.title }}</a>
             {% else %}
-            <a href="{{ site_path(slug, 'edit') }}?page={{ page.slug }}" class="wikilink-new">{{ page.title }}</a>
+            <a href="{{ site_path(slug, 'edit') }}?page={{ page.slug }}&amp;title={{ page.title | urlencode }}" class="wikilink-new">{{ page.title }}</a>
             {% endif %}
             {% endfor %}
         </nav>
