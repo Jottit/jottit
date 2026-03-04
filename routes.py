@@ -346,12 +346,12 @@ def site_settings(slug):
     nav = request.form.get("nav", "").strip()
 
     error = None
-    if subdomain:
+    if subdomain and subdomain != site["subdomain"]:
         if not valid_subdomain(subdomain):
             error = "Subdomain must be lowercase letters, numbers, and hyphens only."
         elif subdomain in RESERVED_SUBDOMAINS:
             error = "That subdomain is reserved."
-        elif not check_subdomain_available(subdomain, site["id"]):
+        elif not check_subdomain_available(subdomain):
             error = "That subdomain is already taken."
 
     if error:

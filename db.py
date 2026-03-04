@@ -265,15 +265,9 @@ def get_feed_entries(slug):
         ).fetchall()
 
 
-def check_subdomain_available(subdomain, exclude_site_id=None):
+def check_subdomain_available(subdomain):
     with get_db() as conn:
-        if exclude_site_id:
-            row = conn.execute(
-                "SELECT id FROM sites WHERE subdomain = %s AND id != %s",
-                (subdomain, exclude_site_id),
-            ).fetchone()
-        else:
-            row = conn.execute(
-                "SELECT id FROM sites WHERE subdomain = %s", (subdomain,)
-            ).fetchone()
+        row = conn.execute(
+            "SELECT id FROM sites WHERE subdomain = %s", (subdomain,)
+        ).fetchone()
         return row is None
