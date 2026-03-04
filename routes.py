@@ -560,7 +560,7 @@ def view_page(slug, page_slug=None):
         existing_page_slugs = {p["slug"] for p in pages}
         for item in parse_nav(site["nav"]):
             item_slug = item["slug"]
-            is_index = item_slug == "index"
+            is_index = item_slug == "/"
             exists = (
                 "-" in existing_page_slugs
                 if is_index

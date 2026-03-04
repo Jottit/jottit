@@ -549,7 +549,7 @@ def test_nav_index_links_to_home(client):
 
     client.post(
         "/ss8d/settings",
-        data={"title": "", "subdomain": "", "nav": "Home: index"},
+        data={"title": "", "subdomain": "", "nav": "Home: /"},
     )
     r = client.get("/ss8d")
     assert b'href="/ss8d"' in r.data
