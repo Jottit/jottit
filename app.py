@@ -13,6 +13,7 @@ if dsn:
     sentry_sdk.init(dsn=dsn, send_default_pii=False)
 
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 app.secret_key = os.environ.get("SECRET_KEY")
 if not app.secret_key:
     if os.environ.get("FLASK_DEBUG") == "1":

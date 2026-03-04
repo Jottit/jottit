@@ -8,17 +8,14 @@
 <div class="panel-page">
     <a href="{{ site_path(slug, page_slug) }}" class="panel-back">&larr; Back</a>
     <h1 class="title">Revision history</h1>
-    <div class="panel panel--wide">
-        <ul class="item-list">
+    <div class="panel">
+        <ul class="sites-menu">
             {% for rev in revisions %}
-            <li class="item history-item">
-                <a href="{{ site_path(slug, page_slug, 'history', rev.revision) }}">#{{ rev.revision }}</a>
-                <span class="history-time">{{ rev.created_at | relative_time }}</span>
-                {% if rev.description %}
-                <span>{{ rev.description }}</span>
-                {% else %}
-                <em>Created page</em>
-                {% endif %}
+            <li>
+                <a href="{{ site_path(slug, page_slug, 'history', rev.revision) }}" class="sites-menu-link">
+                    <span class="sites-menu-name">#{{ rev.revision }} &middot; {{ rev.created_at | relative_time }}</span>
+                    <span class="sites-menu-url">{% if rev.delta is none %}Created{% elif rev.delta > 0 %}+{{ rev.delta }} words{% elif rev.delta < 0 %}{{ rev.delta }} words{% else %}edited{% endif %}</span>
+                </a>
             </li>
             {% endfor %}
         </ul>

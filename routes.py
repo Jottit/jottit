@@ -44,7 +44,6 @@ from utils import (
     INDEX_PAGE_SLUG,
     RESERVED_SLUGS,
     RESERVED_SUBDOMAINS,
-    describe_change,
     generate_slug,
     get_body,
     get_title,
@@ -79,7 +78,7 @@ def _site_path(slug, *parts):
     suffix = "/".join(str(p) for p in parts if p)
     if suffix:
         return f"{prefix}/{suffix}"
-    return f"{prefix}/"
+    return prefix or "/"
 
 
 @bp.before_request
@@ -446,15 +445,17 @@ def page_history(slug, page_slug=None, site=None):
 
     entries = []
     for i, rev in enumerate(revisions):
+        words = len(rev["content"].split())
         if i == 0:
-            description = None
+            delta = None
         else:
-            description = describe_change(revisions[i - 1]["content"], rev["content"])
+            prev_words = len(revisions[i - 1]["content"].split())
+            delta = words - prev_words
         entries.append(
             {
                 "revision": rev["revision"],
                 "created_at": rev["created_at"],
-                "description": description,
+                "delta": delta,
             }
         )
     entries.reverse()

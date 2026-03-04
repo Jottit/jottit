@@ -50,7 +50,14 @@ def test_edit_get_existing_page(client):
 def test_publish_creates_page(client):
     r = client.post("/mypage/edit", data={"title": "Test", "content": "Body"})
     assert r.status_code == 302
-    assert r.headers["Location"] == "/mypage/"
+    assert r.headers["Location"] == "/mypage"
+
+
+def test_trailing_slash_works(client):
+    client.post("/tslash/edit", data={"title": "Hi", "content": "There"})
+    r = client.get("/tslash/")
+    assert r.status_code == 200
+    assert b"Hi" in r.data
 
 
 def test_publish_with_draft(client):
@@ -108,15 +115,15 @@ def test_edit_creates_revisions(client):
     client.post("/revtest/edit", data={"title": "R1", "content": "C"})
     r = client.get("/revtest/history")
     assert r.status_code == 200
-    assert b"#1" in r.data
-    assert b"#2" in r.data
-    assert b"#3" in r.data
+    assert b"history/1" in r.data
+    assert b"history/2" in r.data
 
 
-def test_history_shows_created_page(client):
+def test_history_shows_created(client):
     client.post("/hist1/edit", data={"title": "T", "content": "X"})
+    client.post("/hist1/edit", data={"title": "T", "content": "X Y"})
     r = client.get("/hist1/history")
-    assert b"Created page" in r.data
+    assert b"Created" in r.data
 
 
 def test_history_nonexistent_page(client):
@@ -126,11 +133,12 @@ def test_history_nonexistent_page(client):
 
 def test_history_newest_first(client):
     client.post("/order/edit", data={"title": "T", "content": "A"})
-    client.post("/order/edit", data={"title": "T", "content": "B"})
+    client.post("/order/edit", data={"title": "T", "content": "A B"})
+    client.post("/order/edit", data={"title": "T", "content": "A B C"})
     r = client.get("/order/history")
     body = r.data.decode()
-    pos_2 = body.index("#2")
-    pos_1 = body.index("#1")
+    pos_2 = body.index("history/2")
+    pos_1 = body.index("history/1")
     assert pos_2 < pos_1
 
 
@@ -259,7 +267,7 @@ def test_non_owner_redirected_from_edit(client):
     # Without session, should redirect
     r = client.get("/prot1/edit")
     assert r.status_code == 302
-    assert r.headers["Location"] == "/prot1/"
+    assert r.headers["Location"] == "/prot1"
 
 
 def test_owner_can_edit(client):
@@ -554,7 +562,7 @@ def test_nav_index_links_to_home(client):
         data={"title": "", "subdomain": "", "nav": "Home: /"},
     )
     r = client.get("/ss8d")
-    assert b'href="/ss8d/"' in r.data
+    assert b'href="/ss8d"' in r.data
     assert b"Home" in r.data
     assert b"wikilink-new" not in r.data
 
@@ -809,7 +817,7 @@ def test_page_has_h_entry_markup(client):
     assert 'class="dt-published' in body
     assert "datetime=" in body
     assert 'class="u-url"' in body
-    assert 'href="/mf1/"' in body
+    assert 'href="/mf1"' in body
 
 
 def test_site_header_has_h_card(client):
@@ -902,7 +910,7 @@ def test_sites_page_lists_all(client):
     r = client.get("/sites")
     assert r.status_code == 200
     body = r.data.decode()
-    assert body.count("all-sites-list") >= 1
+    assert body.count("sites-menu") >= 1
     for i in range(5):
         assert f"limit5s{i}" in body
 

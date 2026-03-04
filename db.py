@@ -43,7 +43,8 @@ def save_page(slug, content, draft, page_slug=None):
                     ).fetchone()
             else:
                 page = conn.execute(
-                    "SELECT id FROM pages WHERE site_id = %s", (site["id"],)
+                    "SELECT id FROM pages WHERE site_id = %s AND slug = %s",
+                    (site["id"], INDEX_PAGE_SLUG),
                 ).fetchone()
             conn.execute(
                 """INSERT INTO revisions (page_id, revision, content, draft)
