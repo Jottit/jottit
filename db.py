@@ -20,7 +20,7 @@ def _get_pool():
             min_size=2,
             max_size=10,
             open=True,
-            kwargs={"row_factory": dict_row, "autocommit": False},
+            kwargs={"row_factory": dict_row, "autocommit": False, "connect_timeout": 5},
         )
     return _pool
 
