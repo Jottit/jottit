@@ -460,12 +460,20 @@ def page_history(slug, page_slug=None, site=None):
         )
     entries.reverse()
 
+    per_page = 6
+    page = request.args.get("page", 1, type=int)
+    total_pages = (len(entries) + per_page - 1) // per_page
+    page = max(1, min(page, total_pages))
+    paginated = entries[(page - 1) * per_page : page * per_page]
+
     return render_template(
         "history.html",
         slug=slug,
         page_slug=page_slug,
         site_path=_site_path,
-        revisions=entries,
+        revisions=paginated,
+        page=page,
+        total_pages=total_pages,
     )
 
 

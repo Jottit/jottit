@@ -449,6 +449,12 @@
     font-size: var(--font-size-sm);
 }
 
+.history-pagination {
+    display: flex;
+    justify-content: space-between;
+    padding-top: var(--space-5);
+}
+
 /* Auth pages (claim, signin, verify) */
 
 .auth-form {

@@ -19,6 +19,16 @@
             </li>
             {% endfor %}
         </ul>
+        {% if total_pages > 1 %}
+        <div class="history-pagination">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}" class="btn btn--outline btn--sm">&larr; Newer</a>
+            {% endif %}
+            {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}" class="btn btn--outline btn--sm">Older &rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
