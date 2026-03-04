@@ -48,7 +48,7 @@ def get_db():
 def init_db():
     with get_db() as conn:
         with open("schema.sql") as f:
-            conn.execute(f.read())
+            conn.execute(f.read(), prepare=False)
         conn.commit()
 
 
