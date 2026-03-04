@@ -26,7 +26,6 @@ from db import (
     find_or_create_user,
     get_export_pages,
     get_feed_entries,
-    get_latest_revision,
     get_page,
     get_pages_for_site,
     get_revision,
@@ -206,7 +205,7 @@ def edit_page(slug):
     )
 
     if request.method == "GET":
-        row = get_latest_revision(slug, page_slug)
+        row = get_page(slug, page_slug)
         content = row["content"] if row else ""
         title = get_title(content) or ""
         content = get_body(content)

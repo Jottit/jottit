@@ -24,27 +24,6 @@ def init_db():
         conn.commit()
 
 
-def get_latest_revision(slug, page_slug=None):
-    with get_db() as conn:
-        if page_slug:
-            return conn.execute(
-                """SELECT r.content, r.draft FROM revisions r
-                   JOIN pages p ON r.page_id = p.id
-                   JOIN sites s ON p.site_id = s.id
-                   WHERE s.slug = %s AND p.slug = %s
-                   ORDER BY r.revision DESC LIMIT 1""",
-                (slug, page_slug),
-            ).fetchone()
-        return conn.execute(
-            """SELECT r.content, r.draft FROM revisions r
-               JOIN pages p ON r.page_id = p.id
-               JOIN sites s ON p.site_id = s.id
-               WHERE s.slug = %s
-               ORDER BY r.revision DESC LIMIT 1""",
-            (slug,),
-        ).fetchone()
-
-
 def save_page(slug, content, draft, page_slug=None):
     with get_db() as conn:
         site = conn.execute("SELECT id FROM sites WHERE slug = %s", (slug,)).fetchone()
