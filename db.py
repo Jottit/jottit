@@ -226,7 +226,7 @@ def create_page(site_id, slug):
         return row["id"]
 
 
-def get_export_pages(slug):
+def get_export_pages(site_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT * FROM (
@@ -236,12 +236,11 @@ def get_export_pages(slug):
                        r.created_at
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
-                   JOIN sites s ON p.site_id = s.id
-                   WHERE s.slug = %s AND r.draft = FALSE
+                   WHERE p.site_id = %s AND r.draft = FALSE
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY page_slug ASC""",
-            (slug,),
+            (site_id,),
         ).fetchall()
 
 

@@ -3,6 +3,7 @@ import json
 import os
 import zipfile
 from email.utils import format_datetime
+from functools import wraps
 from xml.sax.saxutils import escape as xml_escape
 
 from flask import (
@@ -328,12 +329,21 @@ def signout():
     return redirect("/")
 
 
+def _require_site_owner(f):
+    @wraps(f)
+    def decorated(slug, *args, **kwargs):
+        user_id = session.get("user_id")
+        site = get_site(slug)
+        if not site or not user_id or site["user_id"] != user_id:
+            return redirect(f"/{slug}")
+        return f(slug, site, *args, **kwargs)
+
+    return decorated
+
+
 @bp.route("/<slug>/settings", methods=["GET", "POST"])
-def site_settings(slug):
-    user_id = session.get("user_id")
-    site = get_site(slug)
-    if not site or not user_id or site["user_id"] != user_id:
-        return redirect(f"/{slug}")
+@_require_site_owner
+def site_settings(slug, site):
 
     if request.method == "GET":
         nav_text = site["nav"] or ""
@@ -371,13 +381,10 @@ def site_settings(slug):
 
 
 @bp.route("/<slug>/export")
-def export_site(slug):
-    user_id = session.get("user_id")
-    site = get_site(slug)
-    if not site or not user_id or site["user_id"] != user_id:
-        return redirect(f"/{slug}")
+@_require_site_owner
+def export_site(slug, site):
 
-    pages = get_export_pages(slug)
+    pages = get_export_pages(site["id"])
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for page in pages:
