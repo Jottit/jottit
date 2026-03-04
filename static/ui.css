@@ -28,13 +28,16 @@
     text-decoration: none;
 }
 
-.public-header a {
-    font-size: var(--font-size-lg);
-    color: var(--muted);
+.public-header a,
+.public-header .link-btn {
+    font-size: 1rem;
+    color: var(--text);
+    text-decoration: none;
 }
 
-.public-header a:hover {
-    color: var(--text);
+.public-header a:hover,
+.public-header .link-btn:hover {
+    opacity: 0.7;
 }
 
 /* Public pages (about, sponsor, etc.) */

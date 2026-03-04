@@ -214,7 +214,7 @@ def edit_page(slug, site=None):
         abort(404)
     if site and site["user_id"] is not None:
         if session.get("user_id") != site["user_id"]:
-            return redirect(f"/{slug}")
+            return redirect(_site_path(slug))
 
     page_slug = (
         request.args.get("page")
@@ -228,7 +228,12 @@ def edit_page(slug, site=None):
         title = get_title(content) or ""
         content = get_body(content)
         return render_template(
-            "edit.html", slug=slug, title=title, content=content, page_slug=page_slug
+            "edit.html",
+            slug=slug,
+            title=title,
+            content=content,
+            page_slug=page_slug,
+            site_path=_site_path,
         )
 
     title = request.form.get("title", "").strip()
@@ -243,9 +248,7 @@ def edit_page(slug, site=None):
     if is_new and session.get("user_id"):
         new_site = get_site(slug)
         claim_site(new_site["id"], session["user_id"])
-    if page_slug:
-        return redirect(f"/{slug}/{page_slug}")
-    return redirect(f"/{slug}")
+    return redirect(_site_path(slug, page_slug))
 
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])

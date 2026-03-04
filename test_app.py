@@ -50,7 +50,7 @@ def test_edit_get_existing_page(client):
 def test_publish_creates_page(client):
     r = client.post("/mypage/edit", data={"title": "Test", "content": "Body"})
     assert r.status_code == 302
-    assert r.headers["Location"] == "/mypage"
+    assert r.headers["Location"] == "/mypage/"
 
 
 def test_publish_with_draft(client):
@@ -259,7 +259,7 @@ def test_non_owner_redirected_from_edit(client):
     # Without session, should redirect
     r = client.get("/prot1/edit")
     assert r.status_code == 302
-    assert r.headers["Location"] == "/prot1"
+    assert r.headers["Location"] == "/prot1/"
 
 
 def test_owner_can_edit(client):
