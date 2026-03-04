@@ -47,6 +47,17 @@ def test_edit_get_existing_page(client):
     assert b"World" in r.data
 
 
+def test_edit_home_page_hides_draft_checkbox(client):
+    r = client.get("/abc13/edit")
+    assert b"Keep this a draft" not in r.data
+
+
+def test_edit_subpage_shows_draft_checkbox(client):
+    client.post("/abc14/edit", data={"title": "Main", "content": "Home"})
+    r = client.get("/abc14/edit?page=about")
+    assert b"Keep this a draft" in r.data
+
+
 def test_publish_creates_page(client):
     r = client.post("/mypage/edit", data={"title": "Test", "content": "Body"})
     assert r.status_code == 302

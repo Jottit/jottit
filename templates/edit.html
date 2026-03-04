@@ -22,10 +22,14 @@
         </div>
     </div>
     <footer class="editor-footer">
+        {% if page_slug %}
         <label class="editor-draft">
             <input type="checkbox" name="draft" form="editor-form">
             Keep this a draft
         </label>
+        {% else %}
+        <span></span>
+        {% endif %}
         <div class="editor-actions">
             <a href="{{ site_path(slug, page_slug) }}" class="btn btn--outline">Cancel</a>
             <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
