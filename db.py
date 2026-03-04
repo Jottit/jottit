@@ -114,9 +114,9 @@ def get_page(site_id, page_slug=None):
             """SELECT r.content, p.draft, r.created_at
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.site_id = %s
+               WHERE p.site_id = %s AND p.slug = %s
                ORDER BY r.revision DESC LIMIT 1""",
-            (site_id,),
+            (site_id, INDEX_PAGE_SLUG),
         ).fetchone()
 
 

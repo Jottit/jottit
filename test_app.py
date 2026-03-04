@@ -756,7 +756,7 @@ def test_page_has_feed_discovery_links(client):
 
 
 def test_draft_hidden_from_non_owner(client):
-    user_id = _create_claimed_site(client, "dv1")
+    _create_claimed_site(client, "dv1")
     save_page("dv1", "# Secret\n\nDraft content", True, "secret")
     r = client.get("/dv1/secret")
     assert r.status_code == 404
@@ -972,6 +972,16 @@ def test_view_subpage(client):
     r = client.get("/sp1/about")
     assert r.status_code == 200
     assert b"Info" in r.data
+
+
+def test_home_page_not_replaced_by_subpage(client):
+    client.post("/sp3/edit", data={"title": "Home", "content": "Welcome"})
+    client.post(
+        "/sp3/edit", data={"title": "Contact", "content": "Email me", "page": "contact"}
+    )
+    r = client.get("/sp3")
+    assert b"Welcome" in r.data
+    assert b"Email me" not in r.data
 
 
 def test_view_subpage_404(client):
