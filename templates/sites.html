@@ -4,15 +4,16 @@
 
 {% block body %}
 <div class="panel-page">
-    <a href="/" class="sites-back">&larr; Back</a>
-    <div class="sites-list-container">
+    <a href="/" class="panel-back">&larr; Back</a>
+    <h1 class="title">My sites</h1>
+    <div class="panel panel--wide">
         {% if sites %}
-        <ul class="all-sites-list">
+        <ul class="sites-menu">
             {% for site in sites %}
             <li>
-                <a href="/{{ site.slug }}" class="all-sites-link">
-                    <span>{{ site.title or site.slug }}</span>
-                    <span class="home-sites-domain">{% if site.subdomain %}{{ site.subdomain }}.jottit.org{% else %}jottit.org/{{ site.slug }}{% endif %}</span>
+                <a href="/{{ site.slug }}" class="sites-menu-link">
+                    <span class="sites-menu-name{% if not site.title %} sites-menu-name--untitled{% endif %}">{{ site.title or site.slug }}</span>
+                    <span class="sites-menu-url">{% if site.subdomain %}{{ site.subdomain }}.jottit.org{% else %}jottit.org/{{ site.slug }}{% endif %}</span>
                 </a>
             </li>
             {% endfor %}

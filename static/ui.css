@@ -156,34 +156,39 @@
     white-space: nowrap;
 }
 
-.all-sites-list {
+.sites-menu {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.all-sites-list li {
-    border: 1px solid var(--subtle);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--space-5);
+.sites-menu li {
+    border-bottom: 1px solid var(--subtle);
 }
 
-.all-sites-link {
+.sites-menu li:last-child {
+    border-bottom: none;
+}
+
+.sites-menu-link {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    gap: var(--space-5);
-    padding: var(--space-3) var(--space-6);
-    font-size: var(--font-size-md);
+    align-items: center;
+    padding: var(--space-5) 0;
 }
 
-.sites-back {
-    margin-bottom: var(--space-5);
+.sites-menu-name {
+    font-weight: 600;
 }
 
-.sites-list-container {
-    width: 100%;
-    max-width: 380px;
+.sites-menu-name--untitled {
+    font-weight: normal;
+    color: var(--muted);
+}
+
+.sites-menu-url {
+    color: var(--muted);
+    font-size: var(--font-size-sm);
 }
 
 .view-all-link {
