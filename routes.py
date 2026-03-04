@@ -117,11 +117,15 @@ def home():
 
 @bp.route("/about")
 def about():
+    if g.subdomain_site:
+        return view_page("about")
     return render_template("about.html", signed_in="user_id" in session)
 
 
 @bp.route("/talk")
 def talk():
+    if g.subdomain_site:
+        return view_page("talk")
     return render_template("talk.html", signed_in="user_id" in session)
 
 
