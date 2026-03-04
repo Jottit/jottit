@@ -6,15 +6,14 @@
 {% endblock %}
 
 {% block body %}
-{% for message in get_flashed_messages() %}
-<div class="toast" id="toast">{{ message }}</div>
-<script src="/static/toast.js"></script>
-{% endfor %}
 <div class="panel-page">
     <a href="/{{ slug }}" class="panel-back">&larr; Back</a>
     <h1 class="title">Settings</h1>
     <div class="panel">
 
+        {% for message in get_flashed_messages() %}
+        <p class="settings-success">{{ message }}</p>
+        {% endfor %}
         {% if error %}
         <p class="error">{{ error }}</p>
         {% endif %}

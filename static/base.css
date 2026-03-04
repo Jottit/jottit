@@ -74,6 +74,7 @@ table {
     --subtle-hover: rgba(0, 0, 0, 0.2);
     --border: #eee;
     --error: #c0392b;
+    --success: #27ae60;
     --placeholder: #ccc;
     --code-bg: #f5f5f5;
 

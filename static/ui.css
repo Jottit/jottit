@@ -525,13 +525,36 @@
 .settings-subdomain-row {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    background: var(--bg-surface);
+    border: 1px solid var(--subtle);
+    border-radius: 4px;
+}
+
+.settings-subdomain-row .input {
+    border: none;
+    background: transparent;
+}
+
+.settings-subdomain-row .input:focus {
+    border: none;
 }
 
 .settings-subdomain-suffix {
+    padding-right: var(--space-3);
     font-size: var(--font-size-sm);
-    color: var(--site-color-muted);
+    color: var(--muted);
     white-space: nowrap;
+}
+
+.settings-success {
+    color: var(--success);
+    background: rgba(39, 174, 96, 0.1);
+    font-size: var(--font-size-md);
+    padding: var(--space-3) var(--space-12);
+    margin: calc(-1 * var(--space-12));
+    margin-bottom: var(--space-6);
+    border-radius: var(--radius-pill) var(--radius-pill) 0 0;
+    text-align: center;
 }
 
 .settings-save {
