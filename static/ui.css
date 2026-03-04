@@ -160,17 +160,17 @@
 }
 
 .all-sites-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--space-5);
-    padding: var(--space-3) var(--space-6);
     border: 1px solid var(--subtle);
     border-radius: var(--radius-lg);
     margin-bottom: var(--space-5);
 }
 
-.all-sites-list a {
+.all-sites-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-5);
+    padding: var(--space-3) var(--space-6);
     font-size: var(--font-size-md);
 }
 

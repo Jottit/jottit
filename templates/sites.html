@@ -10,8 +10,10 @@
         <ul class="all-sites-list">
             {% for site in sites %}
             <li>
-                <a href="/{{ site.slug }}">{{ site.title or site.slug }}</a>
-                <span class="home-sites-domain">{% if site.subdomain %}{{ site.subdomain }}.jottit.org{% else %}jottit.org/{{ site.slug }}{% endif %}</span>
+                <a href="/{{ site.slug }}" class="all-sites-link">
+                    <span>{{ site.title or site.slug }}</span>
+                    <span class="home-sites-domain">{% if site.subdomain %}{{ site.subdomain }}.jottit.org{% else %}jottit.org/{{ site.slug }}{% endif %}</span>
+                </a>
             </li>
             {% endfor %}
         </ul>
