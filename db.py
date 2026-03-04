@@ -93,24 +93,35 @@ def get_page(site_id, page_slug=None):
         ).fetchone()
 
 
-def get_revisions(site_id):
+def get_revisions(site_id, page_slug=None):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.revision, r.created_at, r.content FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.site_id = %s
+               WHERE p.site_id = %s AND p.slug = %s
                ORDER BY r.revision ASC""",
-            (site_id,),
+            (site_id, page_slug or INDEX_PAGE_SLUG),
         ).fetchall()
 
 
-def get_revision(site_id, revision):
+def get_revision_count(site_id, page_slug=None):
+    with get_db() as conn:
+        row = conn.execute(
+            """SELECT COUNT(*) AS cnt FROM revisions r
+               JOIN pages p ON r.page_id = p.id
+               WHERE p.site_id = %s AND p.slug = %s""",
+            (site_id, page_slug or INDEX_PAGE_SLUG),
+        ).fetchone()
+        return row["cnt"]
+
+
+def get_revision(site_id, revision, page_slug=None):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.content, r.created_at, r.revision FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.site_id = %s AND r.revision = %s""",
-            (site_id, revision),
+               WHERE p.site_id = %s AND p.slug = %s AND r.revision = %s""",
+            (site_id, page_slug or INDEX_PAGE_SLUG, revision),
         ).fetchone()
 
 

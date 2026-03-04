@@ -85,6 +85,7 @@ def test_view_nonexistent_page(client):
 
 def test_view_page_shows_actions_for_owner(client):
     client.post("/owned/edit", data={"title": "Mine", "content": "Content"})
+    client.post("/owned/edit", data={"title": "Mine", "content": "Updated"})
     r = client.get("/owned")
     assert b"Edit" in r.data
     assert b"History" in r.data

@@ -30,6 +30,7 @@ from db import (
     get_page,
     get_pages_for_site,
     get_revision,
+    get_revision_count,
     get_revisions,
     get_site,
     get_site_by_subdomain,
@@ -411,12 +412,18 @@ def export_site(slug, site):
 
 
 @bp.route("/<slug>/history")
-def page_history(slug, site=None):
+@bp.route("/<slug>/<page_slug>/history")
+def page_history(slug, page_slug=None, site=None):
+    subdomain_site = g.subdomain_site
+    if subdomain_site and slug != subdomain_site["slug"]:
+        page_slug = slug
+        slug = subdomain_site["slug"]
+        site = subdomain_site
     if site is None:
         site = get_site(slug)
     if not site:
         abort(404)
-    revisions = get_revisions(site["id"])
+    revisions = get_revisions(site["id"], page_slug)
 
     if not revisions:
         abort(404)
@@ -436,16 +443,24 @@ def page_history(slug, site=None):
         )
     entries.reverse()
 
-    return render_template("history.html", slug=slug, revisions=entries[1:])
+    return render_template(
+        "history.html", slug=slug, page_slug=page_slug, revisions=entries
+    )
 
 
 @bp.route("/<slug>/history/<int:revision>")
-def view_revision(slug, revision, site=None):
+@bp.route("/<slug>/<page_slug>/history/<int:revision>")
+def view_revision(slug, revision, page_slug=None, site=None):
+    subdomain_site = g.subdomain_site
+    if subdomain_site and slug != subdomain_site["slug"]:
+        page_slug = slug
+        slug = subdomain_site["slug"]
+        site = subdomain_site
     if site is None:
         site = get_site(slug)
     if not site:
         abort(404)
-    row = get_revision(site["id"], revision)
+    row = get_revision(site["id"], revision, page_slug)
 
     if not row:
         abort(404)
@@ -624,4 +639,5 @@ def view_page(slug, page_slug=None):
         page_slug=page_slug,
         page_title=page_title,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
+        has_history=get_revision_count(site["id"], page_slug) > 1,
     )
