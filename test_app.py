@@ -557,7 +557,7 @@ def test_nav_index_links_to_home(client):
     assert b"wikilink-new" not in r.data
 
 
-def testparse_nav():
+def test_parse_nav():
     items = parse_nav("About\nWriting: blog\n\nContact: contact")
     assert len(items) == 3
     assert items[0] == {"label": "About", "slug": "about"}
@@ -741,7 +741,7 @@ def test_export_settings_has_link(client):
 # -- Wikilinks --
 
 
-def testslugify():
+def test_slugify():
     assert slugify("Good Writing") == "good-writing"
     assert slugify("Hello World!") == "hello-world"
     assert slugify("  Multiple   Spaces  ") == "multiple-spaces"
