@@ -316,6 +316,21 @@ def get_feed_entries(site_id):
         ).fetchall()
 
 
+def delete_page(site_id, page_slug):
+    with get_db() as conn:
+        conn.execute(
+            "DELETE FROM pages WHERE site_id = %s AND slug = %s",
+            (site_id, page_slug),
+        )
+        conn.commit()
+
+
+def delete_site(site_id):
+    with get_db() as conn:
+        conn.execute("DELETE FROM sites WHERE id = %s", (site_id,))
+        conn.commit()
+
+
 def check_subdomain_available(subdomain):
     with get_db() as conn:
         row = conn.execute(

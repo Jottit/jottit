@@ -752,6 +752,88 @@ def test_page_has_feed_discovery_links(client):
     assert b"/disc1/feed.json" in r.data
 
 
+# -- Delete page --
+
+
+def test_owner_can_delete_subpage(client):
+    user_id = _create_claimed_site(client, "del1")
+    save_page("del1", "# About\n\nAbout page", False, "about")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/del1/delete", data={"page": "about"})
+    assert r.status_code == 302
+    r = client.get("/del1/about")
+    assert r.status_code == 404
+
+
+def test_non_owner_cannot_delete(client):
+    _create_claimed_site(client, "del2")
+    save_page("del2", "# About\n\nAbout page", False, "about")
+    r = client.post("/del2/delete", data={"page": "about"})
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/del2"
+    r = client.get("/del2/about")
+    assert r.status_code == 200
+
+
+def test_cannot_delete_index_page(client):
+    user_id = _create_claimed_site(client, "del3")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/del3/delete", data={})
+    assert r.status_code == 302
+    r = client.get("/del3")
+    assert r.status_code == 200
+
+
+# -- Delete site --
+
+
+def test_delete_site_shows_confirmation_page(client):
+    user_id = _create_claimed_site(client, "dsite1")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/dsite1/delete-site")
+    assert r.status_code == 200
+    assert b'Type "delete" to confirm' in r.data
+
+
+def test_delete_site_requires_owner(client):
+    _create_claimed_site(client, "dsite2")
+    r = client.get("/dsite2/delete-site")
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/dsite2"
+
+
+def test_delete_site_wrong_confirmation(client):
+    user_id = _create_claimed_site(client, "dsite3")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/dsite3/delete-site", data={"confirmation": "wrong"})
+    assert r.status_code == 200
+    assert b"Please type" in r.data
+    assert get_site("dsite3") is not None
+
+
+def test_delete_site_success(client):
+    user_id = _create_claimed_site(client, "dsite4")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/dsite4/delete-site", data={"confirmation": "delete"})
+    assert r.status_code == 302
+    assert "/" in r.headers["Location"]
+    assert get_site("dsite4") is None
+
+
+def test_settings_shows_danger_zone(client):
+    user_id = _create_claimed_site(client, "dsite5")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/dsite5/settings")
+    assert b"Delete site" in r.data
+    assert b"delete-site" in r.data
+
+
 # -- Export --
 
 

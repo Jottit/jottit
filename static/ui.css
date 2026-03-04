@@ -434,6 +434,10 @@
     gap: var(--space-2);
 }
 
+.page-actions-buttons .inline-form {
+    display: contents;
+}
+
 /* History */
 
 .history-item {

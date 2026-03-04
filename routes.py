@@ -24,6 +24,8 @@ from db import (
     check_subdomain_available,
     claim_site,
     create_verification_code,
+    delete_page,
+    delete_site,
     find_or_create_user,
     get_export_pages,
     get_feed_entries,
@@ -201,6 +203,18 @@ def subdomain_claim_verify():
 def subdomain_settings():
     site = _require_subdomain_site()
     return site_settings(site["slug"], site=site)
+
+
+@bp.route("/delete", methods=["POST"])
+def subdomain_delete():
+    site = _require_subdomain_site()
+    return delete_site_page(site["slug"], site=site)
+
+
+@bp.route("/delete-site", methods=["GET", "POST"])
+def subdomain_delete_site():
+    site = _require_subdomain_site()
+    return delete_site_page_confirm(site["slug"], site=site)
 
 
 @bp.route("/feed.xml")
@@ -626,6 +640,37 @@ def json_feed(slug, site=None):
     return Response(
         json.dumps(feed), content_type="application/feed+json; charset=utf-8"
     )
+
+
+@bp.route("/<slug>/delete", methods=["POST"])
+@_require_site_owner
+def delete_site_page(slug, site):
+    page_slug = request.form.get("page")
+    if not page_slug:
+        return redirect(_site_path(slug))
+    delete_page(site["id"], page_slug)
+    return redirect(_site_path(slug))
+
+
+@bp.route("/<slug>/delete-site", methods=["GET", "POST"])
+@_require_site_owner
+def delete_site_page_confirm(slug, site):
+    site_name = site["title"] or site["subdomain"] or slug
+
+    if request.method == "GET":
+        return render_template("delete_site.html", slug=slug, site_name=site_name)
+
+    confirmation = request.form.get("confirmation", "").strip()
+    if confirmation != "delete":
+        return render_template(
+            "delete_site.html",
+            slug=slug,
+            site_name=site_name,
+            error='Please type "delete" to confirm.',
+        )
+
+    delete_site(site["id"])
+    return redirect(f"{request.scheme}://{BASE_DOMAIN}/")
 
 
 @bp.route("/<slug>")

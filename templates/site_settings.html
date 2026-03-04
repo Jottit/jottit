@@ -48,5 +48,11 @@
         <h2 class="section-title">Export your data</h2>
         <a href="/{{ slug }}/export" class="btn btn--outline btn--sm">Download as zip</a>
     </div>
+
+    <div class="panel danger-zone">
+        <h2 class="danger-zone-title">Delete site</h2>
+        <p class="danger-zone-text">Permanently delete <strong>{{ site.title or site.subdomain or slug }}</strong> and all its pages.</p>
+        <a href="/{{ slug }}/delete-site" class="btn btn-danger">Delete site</a>
+    </div>
 </div>
 {% endblock %}

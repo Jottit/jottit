@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Delete site — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/{{ slug }}/settings" class="panel-back">&larr; Back to settings</a>
+    <h1 class="title">Delete site</h1>
+    <div class="panel">
+        {% if error %}
+        <p class="notice notice--error">{{ error }}</p>
+        {% endif %}
+
+        <p class="danger-confirm-text">This will permanently delete <strong>{{ site_name }}</strong> and all its pages. This cannot be undone.</p>
+
+        <form method="post" action="/{{ slug }}/delete-site">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label class="label" for="confirmation">Type "delete" to confirm</label>
+                <input class="input" type="text" id="confirmation" name="confirmation" autocomplete="off" autofocus>
+            </div>
+            <button type="submit" class="btn btn-danger">Delete this site</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

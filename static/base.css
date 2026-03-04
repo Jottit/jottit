@@ -347,6 +347,36 @@ a {
     margin-bottom: var(--space-3);
 }
 
+.btn-danger {
+    background: var(--error);
+    color: #fff;
+    border: 1px solid var(--error);
+}
+
+.danger-zone {
+    border: 2px solid var(--error);
+    margin-top: var(--space-8);
+    background: transparent;
+    box-shadow: none;
+}
+
+.danger-zone-title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--error);
+    margin-bottom: var(--space-3);
+}
+
+.danger-zone-text {
+    font-size: var(--font-size-md);
+    margin-bottom: var(--space-5);
+}
+
+.danger-confirm-text {
+    font-size: var(--font-size-md);
+    margin-bottom: var(--space-5);
+}
+
 .muted-link {
     display: block;
     margin-top: var(--space-5);

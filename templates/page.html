@@ -51,6 +51,12 @@
     <div class="page-actions">
         <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">last edited {{ updated_at | relative_time }}</time>
         <div class="page-actions-buttons">
+            {% if is_owner and page_slug %}
+            <form method="post" action="{{ site_path(slug, 'delete') }}" class="inline-form">
+                <input type="hidden" name="page" value="{{ page_slug }}">
+                <button type="submit" class="btn btn--outline btn--sm" onclick="return confirm('Delete this page?')">Delete</button>
+            </form>
+            {% endif %}
             {% if has_history %}<a href="{{ site_path(slug, page_slug, 'history') }}" class="btn btn--outline btn--sm">History</a>{% endif %}
             <a href="{{ site_path(slug, 'edit') }}{% if page_slug %}?page={{ page_slug }}{% endif %}" class="btn btn--outline btn--sm">Edit</a>
         </div>
