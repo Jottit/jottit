@@ -167,13 +167,13 @@ a {
     border: 1px solid var(--btn-bg);
 }
 
-.btn-outline {
+.btn--outline {
     background: transparent;
     color: var(--muted);
     border-color: var(--subtle);
 }
 
-.btn-outline:hover {
+.btn--outline:hover {
     opacity: 0.7;
 }
 
@@ -187,7 +187,7 @@ a {
     color: #fff;
 }
 
-.btn-sm {
+.btn--sm {
     padding: var(--space-1) 14px;
     font-size: var(--font-size-sm);
 }

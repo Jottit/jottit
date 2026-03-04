@@ -321,12 +321,12 @@
     gap: var(--space-2);
 }
 
-.editor .btn-outline {
+.editor .btn--outline {
     color: var(--text);
     border-color: #ddd;
 }
 
-.editor .btn-outline:hover {
+.editor .btn--outline:hover {
     border-color: #bbb;
 }
 

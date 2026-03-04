@@ -51,8 +51,8 @@
     <div class="page-actions">
         <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">last edited {{ updated_at | relative_time }}</time>
         <div class="page-actions-buttons">
-            <a href="/{{ slug }}/history" class="btn btn-outline btn-sm">History</a>
-            <a href="/{{ slug }}/edit{% if page_slug %}?page={{ page_slug }}{% endif %}" class="btn btn-outline btn-sm">Edit</a>
+            <a href="/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>
+            <a href="/{{ slug }}/edit{% if page_slug %}?page={{ page_slug }}{% endif %}" class="btn btn--outline btn--sm">Edit</a>
         </div>
     </div>
     {% endif %}

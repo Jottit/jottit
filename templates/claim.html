@@ -14,7 +14,7 @@
     <form class="auth-form" method="post" action="/{{ slug }}/claim">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input class="auth-input" type="email" name="email" autocomplete="email" required autofocus>
-        <button class="btn btn-outline" type="submit">Claim</button>
+        <button class="btn btn--outline" type="submit">Claim</button>
     </form>
 </div>
 {% endblock %}
