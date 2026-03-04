@@ -181,11 +181,6 @@
     font-weight: 600;
 }
 
-.sites-menu-name--untitled {
-    font-weight: normal;
-    color: var(--muted);
-}
-
 .sites-menu-url {
     color: var(--muted);
     font-size: var(--font-size-sm);

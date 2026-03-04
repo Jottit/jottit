@@ -12,7 +12,7 @@
             {% for site in sites %}
             <li>
                 <a href="/{{ site.slug }}" class="sites-menu-link">
-                    <span class="sites-menu-name{% if not site.title %} sites-menu-name--untitled{% endif %}">{{ site.title or site.slug }}</span>
+                    <span class="sites-menu-name">{{ site.title or site.slug }}</span>
                     <span class="sites-menu-url">{% if site.subdomain %}{{ site.subdomain }}.jottit.org{% else %}jottit.org/{{ site.slug }}{% endif %}</span>
                 </a>
             </li>
