@@ -7,6 +7,9 @@ import psycopg
 import pytest
 
 from app import app as flask_app
+from routes import limiter
+
+limiter.enabled = False
 
 TEST_DB = "jottit_test"
 

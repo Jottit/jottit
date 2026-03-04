@@ -24,6 +24,7 @@ function updatePreview() {
 }
 
 var storageKey = 'jottit-draft:' + window.location.pathname;
+var cursorKey = 'jottit-cursor:' + window.location.pathname;
 
 function saveDraft() {
     localStorage.setItem(storageKey, JSON.stringify({
@@ -34,6 +35,25 @@ function saveDraft() {
 
 function clearDraft() {
     localStorage.removeItem(storageKey);
+}
+
+function saveCursor() {
+    localStorage.setItem(cursorKey, JSON.stringify({
+        field: document.activeElement === titleInput ? 'title' : 'content',
+        start: (document.activeElement === titleInput ? titleInput : contentInput).selectionStart,
+        end: (document.activeElement === titleInput ? titleInput : contentInput).selectionEnd
+    }));
+}
+
+function restoreCursor() {
+    var raw = localStorage.getItem(cursorKey);
+    if (!raw) return;
+    try {
+        var pos = JSON.parse(raw);
+        var el = pos.field === 'title' ? titleInput : contentInput;
+        el.focus();
+        el.setSelectionRange(pos.start, pos.end);
+    } catch (e) {}
 }
 
 var saved = localStorage.getItem(storageKey);
@@ -48,12 +68,19 @@ if (saved) {
 titleInput.addEventListener('input', function() {
     updatePreview();
     saveDraft();
+    saveCursor();
 });
 contentInput.addEventListener('input', function() {
     updatePreview();
     saveDraft();
+    saveCursor();
 });
+titleInput.addEventListener('keyup', saveCursor);
+titleInput.addEventListener('click', saveCursor);
+contentInput.addEventListener('keyup', saveCursor);
+contentInput.addEventListener('click', saveCursor);
 updatePreview();
+restoreCursor();
 
 var form = document.querySelector('.editor-form');
 if (form) {
