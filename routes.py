@@ -91,6 +91,7 @@ def home():
     site = g.subdomain_site
     if site:
         return view_page(site["slug"])
+
     signed_in = "user_id" in session
     sites = []
     has_more_sites = False

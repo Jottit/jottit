@@ -352,13 +352,17 @@
     background-clip: text;
 }
 
-.admin-banner a {
+.admin-banner a,
+.admin-banner .link-btn {
     font-size: var(--font-size-sm);
     color: var(--text);
+    text-decoration: none;
 }
 
-.admin-banner a:hover {
+.admin-banner a:hover,
+.admin-banner .link-btn:hover {
     color: var(--text);
+    opacity: 0.7;
 }
 
 .site-header {
