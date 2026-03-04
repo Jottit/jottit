@@ -34,7 +34,6 @@ from db import (
     get_site,
     get_site_by_subdomain,
     get_sites_for_user,
-    get_user_email,
     save_page,
     update_site_settings,
     verify_code,
@@ -332,13 +331,7 @@ def settings():
     site = g.subdomain_site
     if site:
         return site_settings(site["slug"])
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect("/signin")
-
-    sites = get_sites_for_user(user_id)
-    email = get_user_email(user_id)
-    return render_template("settings.html", sites=sites, email=email)
+    return redirect("/")
 
 
 @bp.route("/<slug>/settings", methods=["GET", "POST"])

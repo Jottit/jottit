@@ -343,24 +343,10 @@ def test_signout(client):
 # -- Settings --
 
 
-def test_settings_requires_signin(client):
+def test_settings_redirects_to_home(client):
     r = client.get("/settings")
     assert r.status_code == 302
-    assert "/signin" in r.headers["Location"]
-
-
-def test_settings_shows_owned_sites(client):
-    client.post("/set1/edit", data={"title": "T", "content": "X"})
-    user_id = find_or_create_user("owner@example.com")
-    claim_site("set1", user_id)
-
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/settings")
-    assert r.status_code == 200
-    assert b"set1" in r.data
-    assert b"owner@example.com" in r.data
+    assert r.headers["Location"] == "/"
 
 
 # -- Homepage sign in / settings link --
@@ -593,15 +579,6 @@ def test_page_hides_settings_link_for_non_owner(client):
     _create_claimed_site(client, "ss11")
     r = client.get("/ss11")
     assert b"/ss11/settings" not in r.data
-
-
-def test_settings_page_links_to_site_settings(client):
-    user_id = _create_claimed_site(client, "ss12")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/settings")
-    assert b"/ss12/settings" in r.data
 
 
 # -- RSS Feed --
