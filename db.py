@@ -5,6 +5,8 @@ from contextlib import contextmanager
 import psycopg
 from psycopg.rows import dict_row
 
+from utils import INDEX_PAGE_SLUG
+
 DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
 
 
@@ -59,7 +61,7 @@ def save_page(slug, content, draft, page_slug=None):
             site_id = cursor.fetchone()["id"]
             cursor = conn.execute(
                 "INSERT INTO pages (site_id, slug) VALUES (%s, %s) RETURNING id",
-                (site_id, page_slug or "-"),
+                (site_id, page_slug or INDEX_PAGE_SLUG),
             )
             page_id = cursor.fetchone()["id"]
             conn.execute(
@@ -70,49 +72,45 @@ def save_page(slug, content, draft, page_slug=None):
         conn.commit()
 
 
-def get_page(slug, page_slug=None):
+def get_page(site_id, page_slug=None):
     with get_db() as conn:
         if page_slug:
             return conn.execute(
-                """SELECT r.content, r.draft, r.created_at, s.user_id
+                """SELECT r.content, r.draft, r.created_at
                    FROM revisions r
                    JOIN pages p ON r.page_id = p.id
-                   JOIN sites s ON p.site_id = s.id
-                   WHERE s.slug = %s AND p.slug = %s
+                   WHERE p.site_id = %s AND p.slug = %s
                    ORDER BY r.revision DESC LIMIT 1""",
-                (slug, page_slug),
+                (site_id, page_slug),
             ).fetchone()
         return conn.execute(
-            """SELECT r.content, r.draft, r.created_at, s.user_id
+            """SELECT r.content, r.draft, r.created_at
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               JOIN sites s ON p.site_id = s.id
-               WHERE s.slug = %s
+               WHERE p.site_id = %s
                ORDER BY r.revision DESC LIMIT 1""",
-            (slug,),
+            (site_id,),
         ).fetchone()
 
 
-def get_revisions(slug):
+def get_revisions(site_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.revision, r.created_at, r.content FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               JOIN sites s ON p.site_id = s.id
-               WHERE s.slug = %s
+               WHERE p.site_id = %s
                ORDER BY r.revision ASC""",
-            (slug,),
+            (site_id,),
         ).fetchall()
 
 
-def get_revision(slug, revision):
+def get_revision(site_id, revision):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.content, r.created_at, r.revision FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               JOIN sites s ON p.site_id = s.id
-               WHERE s.slug = %s AND r.revision = %s""",
-            (slug, revision),
+               WHERE p.site_id = %s AND r.revision = %s""",
+            (site_id, revision),
         ).fetchone()
 
 
@@ -146,11 +144,11 @@ def find_or_create_user(email):
         return user_id
 
 
-def claim_site(slug, user_id):
+def claim_site(site_id, user_id):
     with get_db() as conn:
         result = conn.execute(
-            "UPDATE sites SET user_id = %s WHERE slug = %s AND user_id IS NULL",
-            (user_id, slug),
+            "UPDATE sites SET user_id = %s WHERE id = %s AND user_id IS NULL",
+            (user_id, site_id),
         )
         conn.commit()
         return result.rowcount > 0
@@ -244,7 +242,7 @@ def get_export_pages(site_id):
         ).fetchall()
 
 
-def get_feed_entries(slug):
+def get_feed_entries(site_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT * FROM (
@@ -254,13 +252,12 @@ def get_feed_entries(slug):
                        r.created_at
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
-                   JOIN sites s ON p.site_id = s.id
-                   WHERE s.slug = %s AND r.draft = FALSE
+                   WHERE p.site_id = %s AND r.draft = FALSE
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY created_at DESC
                LIMIT 20""",
-            (slug,),
+            (site_id,),
         ).fetchall()
 
 

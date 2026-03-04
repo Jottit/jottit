@@ -383,7 +383,6 @@ def site_settings(slug, site):
 @bp.route("/<slug>/export")
 @_require_site_owner
 def export_site(slug, site):
-
     pages = get_export_pages(site["id"])
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:

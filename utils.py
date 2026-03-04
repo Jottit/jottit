@@ -38,6 +38,8 @@ RESERVED_SUBDOMAINS = {
     "assets",
 }
 
+INDEX_PAGE_SLUG = "-"
+
 _SANITIZE_ATTRIBUTES = {**nh3.ALLOWED_ATTRIBUTES, "*": {"class"}}
 
 
