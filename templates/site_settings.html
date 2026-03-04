@@ -3,6 +3,7 @@
 {% block title %}Settings — {{ slug }} — Jottit{% endblock %}
 
 {% block head %}
+<script src="/static/settings.js" defer></script>
 {% endblock %}
 
 {% block body %}
@@ -28,9 +29,10 @@
             <div class="field">
                 <label class="label" for="subdomain">Subdomain</label>
                 <div class="settings-subdomain-row">
-                    <input class="input" type="text" id="subdomain" name="subdomain" value="{{ site.subdomain or '' }}" placeholder="yourname">
+                    <input class="input" type="text" id="subdomain" name="subdomain" value="{{ site.subdomain or '' }}" placeholder="yourname" data-current="{{ site.subdomain or '' }}">
                     <span class="settings-subdomain-suffix">.jottit.org</span>
                 </div>
+                <p class="subdomain-error" hidden></p>
             </div>
 
             <div class="field">

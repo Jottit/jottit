@@ -128,6 +128,23 @@ def talk():
     return render_template("talk.html", signed_in="user_id" in session)
 
 
+@bp.route("/api/check-subdomain")
+def check_subdomain():
+    subdomain = request.args.get("subdomain", "").strip().lower()
+    if not subdomain:
+        return {"available": False}
+    if not valid_subdomain(subdomain):
+        return {
+            "available": False,
+            "error": "Subdomain must be lowercase letters, numbers, and hyphens only.",
+        }
+    if subdomain in RESERVED_SUBDOMAINS:
+        return {"available": False, "error": "That subdomain is reserved."}
+    if not check_subdomain_available(subdomain):
+        return {"available": False, "error": "That subdomain is already taken."}
+    return {"available": True}
+
+
 @bp.route("/sites")
 def sites_list():
     user_id = session.get("user_id")

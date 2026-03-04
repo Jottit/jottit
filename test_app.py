@@ -905,6 +905,42 @@ def _create_user_with_sites(client, count):
 # -- /sites page --
 
 
+# -- Subdomain availability API --
+
+
+def test_check_subdomain_available(client):
+    r = client.get("/api/check-subdomain?subdomain=fresh")
+    data = json.loads(r.data)
+    assert data["available"] is True
+
+
+def test_check_subdomain_taken(client):
+    user_id = _create_claimed_site(client, "csd1")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/csd1/settings", data={"title": "", "subdomain": "taken1", "nav": ""})
+    r = client.get("/api/check-subdomain?subdomain=taken1")
+    data = json.loads(r.data)
+    assert data["available"] is False
+    assert "already taken" in data["error"]
+
+
+def test_check_subdomain_invalid(client):
+    r = client.get("/api/check-subdomain?subdomain=BAD!")
+    data = json.loads(r.data)
+    assert data["available"] is False
+    assert "lowercase" in data["error"]
+
+
+def test_check_subdomain_empty(client):
+    r = client.get("/api/check-subdomain?subdomain=")
+    data = json.loads(r.data)
+    assert data["available"] is False
+
+
+# -- /sites page --
+
+
 def test_sites_page_lists_all(client):
     _create_user_with_sites(client, 5)
     r = client.get("/sites")
