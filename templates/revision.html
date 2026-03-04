@@ -9,10 +9,12 @@
     You're viewing revision #{{ revision }} from {{ created_at | relative_time }}.
     <a href="/{{ slug }}">View current version</a>
 </div>
-<article class="page">
-    {{ content | safe }}
-</article>
-<footer class="page-footer">
-    <span>powered by <a href="/">Jottit</a></span>
-</footer>
+<main class="page-main">
+    <article class="page">
+        {{ content | safe }}
+    </article>
+    <footer class="page-footer">
+        <span>powered by <a href="/">Jottit</a></span>
+    </footer>
+</main>
 {% endblock %}

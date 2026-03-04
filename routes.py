@@ -436,7 +436,7 @@ def page_history(slug, site=None):
         )
     entries.reverse()
 
-    return render_template("history.html", slug=slug, revisions=entries)
+    return render_template("history.html", slug=slug, revisions=entries[1:])
 
 
 @bp.route("/<slug>/history/<int:revision>")
