@@ -343,10 +343,9 @@ def test_signout(client):
 # -- Settings --
 
 
-def test_settings_redirects_to_home(client):
+def test_settings_404_without_subdomain(client):
     r = client.get("/settings")
-    assert r.status_code == 302
-    assert r.headers["Location"] == "/"
+    assert r.status_code == 404
 
 
 # -- Homepage sign in / settings link --

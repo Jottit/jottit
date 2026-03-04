@@ -166,6 +166,12 @@ def subdomain_claim_verify():
     return claim_verify(site["slug"])
 
 
+@bp.route("/settings")
+def subdomain_settings():
+    site = _require_subdomain_site()
+    return site_settings(site["slug"])
+
+
 @bp.route("/feed.xml")
 def subdomain_rss():
     site = _require_subdomain_site()
@@ -320,14 +326,6 @@ def signin_verify():
 @bp.route("/signout", methods=["POST"])
 def signout():
     session.pop("user_id", None)
-    return redirect("/")
-
-
-@bp.route("/settings")
-def settings():
-    site = g.subdomain_site
-    if site:
-        return site_settings(site["slug"])
     return redirect("/")
 
 
