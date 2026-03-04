@@ -96,13 +96,17 @@ def process_wikilinks(content, site_slug, existing_page_slugs=None):
     return re.sub(r"\[\[([^\[\]]+)\]\]", replace, content)
 
 
-def get_title(content):
-    if content.startswith("# "):
-        return content.split("\n", 1)[0][2:]
-    return None
+def get_title(row):
+    content = row["content"] if row else None
+    if not content or not content.startswith("# "):
+        return None
+    return content.split("\n", 1)[0][2:]
 
 
-def get_body(content):
+def get_body(row):
+    content = row["content"] if row else None
+    if not content:
+        return ""
     if content.startswith("# "):
         parts = content.split("\n", 1)
         return parts[1].strip() if len(parts) > 1 else ""
@@ -116,8 +120,8 @@ def describe_change(prev, curr):
     if new_title != old_title and new_title:
         return f"Changed title to \u201c{new_title}\u201d"
 
-    old_lines = prev.splitlines()
-    new_lines = curr.splitlines()
+    old_lines = prev["content"].splitlines()
+    new_lines = curr["content"].splitlines()
     added = []
     removed = []
     for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(

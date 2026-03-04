@@ -201,12 +201,8 @@ def edit_page(slug):
 
     if request.method == "GET":
         row = get_latest_revision(slug, page_slug)
-        content = row["content"] if row else ""
-        title = ""
-        if content.startswith("# "):
-            parts = content.split("\n", 1)
-            title = parts[0][2:]
-            content = parts[1].strip() if len(parts) > 1 else ""
+        title = get_title(row) or ""
+        content = get_body(row)
         return render_template(
             "edit.html", slug=slug, title=title, content=content, page_slug=page_slug
         )
@@ -387,8 +383,8 @@ def export_site(slug):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for page in pages:
-            title = get_title(page["content"]) or page["page_slug"]
-            body = get_body(page["content"])
+            title = get_title(page) or page["page_slug"]
+            body = get_body(page)
             date = page["created_at"].strftime("%Y-%m-%d")
             filename = page["page_slug"] if page["page_slug"] != "-" else "index"
             md = f"---\ntitle: {title}\ndate: {date}\n---\n\n{body}\n"
@@ -414,7 +410,7 @@ def page_history(slug):
         if i == 0:
             description = None
         else:
-            description = describe_change(revisions[i - 1]["content"], rev["content"])
+            description = describe_change(revisions[i - 1], rev)
         entries.append(
             {
                 "revision": rev["revision"],
@@ -452,10 +448,10 @@ def _build_feed_entries(slug):
     for entry in entries:
         page_slug = entry["page_slug"]
         page_url = site_url if page_slug == "-" else f"{base_url}/{page_slug}"
-        body = get_body(entry["content"])
+        body = get_body(entry)
         items.append(
             {
-                "title": get_title(entry["content"]) or slug,
+                "title": get_title(entry) or slug,
                 "url": page_url,
                 "body": body,
                 "body_html": render_markdown(process_wikilinks(body, slug)),
@@ -581,9 +577,8 @@ def view_page(slug, page_slug=None):
                 }
             )
 
-    raw_content = row["content"]
-    page_title = get_title(raw_content)
-    content = process_wikilinks(raw_content, slug, existing_page_slugs)
+    page_title = get_title(row)
+    content = process_wikilinks(row["content"], slug, existing_page_slugs)
     html = render_markdown(content)
     html = html.replace("<h1>", '<h1 class="p-name">', 1)
 

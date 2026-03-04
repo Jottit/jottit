@@ -156,23 +156,34 @@ def test_view_revision_nonexistent(client):
 
 
 def test_describe_title_change():
-    assert "Changed title" in describe_change("# Old\n\nBody", "# New\n\nBody")
+    assert "Changed title" in describe_change(
+        {"content": "# Old\n\nBody"}, {"content": "# New\n\nBody"}
+    )
 
 
 def test_describe_added_content():
-    assert "Added" in describe_change("# T\n\nA", "# T\n\nA\nB\nC")
+    assert "Added" in describe_change(
+        {"content": "# T\n\nA"}, {"content": "# T\n\nA\nB\nC"}
+    )
 
 
 def test_describe_removed_content():
-    assert "Removed" in describe_change("# T\n\nA\nB\nC", "# T\n\nA")
+    assert "Removed" in describe_change(
+        {"content": "# T\n\nA\nB\nC"}, {"content": "# T\n\nA"}
+    )
 
 
-def testdescribe_changed_content():
-    assert "Changed" in describe_change("# T\n\nHello", "# T\n\nWorld")
+def test_describe_changed_content():
+    assert "Changed" in describe_change(
+        {"content": "# T\n\nHello"}, {"content": "# T\n\nWorld"}
+    )
 
 
 def test_describe_same_content():
-    assert describe_change("# T\n\nA", "# T\n\nA") == "Edited page"
+    assert (
+        describe_change({"content": "# T\n\nA"}, {"content": "# T\n\nA"})
+        == "Edited page"
+    )
 
 
 # -- Claim banner --

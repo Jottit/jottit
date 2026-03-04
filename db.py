@@ -205,13 +205,10 @@ def verify_code(email, code, purpose):
 
 def get_sites_for_user(user_id, limit=None):
     with get_db() as conn:
-        query = """SELECT s.slug, s.title, s.subdomain, s.visibility
-                   FROM sites s
-                   LEFT JOIN pages p ON s.id = p.site_id
-                   LEFT JOIN revisions r ON p.id = r.page_id
-                   WHERE s.user_id = %s
-                   GROUP BY s.id, s.slug, s.title, s.subdomain, s.visibility
-                   ORDER BY MAX(r.created_at) DESC NULLS LAST"""
+        query = """SELECT slug, title, subdomain, visibility
+                   FROM sites
+                   WHERE user_id = %s
+                   ORDER BY subdomain NULLS LAST, slug"""
         params = [user_id]
         if limit is not None:
             query += " LIMIT %s"
