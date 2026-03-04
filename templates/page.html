@@ -53,8 +53,9 @@
         <div class="page-actions-buttons">
             {% if is_owner and page_slug %}
             <form method="post" action="{{ site_path(slug, 'delete') }}" class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="page" value="{{ page_slug }}">
-                <button type="submit" class="btn btn--outline btn--sm" onclick="return confirm('Delete this page?')">Delete</button>
+                <button type="submit" class="btn btn--outline btn--sm" id="delete-page-btn">Delete</button>
             </form>
             {% endif %}
             {% if has_history %}<a href="{{ site_path(slug, page_slug, 'history') }}" class="btn btn--outline btn--sm">History</a>{% endif %}
@@ -66,4 +67,7 @@
         <span>powered by <a href="/">Jottit</a></span>
     </footer>
 </main>
+{% if is_owner and page_slug %}
+<script src="/static/delete-page.js" defer></script>
+{% endif %}
 {% endblock %}
