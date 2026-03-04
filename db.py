@@ -216,23 +216,6 @@ def get_sites_for_user(user_id, limit=None):
         return conn.execute(query, params).fetchall()
 
 
-def count_sites_for_user(user_id):
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT COUNT(*) AS count FROM sites WHERE user_id = %s",
-            (user_id,),
-        ).fetchone()
-        return row["count"]
-
-
-def get_user_email(user_id):
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT email FROM users WHERE id = %s", (user_id,)
-        ).fetchone()
-        return row["email"] if row else None
-
-
 def update_site_settings(site_id, title, subdomain, nav=None):
     with get_db() as conn:
         conn.execute(
