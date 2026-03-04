@@ -1,11 +1,16 @@
 import os
 from datetime import datetime, timezone
 
+import sentry_sdk
 from flask import Flask, request
 from flask_wtf.csrf import CSRFProtect
 
 from db import init_db
 from routes import bp, limiter
+
+dsn = os.environ.get("SENTRY_DSN")
+if dsn:
+    sentry_sdk.init(dsn=dsn, send_default_pii=False)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY")

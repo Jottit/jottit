@@ -6,13 +6,13 @@
 
 {% block body %}
 <div class="panel-page">
-    <a href="/{{ slug }}{% if page_slug %}/{{ page_slug }}{% endif %}" class="panel-back">&larr; Back</a>
+    <a href="{{ site_path(slug, page_slug) }}" class="panel-back">&larr; Back</a>
     <h1 class="title">Revision history</h1>
     <div class="panel panel--wide">
         <ul class="item-list">
             {% for rev in revisions %}
             <li class="item history-item">
-                <a href="/{{ slug }}/{% if page_slug %}{{ page_slug }}/{% endif %}history/{{ rev.revision }}">#{{ rev.revision }}</a>
+                <a href="{{ site_path(slug, page_slug, 'history', rev.revision) }}">#{{ rev.revision }}</a>
                 <span class="history-time">{{ rev.created_at | relative_time }}</span>
                 {% if rev.description %}
                 <span>{{ rev.description }}</span>

@@ -554,7 +554,7 @@ def test_nav_index_links_to_home(client):
         data={"title": "", "subdomain": "", "nav": "Home: /"},
     )
     r = client.get("/ss8d")
-    assert b'href="/ss8d"' in r.data
+    assert b'href="/ss8d/"' in r.data
     assert b"Home" in r.data
     assert b"wikilink-new" not in r.data
 
@@ -809,7 +809,7 @@ def test_page_has_h_entry_markup(client):
     assert 'class="dt-published' in body
     assert "datetime=" in body
     assert 'class="u-url"' in body
-    assert 'href="/mf1"' in body
+    assert 'href="/mf1/"' in body
 
 
 def test_site_header_has_h_card(client):

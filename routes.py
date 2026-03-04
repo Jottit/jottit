@@ -73,6 +73,15 @@ def _subdomain_url(subdomain, path=""):
     return f"{scheme}://{subdomain}.{BASE_DOMAIN}{path}"
 
 
+def _site_path(slug, *parts):
+    """Build a URL path for a site, omitting the slug on subdomain sites."""
+    prefix = "" if g.subdomain_site else f"/{slug}"
+    suffix = "/".join(str(p) for p in parts if p)
+    if suffix:
+        return f"{prefix}/{suffix}"
+    return f"{prefix}/"
+
+
 @bp.before_request
 def resolve_subdomain():
     subdomain = _get_subdomain()
@@ -444,7 +453,11 @@ def page_history(slug, page_slug=None, site=None):
     entries.reverse()
 
     return render_template(
-        "history.html", slug=slug, page_slug=page_slug, revisions=entries
+        "history.html",
+        slug=slug,
+        page_slug=page_slug,
+        site_path=_site_path,
+        revisions=entries,
     )
 
 
@@ -630,6 +643,7 @@ def view_page(slug, page_slug=None):
         content=html,
         draft=row["draft"],
         slug=slug,
+        site_path=_site_path,
         show_actions=show_actions,
         unclaimed=unclaimed,
         is_owner=is_owner,
