@@ -101,6 +101,11 @@ def resolve_subdomain():
     g.subdomain_site = site
 
 
+@bp.route("/robots.txt")
+def robots():
+    return "User-agent: *\nAllow: /\n", 200, {"Content-Type": "text/plain"}
+
+
 @bp.route("/")
 def home():
     site = g.subdomain_site

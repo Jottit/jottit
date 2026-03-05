@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}{% if page_title %}{{ page_title }} — {% endif %}{% if site_title %}{{ site_title }}{% else %}Jottit{% endif %}{% endblock %}
+{% block meta_description %}{% if page_description %}{{ page_description }}{% else %}A page on Jottit.{% endif %}{% endblock %}
 {% block og_title %}{% if page_title %}{{ page_title }}{% elif site_title %}{{ site_title }}{% else %}Jottit{% endif %}{% endblock %}
 {% block og_description %}{% if page_description %}{{ page_description }}{% else %}A page on Jottit.{% endif %}{% endblock %}
 

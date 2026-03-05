@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Jottit{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}The fastest way to publish on the web.{% endblock %}">
     <meta property="og:title" content="{% block og_title %}Jottit{% endblock %}">
     <meta property="og:description" content="{% block og_description %}The fastest way to publish on the web.{% endblock %}">
+    <meta property="og:url" content="{{ request.url }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Jottit">
     <meta property="og:image" content="{% block og_image %}/static/og.png{% endblock %}">
     {% block og_extra %}{% endblock %}
+    <link rel="icon" href="/static/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/theme.css">
     <link rel="stylesheet" href="/static/ui.css">
