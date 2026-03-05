@@ -24,6 +24,12 @@
         <h1 class="site-title h-card"><a class="p-name u-url" href="{{ site_path(slug) }}">{{ site_title }}</a></h1>
         {% endif %}
         {% if nav_pages %}
+        <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
+        <label for="nav-toggle" class="nav-hamburger" aria-label="Toggle navigation">
+            <span></span>
+            <span></span>
+            <span></span>
+        </label>
         <nav class="site-nav">
             {% for page in nav_pages %}
             {% if page.is_index %}
