@@ -115,6 +115,17 @@ def get_body(content):
     return content
 
 
+def get_description(content, max_length=200):
+    body = get_body(content)
+    if not body:
+        return ""
+    text = re.sub(r"[#*_\[\]`>]", "", body)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) <= max_length:
+        return text
+    return text[:max_length].rsplit(" ", 1)[0] + "..."
+
+
 def describe_change(prev, curr):
     old_title = get_title(prev)
     new_title = get_title(curr)

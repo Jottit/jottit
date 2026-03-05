@@ -48,6 +48,7 @@ from utils import (
     RESERVED_SUBDOMAINS,
     generate_slug,
     get_body,
+    get_description,
     get_title,
     parse_nav,
     process_wikilinks,
@@ -733,6 +734,7 @@ def view_page(slug, page_slug=None):
             )
 
     page_title = get_title(row["content"])
+    page_description = get_description(row["content"])
     content = process_wikilinks(row["content"], slug, existing_page_slugs)
     html = render_markdown(content)
     html = html.replace("<h1>", '<h1 class="p-name">', 1)
@@ -751,6 +753,7 @@ def view_page(slug, page_slug=None):
         updated_at=row["created_at"],
         page_slug=page_slug,
         page_title=page_title,
+        page_description=page_description,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
         has_history=get_revision_count(site["id"], page_slug) > 1,
     )
