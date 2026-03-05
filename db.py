@@ -20,6 +20,8 @@ def _get_pool():
             min_size=2,
             max_size=10,
             open=True,
+            check=ConnectionPool.check_connection,
+            max_idle=300,
             kwargs={"row_factory": dict_row, "autocommit": False, "connect_timeout": 5},
         )
     return _pool
