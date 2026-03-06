@@ -273,9 +273,10 @@ def test_claim_full_flow(client):
     site = get_site("cf3")
     assert site["user_id"] is not None
 
-    # Banner is gone
+    # Banner is gone and edit button is visible
     r = client.get("/cf3")
     assert b"Make it yours" not in r.data
+    assert b"Edit" in r.data
 
 
 def test_claim_invalid_code_rejected(client):

@@ -3,15 +3,21 @@
     var hidden = document.getElementById('code-value');
 
     var form = document.querySelector('.auth-form');
+    var submitted = false;
 
     function syncHidden() {
         var code = '';
         digits.forEach(function(d) { code += d.value; });
         hidden.value = code;
-        if (code.length === 6) {
+        if (code.length === 6 && !submitted) {
+            submitted = true;
             form.submit();
         }
     }
+
+    form.addEventListener('submit', function() {
+        submitted = true;
+    });
 
     digits.forEach(function(input, i) {
         input.addEventListener('input', function() {
