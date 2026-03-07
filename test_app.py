@@ -245,7 +245,7 @@ def test_describe_same_content():
 def test_unclaimed_page_shows_claim_banner_to_creator(client):
     client.post("/uncl/edit", data={"title": "T", "content": "X"})
     r = client.get("/uncl")
-    assert b"Make it yours" in r.data
+    assert b"unclaimed" in r.data
 
 
 def test_unclaimed_page_hides_claim_banner_from_non_creator(client):
@@ -253,7 +253,7 @@ def test_unclaimed_page_hides_claim_banner_from_non_creator(client):
     with client.session_transaction() as sess:
         sess.clear()
     r = client.get("/uncl2")
-    assert b"Make it yours" not in r.data
+    assert b"unclaimed" not in r.data
 
 
 def test_claimed_page_hides_claim_banner(client):
@@ -262,7 +262,7 @@ def test_claimed_page_hides_claim_banner(client):
     page_meta = get_page_meta("clmd")
     claim_page(page_meta["id"], user_id)
     r = client.get("/clmd")
-    assert b"Make it yours" not in r.data
+    assert b"unclaimed" not in r.data
 
 
 # -- Claim flow --

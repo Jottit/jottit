@@ -4,6 +4,13 @@
     position: absolute;
     top: var(--space-6);
     right: var(--space-8);
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+}
+
+.signin-link a {
+    font-weight: 600;
+    color: var(--text);
 }
 
 .home-actions {
@@ -703,16 +710,24 @@
 /* Claim banner */
 
 .claim-banner {
-    background: #111;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: var(--font-size-sm);
+    display: block;
+    background: #07131c;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    font-size: var(--font-size-base);
     text-align: center;
-    padding: var(--space-2) var(--space-5);
+    padding: var(--space-3) var(--space-5);
+    text-decoration: none;
+    margin-bottom: var(--space-10);
+    transition: opacity 0.15s;
 }
 
-.claim-btn {
+.claim-banner:hover {
+    opacity: 0.9;
+}
+
+.claim-banner strong {
     color: #fff;
-    text-decoration: underline;
 }
 
 /* Settings hub */
