@@ -946,7 +946,8 @@ def view_page(slug):
     if row["draft"] and not is_owner and not is_creator:
         abort(404)
 
-    show_actions = is_owner or is_creator
+    can_edit = _can_edit(page_meta)
+    show_actions = is_owner or (is_creator and can_edit)
 
     page_title = get_title(row["content"])
     page_description = get_description(row["content"])
