@@ -265,8 +265,8 @@
     display: flex;
     flex-direction: column;
     height: 100dvh;
-    background: #fff;
-    color: #111;
+    background: var(--bg-surface);
+    color: var(--text);
 }
 
 .editor-split {
@@ -328,7 +328,7 @@
         display: block;
         flex: 1;
         overflow-y: auto;
-        border-left: 1px solid #ddd;
+        border-left: 1px solid var(--border);
         padding: var(--space-10) var(--space-8);
     }
 
@@ -363,7 +363,7 @@
 .admin-banner .btn--outline {
     font-weight: 500;
     font-size: var(--font-size-sm);
-    border-color: rgba(0, 0, 0, 0.4);
+    border-color: var(--muted);
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
@@ -388,11 +388,11 @@
 
 .editor .btn--outline {
     color: var(--text);
-    border-color: #ddd;
+    border-color: var(--border);
 }
 
 .editor .btn--outline:hover {
-    border-color: #bbb;
+    border-color: var(--subtle-hover);
 }
 
 /* Profile header (subdomain pages) */
@@ -468,9 +468,11 @@
 /* Individual page — link header to home */
 
 a.profile-header--page {
+    display: block;
     text-decoration: none;
     color: inherit;
     transition: opacity 0.15s;
+    padding-top: 40px;
 }
 
 a.profile-header--page:hover {
@@ -572,7 +574,7 @@ a.profile-header--page:hover {
 
 .settings-identity-hint {
     font-size: var(--font-size-xs);
-    color: #3aa882;
+    color: var(--accent);
 }
 
 .site-header {
