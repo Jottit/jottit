@@ -249,12 +249,6 @@ a {
     margin-bottom: var(--space-5);
 }
 
-.panel-back-chevron {
-    font-size: 1.8em;
-    font-weight: 600;
-    line-height: 0;
-    margin-top: -3px;
-}
 
 .panel {
     background: var(--bg-surface);

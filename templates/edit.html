@@ -12,8 +12,10 @@
         <div class="editor-pane">
             <form id="editor-form" class="editor-form" method="post" action="/{{ slug }}/edit">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input class="editor-title" type="text" name="title" placeholder="Title" value="{{ title }}" {% if not title %}autofocus{% endif %}>
-                <textarea class="editor-content" name="content" placeholder="Write something...&#10;&#10;**bold**  *italic*  [link](url)  ## heading" {% if title and not content %}autofocus{% endif %}>{{ content }}</textarea>
+                <label for="title" class="sr-only">Title</label>
+                <input class="editor-title" id="title" type="text" name="title" placeholder="Title" value="{{ title }}" {% if not title %}autofocus{% endif %}>
+                <label for="content" class="sr-only">Content</label>
+                <textarea class="editor-content" id="content" name="content" placeholder="Write something...&#10;&#10;**bold**  *italic*  [link](url)  ## heading" {% if title and not content %}autofocus{% endif %}>{{ content }}</textarea>
             </form>
         </div>
         <div class="editor-preview">
