@@ -364,6 +364,16 @@
 }
 
 
+.editor-markdown-link {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.editor-markdown-link:hover {
+    color: var(--text);
+}
+
 .editor .btn--outline {
     color: var(--text);
     border-color: #ddd;
@@ -453,6 +463,12 @@ a.profile-header--page {
 
 a.profile-header--page:hover {
     opacity: 0.7;
+}
+
+/* Individual page — top spacing */
+
+.page-profile-header {
+    margin-top: var(--space-10);
 }
 
 /* Individual page — smaller avatar */
