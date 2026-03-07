@@ -140,8 +140,8 @@ table {
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg: #1a1a1a;
-        --bg-surface: #262626;
+        --bg: #1a2028;
+        --bg-surface: #262c34;
         --text: #e0e0e0;
         --btn-bg: #fff;
         --btn-text: #1a1a1a;
