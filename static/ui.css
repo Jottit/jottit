@@ -550,17 +550,17 @@ a.profile-header--page:hover {
 }
 
 @keyframes profile-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(80, 200, 160, 0.45); }
-    50% { box-shadow: 0 0 0 5px rgba(80, 200, 160, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(80, 200, 160, 0.6); }
+    50% { box-shadow: 0 0 0 7px rgba(80, 200, 160, 0); }
 }
 
 .admin-avatar.profile-incomplete {
-    animation: profile-pulse 2s ease-in-out infinite;
+    animation: profile-pulse 2s ease-in-out 3;
 }
 
 .settings-identity-hint {
     font-size: var(--font-size-xs);
-    color: var(--accent);
+    color: #3aa882;
 }
 
 .site-header {

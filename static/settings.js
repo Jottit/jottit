@@ -1,11 +1,18 @@
 (function() {
     var updateLink = document.getElementById('avatar-update');
     var avatarInput = document.getElementById('avatar-input');
+    var avatarPlaceholder = document.querySelector('.settings-avatar-placeholder');
     if (updateLink && avatarInput) {
         updateLink.addEventListener('click', function(e) {
             e.preventDefault();
             avatarInput.click();
         });
+        if (avatarPlaceholder) {
+            avatarPlaceholder.style.cursor = 'pointer';
+            avatarPlaceholder.addEventListener('click', function() {
+                avatarInput.click();
+            });
+        }
         avatarInput.addEventListener('change', function() {
             if (avatarInput.files.length > 0) {
                 avatarInput.form.submit();
