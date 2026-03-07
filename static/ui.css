@@ -316,7 +316,7 @@
         display: block;
         flex: 1;
         overflow-y: auto;
-        border-left: 1px solid #f0f0f0;
+        border-left: 1px solid #ddd;
         padding: var(--space-10) var(--space-8);
     }
 
