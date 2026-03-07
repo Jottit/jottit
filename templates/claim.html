@@ -5,29 +5,16 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-<div class="panel-page">
-    <a href="/{{ slug }}" class="panel-back">&larr; Back</a>
+<div class="shell shell-centered">
     <h1 class="title">Claim this page</h1>
-    <div class="panel">
-        <p class="subtitle">Choose a username and verify your email.</p>
-        {% if error %}
-        <p class="notice notice--error">{{ error }}</p>
-        {% endif %}
-        <form method="post" action="/{{ slug }}/claim">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="field">
-                <label class="label" for="username">Username</label>
-                <div class="settings-subdomain-row">
-                    <input class="input" type="text" id="username" name="username" value="{{ username or '' }}" placeholder="yourname" required autofocus>
-                    <span class="settings-subdomain-suffix">.jottit.org</span>
-                </div>
-            </div>
-            <div class="field">
-                <label class="label" for="email">Email</label>
-                <input class="input" type="email" id="email" name="email" value="{{ email or '' }}" autocomplete="email" required>
-            </div>
-            <button class="btn btn-solid" type="submit">Claim</button>
-        </form>
-    </div>
+    <p class="subtitle">Enter your email to get started.</p>
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+    <form class="auth-form" method="post" action="/{{ slug }}/claim">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="auth-input" type="email" name="email" value="{{ email or '' }}" required autofocus>
+        <button class="btn btn-solid" type="submit">Send code</button>
+    </form>
 </div>
 {% endblock %}

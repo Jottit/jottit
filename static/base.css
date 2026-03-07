@@ -202,7 +202,7 @@ a {
 /* Layout */
 
 .shell {
-    max-width: 400px;
+    max-width: 480px;
     margin: 0 auto;
     padding: 80px var(--space-5);
 }
@@ -227,6 +227,7 @@ a {
     padding: var(--space-8);
     text-align: center;
 }
+
 
 /* Panel */
 

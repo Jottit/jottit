@@ -356,46 +356,13 @@ def claim_page_route(slug):
         return render_template("claim.html", slug=slug)
 
     email = request.form.get("email", "").strip().lower()
-    username = request.form.get("username", "").strip().lower()
-
     if not email:
         return render_template("claim.html", slug=slug, error="Email is required.")
-    if not username:
-        return render_template(
-            "claim.html", slug=slug, error="Username is required.", email=email
-        )
-    if not valid_username(username):
-        return render_template(
-            "claim.html",
-            slug=slug,
-            error="Username must be lowercase letters, numbers, and hyphens only.",
-            email=email,
-            username=username,
-        )
-    if username in RESERVED_USERNAMES:
-        return render_template(
-            "claim.html",
-            slug=slug,
-            error="That username is reserved.",
-            email=email,
-            username=username,
-        )
-    if not check_username_available(username):
-        return render_template(
-            "claim.html",
-            slug=slug,
-            error="That username is already taken.",
-            email=email,
-            username=username,
-        )
 
     code = create_verification_code(email, "claim")
     send_verification_email(email, code)
     session["claim_email"] = email
-    session["claim_username"] = username
-    return render_template(
-        "verify.html", slug=slug, email=email, action=f"/{slug}/claim/verify"
-    )
+    return redirect(f"/{slug}/claim/verify")
 
 
 @bp.route("/<slug>/claim/verify", methods=["GET", "POST"])
@@ -430,19 +397,19 @@ def claim_verify(slug):
         )
 
     user_id = find_or_create_user(email)
-
-    username = session.get("claim_username")
-    if username:
-        existing_user = get_user(user_id)
-        if existing_user and not existing_user.get("username"):
-            set_user_username(user_id, username)
-
-    claim_page(page_meta["id"], user_id)
-    session.pop("claim_email", None)
-    session.pop("claim_username", None)
     session["user_id"] = user_id
 
-    # Generate a nice slug from the page title
+    user = get_user(user_id)
+    if user and user.get("username"):
+        return _finish_claim(slug, page_meta, user_id, user["username"])
+
+    session["claim_verified"] = True
+    return redirect(f"/{slug}/claim/setup")
+
+
+def _finish_claim(slug, page_meta, user_id, username):
+    claim_page(page_meta["id"], user_id)
+
     row = get_page(slug)
     if row:
         title = get_title(row["content"])
@@ -457,10 +424,79 @@ def claim_verify(slug):
                 rename_page(slug, nice_slug)
                 slug = nice_slug
 
-    user = get_user(user_id)
-    if user and user.get("username"):
-        return redirect(_subdomain_url(user["username"], f"/{slug}"))
-    return redirect(f"/{slug}")
+    session.pop("claim_email", None)
+    session.pop("claim_verified", None)
+    session.pop("claim_name", None)
+    return redirect(_subdomain_url(username, f"/{slug}"))
+
+
+@bp.route("/<slug>/claim/setup", methods=["GET", "POST"])
+def claim_setup(slug):
+    if not session.get("claim_verified") or not session.get("user_id"):
+        return redirect(f"/{slug}/claim")
+
+    page_meta = get_page_meta(slug)
+    if not page_meta or page_meta["user_id"] is not None:
+        return redirect(f"/{slug}")
+
+    if request.method == "GET":
+        return render_template("claim_setup.html", slug=slug)
+
+    name = request.form.get("name", "").strip()
+    if not name:
+        return render_template("claim_setup.html", slug=slug, error="Name is required.")
+
+    session["claim_name"] = name
+    return redirect(f"/{slug}/claim/address")
+
+
+@bp.route("/<slug>/claim/address", methods=["GET", "POST"])
+def claim_address(slug):
+    if not session.get("claim_verified") or not session.get("user_id"):
+        return redirect(f"/{slug}/claim")
+    if not session.get("claim_name"):
+        return redirect(f"/{slug}/claim/setup")
+
+    page_meta = get_page_meta(slug)
+    if not page_meta or page_meta["user_id"] is not None:
+        return redirect(f"/{slug}")
+
+    if request.method == "GET":
+        return render_template("claim_address.html", slug=slug)
+
+    username = request.form.get("username", "").strip().lower()
+
+    if not username:
+        return render_template(
+            "claim_address.html", slug=slug, error="Address is required."
+        )
+    if not valid_username(username):
+        return render_template(
+            "claim_address.html",
+            slug=slug,
+            error="Username must be lowercase letters, numbers, and hyphens only.",
+            username=username,
+        )
+    if username in RESERVED_USERNAMES:
+        return render_template(
+            "claim_address.html",
+            slug=slug,
+            error="That username is reserved.",
+            username=username,
+        )
+    if not check_username_available(username):
+        return render_template(
+            "claim_address.html",
+            slug=slug,
+            error="That username is already taken.",
+            username=username,
+        )
+
+    user_id = session["user_id"]
+    name = session["claim_name"]
+    set_user_username(user_id, username)
+    update_user_settings(user_id, name=name, username=username, bio="")
+    return _finish_claim(slug, page_meta, user_id, username)
 
 
 @bp.route("/signin", methods=["GET", "POST"])

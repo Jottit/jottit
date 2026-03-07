@@ -376,17 +376,9 @@
 /* Profile header (subdomain pages) */
 
 .profile-header {
-    text-align: center;
-    padding: 80px var(--space-5) var(--space-10);
     max-width: var(--site-max-width);
     margin: 0 auto;
     border-bottom: 1px solid var(--border);
-}
-
-@media (min-width: 640px) {
-    .profile-header {
-        padding: 80px var(--space-10) var(--space-10);
-    }
 }
 
 .profile-avatar {
@@ -395,13 +387,10 @@
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    margin: 0 auto;
 }
 
 .profile-name {
-    font-size: 2rem;
     font-weight: 700;
-    margin: var(--space-3) 0 var(--space-3);
     letter-spacing: -0.01em;
 }
 
@@ -412,8 +401,52 @@
 
 .profile-bio {
     color: var(--muted);
-    margin: var(--space-2) auto 0;
+}
+
+/* Profile header variants — same centered structure, elements layer in */
+
+.profile-header--name,
+.profile-header--avatar,
+.profile-header--bio,
+.profile-header--full {
+    text-align: center;
+    padding: 80px var(--space-5) var(--space-10);
+}
+
+@media (min-width: 640px) {
+    .profile-header--name,
+    .profile-header--avatar,
+    .profile-header--bio,
+    .profile-header--full {
+        padding: 80px var(--space-10) var(--space-10);
+    }
+}
+
+.profile-header .profile-avatar {
+    margin: 0 auto;
+}
+
+.profile-header .profile-name {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.profile-header .profile-bio {
+    margin: var(--space-3) auto 0;
     max-width: var(--bio-max-width);
+}
+
+/* 1. Name only — less top padding since there's less to show */
+
+.profile-header--name {
+    padding-top: var(--space-12);
+}
+
+/* 2/4. Avatar present — add space between avatar and name */
+
+.profile-header--avatar .profile-name,
+.profile-header--full .profile-name {
+    margin-top: var(--space-3);
 }
 
 /* Site header */
@@ -672,6 +705,37 @@
 .auth-input:-webkit-autofill {
     -webkit-box-shadow: 0 0 0 1000px var(--bg) inset;
     -webkit-text-fill-color: var(--text);
+}
+
+.auth-subdomain-row {
+    display: inline-flex;
+    align-items: baseline;
+    border-bottom: 1px dashed var(--muted);
+    margin-bottom: var(--space-3);
+}
+
+.auth-subdomain-row .auth-input {
+    flex: 0 0 auto;
+    width: 10ch;
+    text-align: right;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.auth-subdomain-row .auth-input:focus {
+    border-bottom: none;
+}
+
+.auth-subdomain-suffix {
+    font-size: var(--font-size-xl);
+    color: var(--muted);
+    padding: var(--space-2) 0;
+}
+
+.auth-subdomain-notice {
+    color: var(--error);
+    font-size: var(--font-size-sm);
+    margin: calc(-1 * var(--space-3)) 0 var(--space-2);
 }
 
 .auth-code {

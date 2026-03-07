@@ -245,7 +245,7 @@ def test_describe_same_content():
 def test_unclaimed_page_shows_claim_banner_to_creator(client):
     client.post("/uncl/edit", data={"title": "T", "content": "X"})
     r = client.get("/uncl")
-    assert b"unclaimed" in r.data
+    assert b"claim-banner" in r.data
 
 
 def test_unclaimed_page_hides_claim_banner_from_non_creator(client):
@@ -253,7 +253,7 @@ def test_unclaimed_page_hides_claim_banner_from_non_creator(client):
     with client.session_transaction() as sess:
         sess.clear()
     r = client.get("/uncl2")
-    assert b"unclaimed" not in r.data
+    assert b"claim-banner" not in r.data
 
 
 def test_claimed_page_hides_claim_banner(client):
@@ -262,18 +262,18 @@ def test_claimed_page_hides_claim_banner(client):
     page_meta = get_page_meta("clmd")
     claim_page(page_meta["id"], user_id)
     r = client.get("/clmd")
-    assert b"unclaimed" not in r.data
+    assert b"claim-banner" not in r.data
 
 
 # -- Claim flow --
 
 
-def test_claim_page_shows_form(client):
+def test_claim_page_shows_email_form(client):
     client.post("/cf1/edit", data={"title": "T", "content": "X"})
     r = client.get("/cf1/claim")
     assert r.status_code == 200
     assert b"email" in r.data
-    assert b"username" in r.data
+    assert b"Enter your email" in r.data
 
 
 def test_claim_already_claimed_redirects(client):
@@ -285,27 +285,29 @@ def test_claim_already_claimed_redirects(client):
     assert r.status_code == 302
 
 
-def test_claim_requires_username(client):
-    client.post("/cf3a/edit", data={"title": "T", "content": "X"})
-    r = client.post("/cf3a/claim", data={"email": "user@example.com", "username": ""})
-    assert r.status_code == 200
-    assert b"Username is required" in r.data
-
-
 def test_claim_full_flow(client):
     client.post("/cf3/edit", data={"title": "My Great Page", "content": "X"})
 
-    r = client.post(
-        "/cf3/claim", data={"email": "user@example.com", "username": "testuser"}
-    )
-    assert r.status_code == 200
-    assert b"Check your email" in r.data
+    # Step 1: email
+    r = client.post("/cf3/claim", data={"email": "user@example.com"})
+    assert r.status_code == 302
+    assert "/cf3/claim/verify" in r.headers["Location"]
 
+    # Step 2: verify
     code = create_verification_code("user@example.com", "claim")
-
     r = client.post(
         "/cf3/claim/verify", data={"code": code, "email": "user@example.com"}
     )
+    assert r.status_code == 302
+    assert "/cf3/claim/setup" in r.headers["Location"]
+
+    # Step 3: name
+    r = client.post("/cf3/claim/setup", data={"name": "Test User"})
+    assert r.status_code == 302
+    assert "/cf3/claim/address" in r.headers["Location"]
+
+    # Step 4: address
+    r = client.post("/cf3/claim/address", data={"username": "testuser"})
     assert r.status_code == 302
     # Slug gets renamed to slugified title
     assert "/my-great-page" in r.headers["Location"]
@@ -315,45 +317,29 @@ def test_claim_full_flow(client):
 
     user = get_user(page_meta["user_id"])
     assert user["username"] == "testuser"
+    assert user["name"] == "Test User"
 
 
-def test_claim_sets_username_on_user(client):
+def test_claim_sets_name_and_username(client):
     client.post("/cfun/edit", data={"title": "Unique Title", "content": "X"})
-    r = client.post(
-        "/cfun/claim", data={"email": "newuser@example.com", "username": "newname"}
-    )
-    assert r.status_code == 200
 
+    client.post("/cfun/claim", data={"email": "newuser@example.com"})
     code = create_verification_code("newuser@example.com", "claim")
     client.post(
         "/cfun/claim/verify", data={"code": code, "email": "newuser@example.com"}
     )
+    client.post("/cfun/claim/setup", data={"name": "New User"})
+    client.post("/cfun/claim/address", data={"username": "newname"})
 
     page_meta = get_page_meta("unique-title")
     user = get_user(page_meta["user_id"])
     assert user["username"] == "newname"
-
-
-def test_returning_user_reuses_existing_username(client):
-    user_id = find_or_create_user("returning@example.com")
-    set_user_username(user_id, "existingname")
-
-    client.post("/cfret/edit", data={"title": "T", "content": "X"})
-    client.post(
-        "/cfret/claim", data={"email": "returning@example.com", "username": "newname"}
-    )
-    code = create_verification_code("returning@example.com", "claim")
-    client.post(
-        "/cfret/claim/verify", data={"code": code, "email": "returning@example.com"}
-    )
-
-    user = get_user(user_id)
-    assert user["username"] == "existingname"
+    assert user["name"] == "New User"
 
 
 def test_claim_invalid_code_rejected(client):
     client.post("/cf4/edit", data={"title": "T", "content": "X"})
-    client.post("/cf4/claim", data={"email": "user@example.com", "username": "user4"})
+    client.post("/cf4/claim", data={"email": "user@example.com"})
     r = client.post(
         "/cf4/claim/verify", data={"code": "000000", "email": "user@example.com"}
     )
@@ -363,16 +349,14 @@ def test_claim_invalid_code_rejected(client):
 
 def test_claim_stores_email_in_session(client):
     client.post("/cf5/edit", data={"title": "T", "content": "X"})
-    client.post(
-        "/cf5/claim", data={"email": "session@example.com", "username": "user5"}
-    )
+    client.post("/cf5/claim", data={"email": "session@example.com"})
     with client.session_transaction() as sess:
         assert sess.get("claim_email") == "session@example.com"
 
 
 def test_claim_rejects_email_substitution(client):
     client.post("/cf6/edit", data={"title": "T", "content": "X"})
-    client.post("/cf6/claim", data={"email": "real@example.com", "username": "user6"})
+    client.post("/cf6/claim", data={"email": "real@example.com"})
     code = create_verification_code("real@example.com", "claim")
     r = client.post(
         "/cf6/claim/verify", data={"code": code, "email": "attacker@example.com"}
@@ -387,13 +371,138 @@ def test_signin_stores_email_in_session(client):
         assert sess.get("signin_email") == "signin@example.com"
 
 
-def test_claim_cleans_up_session_email(client):
+def test_claim_cleans_up_session(client):
     client.post("/cf7/edit", data={"title": "T", "content": "X"})
-    client.post("/cf7/claim", data={"email": "clean@example.com", "username": "user7"})
+    client.post("/cf7/claim", data={"email": "clean@example.com"})
     code = create_verification_code("clean@example.com", "claim")
     client.post("/cf7/claim/verify", data={"code": code, "email": "clean@example.com"})
+    client.post("/cf7/claim/setup", data={"name": "Clean User"})
+    client.post("/cf7/claim/address", data={"username": "user7"})
     with client.session_transaction() as sess:
         assert "claim_email" not in sess
+        assert "claim_verified" not in sess
+        assert "claim_name" not in sess
+
+
+def test_claim_setup_requires_verification(client):
+    client.post("/cf8/edit", data={"title": "T", "content": "X"})
+    r = client.get("/cf8/claim/setup")
+    assert r.status_code == 302
+    assert "/cf8/claim" in r.headers["Location"]
+
+
+def test_claim_setup_validates_name(client):
+    client.post("/cf10/edit", data={"title": "T", "content": "X"})
+    client.post("/cf10/claim", data={"email": "nameval@example.com"})
+    code = create_verification_code("nameval@example.com", "claim")
+    client.post(
+        "/cf10/claim/verify", data={"code": code, "email": "nameval@example.com"}
+    )
+
+    r = client.post("/cf10/claim/setup", data={"name": ""})
+    assert r.status_code == 200
+    assert b"required" in r.data
+
+
+def test_claim_address_validates_username(client):
+    client.post("/cf9/edit", data={"title": "T", "content": "X"})
+    client.post("/cf9/claim", data={"email": "val@example.com"})
+    code = create_verification_code("val@example.com", "claim")
+    client.post("/cf9/claim/verify", data={"code": code, "email": "val@example.com"})
+    client.post("/cf9/claim/setup", data={"name": "Val User"})
+
+    r = client.post("/cf9/claim/address", data={"username": "BAD!"})
+    assert r.status_code == 200
+    assert b"lowercase" in r.data
+
+    r = client.post("/cf9/claim/address", data={"username": ""})
+    assert r.status_code == 200
+    assert b"required" in r.data
+
+
+def test_claim_address_rejects_taken_username(client):
+    user_id = find_or_create_user("existing@example.com")
+    set_user_username(user_id, "takensetup")
+
+    client.post("/cf11/edit", data={"title": "T", "content": "X"})
+    client.post("/cf11/claim", data={"email": "setup@example.com"})
+    code = create_verification_code("setup@example.com", "claim")
+    client.post("/cf11/claim/verify", data={"code": code, "email": "setup@example.com"})
+    client.post("/cf11/claim/setup", data={"name": "Setup User"})
+
+    r = client.post("/cf11/claim/address", data={"username": "takensetup"})
+    assert r.status_code == 200
+    assert b"already taken" in r.data
+
+
+def test_claim_address_requires_verification(client):
+    client.post("/cf12/edit", data={"title": "T", "content": "X"})
+    r = client.get("/cf12/claim/address")
+    assert r.status_code == 302
+    assert "/cf12/claim" in r.headers["Location"]
+
+
+def test_returning_user_skips_setup(client):
+    # First claim: set up name and username
+    client.post("/ret1/edit", data={"title": "First Page", "content": "X"})
+    client.post("/ret1/claim", data={"email": "returning@example.com"})
+    code = create_verification_code("returning@example.com", "claim")
+    client.post(
+        "/ret1/claim/verify", data={"code": code, "email": "returning@example.com"}
+    )
+    client.post("/ret1/claim/setup", data={"name": "Return User"})
+    client.post("/ret1/claim/address", data={"username": "returnuser"})
+
+    # Second page: returning user should skip setup/address
+    with client.session_transaction() as sess:
+        sess.pop("user_id", None)
+    client.post("/ret2/edit", data={"title": "Second Page", "content": "Y"})
+    client.post("/ret2/claim", data={"email": "returning@example.com"})
+    code = create_verification_code("returning@example.com", "claim")
+    r = client.post(
+        "/ret2/claim/verify", data={"code": code, "email": "returning@example.com"}
+    )
+    assert r.status_code == 302
+    # Should skip setup and go straight to subdomain
+    assert "returnuser.jottit.localhost:8000" in r.headers["Location"]
+    assert "/second-page" in r.headers["Location"]
+
+    page_meta = get_page_meta("second-page")
+    assert page_meta is not None
+    assert page_meta["user_id"] is not None
+
+
+def test_returning_user_preserves_profile(client):
+    # Set up a user with name and username
+    user_id = find_or_create_user("preserve@example.com")
+    set_user_username(user_id, "preserved")
+    update_user_settings(user_id, "Original Name", "preserved", "My bio")
+
+    # Create a page and claim it as this returning user
+    client.post("/pres1/edit", data={"title": "T", "content": "X"})
+    client.post("/pres1/claim", data={"email": "preserve@example.com"})
+    code = create_verification_code("preserve@example.com", "claim")
+    client.post(
+        "/pres1/claim/verify", data={"code": code, "email": "preserve@example.com"}
+    )
+
+    # Verify profile was not overwritten
+    user = get_user(user_id)
+    assert user["name"] == "Original Name"
+    assert user["username"] == "preserved"
+    assert user["bio"] == "My bio"
+
+
+def test_claim_address_requires_name(client):
+    client.post("/cf13/edit", data={"title": "T", "content": "X"})
+    client.post("/cf13/claim", data={"email": "noname@example.com"})
+    code = create_verification_code("noname@example.com", "claim")
+    client.post(
+        "/cf13/claim/verify", data={"code": code, "email": "noname@example.com"}
+    )
+    r = client.get("/cf13/claim/address")
+    assert r.status_code == 302
+    assert "/cf13/claim/setup" in r.headers["Location"]
 
 
 # -- Sign in flow --
@@ -506,13 +615,13 @@ def test_auto_claim_no_rename_on_slug_conflict(client):
 
 def test_claim_renames_slug_from_title(client):
     client.post("/cf3b/edit", data={"title": "The Brand Age", "content": "Essay"})
-    client.post(
-        "/cf3b/claim", data={"email": "slugtest@example.com", "username": "sluguser"}
-    )
+    client.post("/cf3b/claim", data={"email": "slugtest@example.com"})
     code = create_verification_code("slugtest@example.com", "claim")
-    r = client.post(
+    client.post(
         "/cf3b/claim/verify", data={"code": code, "email": "slugtest@example.com"}
     )
+    client.post("/cf3b/claim/setup", data={"name": "Slug User"})
+    r = client.post("/cf3b/claim/address", data={"username": "sluguser"})
     assert r.status_code == 302
     assert "/the-brand-age" in r.headers["Location"]
     assert get_page_meta("the-brand-age") is not None
