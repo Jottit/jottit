@@ -15,6 +15,40 @@
 })();
 
 (function() {
+    var form = document.querySelector('form[action="/settings/profile"]');
+    if (!form) return;
+    var csrf = form.querySelector('input[name="csrf_token"]');
+    var timer;
+
+    function save() {
+        var name = form.querySelector('#name');
+        var bio = form.querySelector('#bio');
+        fetch('/settings/profile', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf ? csrf.value : ''
+            },
+            body: JSON.stringify({
+                name: name ? name.value : '',
+                bio: bio ? bio.value : ''
+            })
+        });
+    }
+
+    form.addEventListener('input', function() {
+        clearTimeout(timer);
+        timer = setTimeout(save, 500);
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        clearTimeout(timer);
+        save();
+    });
+})();
+
+(function() {
     var input = document.getElementById('username');
     if (!input) return;
     var error = document.querySelector('.username-error');

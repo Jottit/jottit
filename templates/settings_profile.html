@@ -8,9 +8,6 @@
     <h1 class="title">Profile</h1>
     <div class="panel">
 
-        {% for message in get_flashed_messages() %}
-        <p class="notice notice--success">{{ message }}</p>
-        {% endfor %}
         {% if error %}
         <p class="notice notice--error">{{ error }}</p>
         {% endif %}
@@ -53,10 +50,8 @@
 
             <div class="field">
                 <label class="label" for="bio">Bio</label>
-                <textarea class="input" id="bio" name="bio" rows="2">{{ user.bio or '' }}</textarea>
+                <textarea class="input input--noresize" id="bio" name="bio" rows="3">{{ user.bio or '' }}</textarea>
             </div>
-
-            <button type="submit" class="btn btn-solid settings-save">Save changes</button>
         </form>
     </div>
 </div>

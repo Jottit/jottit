@@ -575,10 +575,19 @@ def settings_profile():
     if request.method == "GET":
         return render_template("settings_profile.html", user=user)
 
-    name = request.form.get("name", "").strip()
-    bio = request.form.get("bio", "").strip()
+    is_ajax = request.content_type and "application/json" in request.content_type
+    if is_ajax:
+        data = request.get_json(silent=True) or {}
+        name = data.get("name", "").strip()
+        bio = data.get("bio", "").strip()
+    else:
+        name = request.form.get("name", "").strip()
+        bio = request.form.get("bio", "").strip()
 
     update_user_settings(user_id, name, user.get("username") or "", bio)
+
+    if is_ajax:
+        return {"ok": True}
     flash("Profile saved")
     return redirect("/settings/profile")
 
@@ -648,7 +657,6 @@ def settings_avatar():
     key = f"{user_id}/avatar.{ext}"
     url = upload_image(key, cropped, file.content_type)
     update_user_avatar(user_id, url)
-    flash("Avatar updated")
     return redirect("/settings/profile")
 
 
@@ -667,7 +675,6 @@ def settings_avatar_delete():
         if key:
             delete_image(key)
         update_user_avatar(user_id, None)
-    flash("Avatar removed")
     return redirect("/settings/profile")
 
 

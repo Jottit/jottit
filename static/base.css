@@ -330,6 +330,10 @@ a {
     border-color: var(--text);
 }
 
+.input--noresize {
+    resize: none;
+}
+
 /* Lists */
 
 .item-list {
