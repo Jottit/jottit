@@ -20,6 +20,7 @@ RESERVED_SLUGS = {
     "static",
     "favicon.ico",
     "robots.txt",
+    "sitemap.xml",
     "export",
 }
 

@@ -333,6 +333,17 @@ def get_feed_entries_for_user(user_id):
         ).fetchall()
 
 
+def get_public_pages():
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT p.slug, p.updated_at, u.username
+               FROM pages p
+               LEFT JOIN users u ON p.user_id = u.id
+               WHERE p.draft = FALSE
+               ORDER BY p.updated_at DESC""",
+        ).fetchall()
+
+
 def delete_page(slug):
     with get_db() as conn:
         conn.execute("DELETE FROM pages WHERE slug = %s", (slug,))

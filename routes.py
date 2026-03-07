@@ -129,7 +129,34 @@ def uploaded_file(filename):
 
 @bp.route("/robots.txt")
 def robots():
-    return "User-agent: *\nAllow: /\n", 200, {"Content-Type": "text/plain"}
+    body = f"User-agent: *\nAllow: /\nSitemap: https://{BASE_DOMAIN}/sitemap.xml\n"
+    return body, 200, {"Content-Type": "text/plain"}
+
+
+@bp.route("/sitemap.xml")
+def sitemap():
+    from db import get_public_pages
+
+    pages = get_public_pages()
+    parts = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for page in pages:
+        if page["username"]:
+            loc = f"https://{page['username']}.{BASE_DOMAIN}/{page['slug']}"
+        else:
+            loc = f"https://{BASE_DOMAIN}/{page['slug']}"
+        lastmod = page["updated_at"].strftime("%Y-%m-%d")
+        parts.append(
+            f"  <url>\n"
+            f"    <loc>{xml_escape(loc)}</loc>\n"
+            f"    <lastmod>{lastmod}</lastmod>\n"
+            f"  </url>"
+        )
+    parts.append("</urlset>")
+    xml = "\n".join(parts)
+    return Response(xml, content_type="application/xml; charset=utf-8")
 
 
 @bp.route("/")
