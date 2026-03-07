@@ -16,12 +16,18 @@
         <input type="hidden" name="code" id="code-value">
         {% if email %}<input type="hidden" name="email" value="{{ email }}">{% endif %}
         <div class="code-inputs">
-            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required autofocus>
-            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
-            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
-            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
-            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
-            <input class="auth-input auth-code-digit" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-1" class="sr-only">Digit 1</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-1" inputmode="numeric" maxlength="1" pattern="[0-9]" required autofocus>
+            <label for="code-digit-2" class="sr-only">Digit 2</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-2" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-3" class="sr-only">Digit 3</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-3" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-4" class="sr-only">Digit 4</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-4" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-5" class="sr-only">Digit 5</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-5" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-6" class="sr-only">Digit 6</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-6" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
         </div>
         <button class="btn btn--outline" type="submit">Verify</button>
     </form>
