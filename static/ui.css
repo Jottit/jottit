@@ -443,6 +443,18 @@
     padding-top: var(--space-12);
 }
 
+/* Individual page — link header to home */
+
+a.profile-header--page {
+    text-decoration: none;
+    color: inherit;
+    transition: opacity 0.15s;
+}
+
+a.profile-header--page:hover {
+    opacity: 0.7;
+}
+
 /* Individual page — smaller avatar */
 
 .profile-header--page .profile-avatar {
