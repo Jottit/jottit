@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/settings" class="panel-back">&larr; Settings</a>
+    <h1 class="title">Profile</h1>
+    <div class="panel">
+
+        {% for message in get_flashed_messages() %}
+        <p class="notice notice--success">{{ message }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="notice notice--error">{{ error }}</p>
+        {% endif %}
+
+        <div class="settings-avatar-section">
+            {% if user.avatar %}
+            <img src="{{ user.avatar }}" alt="Avatar" class="settings-avatar">
+            {% else %}
+            <div class="settings-avatar settings-avatar-placeholder">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="40" cy="30" r="14" fill="currentColor"/>
+                    <ellipse cx="40" cy="68" rx="24" ry="20" fill="currentColor"/>
+                </svg>
+            </div>
+            {% endif %}
+            <div class="settings-avatar-detail">
+                <div class="settings-avatar-actions">
+                    <a href="#" id="avatar-update">{{ "Update" if user.avatar else "Upload" }}</a>
+                    {% if user.avatar %}
+                    <form method="post" action="/settings/avatar/delete" class="inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="link-btn settings-avatar-remove">Remove</button>
+                    </form>
+                    {% endif %}
+                </div>
+                <p class="help-text">Recommended: Square JPG, PNG, or GIF</p>
+            </div>
+        </div>
+        <form id="avatar-form" method="post" action="/settings/avatar" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="file" id="avatar-input" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
+        </form>
+
+        <form method="post" action="/settings/profile">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label class="label" for="name">Your name</label>
+                <input class="input" type="text" id="name" name="name" value="{{ user.name or '' }}">
+            </div>
+
+            <div class="field">
+                <label class="label" for="bio">Bio</label>
+                <textarea class="input" id="bio" name="bio" rows="2">{{ user.bio or '' }}</textarea>
+            </div>
+
+            <button type="submit" class="btn btn-solid settings-save">Save changes</button>
+        </form>
+    </div>
+</div>
+<script src="/static/settings.js"></script>
+{% endblock %}

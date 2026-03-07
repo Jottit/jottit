@@ -6,6 +6,22 @@
     right: var(--space-8);
 }
 
+.home-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+}
+
+.home-actions a {
+    font-size: var(--font-size-sm);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.home-actions a:hover {
+    opacity: 0.7;
+}
+
 /* About header */
 
 .public-header {
@@ -325,6 +341,22 @@
     gap: var(--space-2);
 }
 
+.admin-banner .btn--outline {
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    border-color: rgba(0, 0, 0, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.btn-plus {
+    font-size: 1.5em;
+    font-weight: 300;
+    margin-top: -2px;
+}
+
+
 .editor .btn--outline {
     color: var(--text);
     border-color: #ddd;
@@ -332,6 +364,49 @@
 
 .editor .btn--outline:hover {
     border-color: #bbb;
+}
+
+/* Profile header (subdomain pages) */
+
+.profile-header {
+    text-align: center;
+    padding: 80px var(--space-5) var(--space-10);
+    max-width: var(--site-max-width);
+    margin: 0 auto;
+    border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 640px) {
+    .profile-header {
+        padding: 80px var(--space-10) var(--space-10);
+    }
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+}
+
+.profile-name {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: var(--space-3) 0 var(--space-3);
+    letter-spacing: -0.01em;
+}
+
+.profile-name a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.profile-bio {
+    color: var(--muted);
+    margin: var(--space-2) auto 0;
+    max-width: var(--bio-max-width);
 }
 
 /* Site header */
@@ -347,13 +422,19 @@
 
 .admin-banner .admin-banner-home {
     margin-right: auto;
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-xl);
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(90deg, var(--brand-1), var(--brand-2), var(--brand-3));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+.admin-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
 }
 
 .admin-banner a,
@@ -369,6 +450,29 @@
     opacity: 0.7;
 }
 
+.admin-avatar-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.admin-banner .admin-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--muted);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+}
+
 .site-header {
     border-bottom: 1px solid var(--border);
 }
@@ -377,10 +481,16 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: var(--measure);
+    max-width: var(--site-max-width);
     margin: 0 auto;
     position: relative;
-    padding: var(--space-8);
+    padding: var(--space-5) var(--space-5);
+}
+
+@media (min-width: 640px) {
+    .site-header-inner {
+        padding: var(--space-5) var(--space-10);
+    }
 }
 
 .site-title {
@@ -605,13 +715,157 @@
     text-decoration: underline;
 }
 
-/* Settings */
+/* Settings hub */
+
+.settings-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-8) var(--space-8);
+    margin: calc(-1 * var(--space-12));
+    margin-bottom: 0;
+    border-radius: var(--radius-pill) var(--radius-pill) 0 0;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s;
+}
+
+.settings-identity:hover {
+    background: var(--bg);
+}
+
+.settings-identity-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.settings-identity-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-identity-name {
+    font-weight: 600;
+    font-size: var(--font-size-md);
+}
+
+.settings-identity-bio {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-list {
+    margin: 0 calc(-1 * var(--space-12));
+    margin-bottom: calc(-1 * var(--space-12));
+    border-top: 1px solid var(--border);
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-8);
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s;
+}
+
+.settings-row:hover {
+    background: var(--bg);
+}
+
+.settings-row--last {
+    border-bottom: none;
+    padding: var(--space-4) var(--space-8);
+    padding-bottom: var(--space-8);
+    border-radius: 0 0 var(--radius-pill) var(--radius-pill);
+}
+
+.settings-row-label {
+    font-weight: 600;
+    font-size: var(--font-size-md);
+}
+
+.settings-row-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.settings-row-value {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+}
+
+.settings-chevron {
+    font-size: var(--font-size-xl);
+    color: var(--muted);
+    line-height: 1;
+}
+
+.signout-btn {
+    text-decoration: none;
+}
+
+/* Settings sub-pages */
+
+.settings-avatar-section {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    margin-bottom: var(--space-8);
+}
+
+.settings-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.settings-avatar-placeholder {
+    background: var(--bg-surface, var(--border));
+    color: var(--muted);
+    overflow: hidden;
+}
+
+.settings-avatar-placeholder svg {
+    width: 100%;
+    height: 100%;
+}
+
+.settings-avatar-detail {
+    min-width: 0;
+}
+
+.settings-avatar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.settings-avatar-remove {
+    color: var(--error);
+}
 
 .settings-subdomain-row {
     display: flex;
     align-items: center;
-    background: var(--bg-surface);
-    border: 1px solid var(--input-border);
+    background: var(--bg);
+    border: none;
     border-radius: 4px;
 }
 

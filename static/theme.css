@@ -3,12 +3,12 @@
 .page-main {
     max-width: var(--site-max-width);
     margin: 0 auto;
-    padding: var(--space-10) var(--space-5);
+    padding: var(--space-5) var(--space-5);
 }
 
 @media (min-width: 640px) {
     .page-main {
-        padding: 80px var(--space-10);
+        padding: var(--space-10) var(--space-10);
     }
 }
 
@@ -112,6 +112,45 @@
     border: none;
     border-top: 1px solid #e0e0e0;
     margin: 2.5rem 0;
+}
+
+/* Subdomain page listing */
+
+.page-listing-item {
+    padding: 0 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.page-listing-item:last-child {
+    border-bottom: none;
+}
+
+.page a.page-listing-link {
+    text-decoration: none;
+    display: block;
+}
+
+.page a.page-listing-link:hover .page-listing-title {
+    text-decoration: underline;
+}
+
+.page-listing-title {
+    font-family: var(--site-font-heading);
+    font-size: 1.625rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--site-color-heading);
+    margin: 0 0 0.4rem;
+}
+
+.page-listing-desc {
+    color: var(--site-color-text);
+    margin: 0 0 0.4rem;
+}
+
+.page-listing-date {
+    font-size: var(--font-size-sm);
+    color: var(--site-color-muted);
 }
 
 .page-footer {

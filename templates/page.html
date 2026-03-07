@@ -2,73 +2,56 @@
 
 {% block title %}{% if page_title %}{{ page_title }} - {% endif %}{% if site_title %}{{ site_title }}{% else %}Jottit{% endif %}{% endblock %}
 {% block meta_description %}{% if page_description %}{{ page_description }}{% else %}A page on Jottit.{% endif %}{% endblock %}
-{% block og_title %}{% if page_title %}{{ page_title }}{% elif site_title %}{{ site_title }}{% else %}Jottit{% endif %}{% endblock %}
+{% block og_title %}{% if page_title %}{{ page_title }}{% else %}Jottit{% endif %}{% endblock %}
 {% block og_description %}{% if page_description %}{{ page_description }}{% else %}A page on Jottit.{% endif %}{% endblock %}
 
 {% block head %}
-<link rel="alternate" type="application/rss+xml" href="{{ site_path(slug, 'feed.xml') }}" title="{{ site_title or 'Jottit' }}">
-<link rel="alternate" type="application/feed+json" href="{{ site_path(slug, 'feed.json') }}" title="{{ site_title or 'Jottit' }}">
+<link rel="alternate" type="application/rss+xml" href="/{{ slug }}/feed.xml" title="{{ site_title or page_title or 'Jottit' }}">
+<link rel="alternate" type="application/feed+json" href="/{{ slug }}/feed.json" title="{{ site_title or page_title or 'Jottit' }}">
 {% endblock %}
 
 {% block body %}
 {% if is_owner %}
 <div class="admin-banner">
     <a href="{{ base_url }}" class="admin-banner-home">Jottit</a>
-    <a href="{{ site_path(slug, 'settings') }}">Settings</a>
-    {% include "_signout.html" %}
-</div>
-{% endif %}
-{% if site_title or nav_pages %}
-<header class="site-header">
-    <div class="site-header-inner">
-        {% if site_title %}
-        <h1 class="site-title h-card"><a class="p-name u-url" href="{{ site_path(slug) }}">{{ site_title }}</a></h1>
-        {% endif %}
-        {% if nav_pages %}
-        <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
-        <label for="nav-toggle" class="nav-hamburger" aria-label="Toggle navigation">
-            <span></span>
-            <span></span>
-            <span></span>
-        </label>
-        <nav class="site-nav">
-            {% for page in nav_pages %}
-            {% if page.is_index %}
-            <a href="{{ site_path(slug) }}">{{ page.title }}</a>
-            {% elif page.exists %}
-            <a href="{{ site_path(slug, page.slug) }}">{{ page.title }}</a>
-            {% else %}
-            <a href="{{ site_path(slug, 'edit') }}?page={{ page.slug }}&amp;title={{ page.title | urlencode }}" class="wikilink-new">{{ page.title }}</a>
-            {% endif %}
-            {% endfor %}
-        </nav>
+    <div class="admin-banner-actions">
+        <a href="{{ base_url }}/new" class="btn btn--outline btn--sm"><span class="btn-plus">+</span> Create a page</a>
+        {% if owner_avatar_url %}
+        <a href="{{ base_url }}/settings" title="Settings"><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"></a>
+        {% else %}
+        <a href="{{ base_url }}/settings" class="admin-avatar" title="Settings">{{ owner_initials }}</a>
         {% endif %}
     </div>
+</div>
+{% endif %}
+{% if site_title %}
+<header class="profile-header h-card">
+    {% if avatar_url %}
+    <img src="{{ avatar_url }}" alt="{{ site_title }}" class="profile-avatar u-photo">
+    {% endif %}
+    <h1 class="profile-name"><a class="p-name u-url" href="/">{{ site_title }}</a></h1>
+    {% if bio %}
+    <p class="profile-bio p-note">{{ bio }}</p>
+    {% endif %}
 </header>
 {% endif %}
 {% if unclaimed %}
 <div class="claim-banner">
-    This page is unclaimed. <a href="{{ site_path(slug, 'claim') }}" class="claim-btn">Make it yours</a>
+    This page is unclaimed. <a href="/{{ slug }}/claim" class="claim-btn">Make it yours</a>
 </div>
 {% endif %}
 <main class="page-main">
     <article class="page h-entry">
         <div class="e-content">{{ content | safe }}</div>
-        <a class="u-url" href="{{ site_path(slug, page_slug) }}" hidden></a>
+        <a class="u-url" href="/{{ slug }}" hidden></a>
     </article>
     {% if show_actions %}
     <div class="page-actions">
         <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">{% if draft %}<span class="draft-pill">DRAFT</span> · {% endif %}last edited {{ updated_at | relative_time }}</time>
         <div class="page-actions-buttons">
-            {% if is_owner and page_slug %}
-            <form method="post" action="{{ site_path(slug, 'delete') }}" class="inline-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="page" value="{{ page_slug }}">
-                <button type="submit" class="btn btn--outline btn--sm" id="delete-page-btn">Delete</button>
-            </form>
-            {% endif %}
-            {% if has_history %}<a href="{{ site_path(slug, page_slug, 'history') }}" class="btn btn--outline btn--sm">History</a>{% endif %}
-            <a href="{{ site_path(slug, 'edit') }}{% if page_slug %}?page={{ page_slug }}{% endif %}" class="btn btn--outline btn--sm">Edit</a>
+            {% if is_owner %}<a href="/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
+            {% if has_history %}<a href="/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>{% endif %}
+            <a href="/{{ slug }}/edit" class="btn btn--outline btn--sm">Edit</a>
         </div>
     </div>
     {% endif %}
@@ -76,7 +59,4 @@
         <span>powered by <a href="{{ base_url }}">Jottit</a></span>
     </footer>
 </main>
-{% if is_owner and page_slug %}
-<script src="/static/delete-page.js" defer></script>
-{% endif %}
 {% endblock %}

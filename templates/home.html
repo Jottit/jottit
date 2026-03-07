@@ -3,7 +3,11 @@
 {% block body %}
 <div class="home">
     {% if signed_in %}
-    {% with class="signin-link" %}{% include "_signout.html" %}{% endwith %}
+    {% if owner_avatar_url %}
+    <a href="/settings" class="signin-link"><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"></a>
+    {% else %}
+    <a href="/settings" class="signin-link admin-avatar">{{ owner_initials }}</a>
+    {% endif %}
     {% else %}
     <a href="/signin" class="signin-link">Sign in</a>
     {% endif %}
@@ -11,10 +15,7 @@
     <main class="home-main">
         <h1 class="logo">Jottit</h1>
         <p class="tagline">The fastest way to publish on the web.</p>
-        <a href="/new" class="btn btn-solid btn-lg mb-2">Create a page</a>
-        {% if sites %}
-        <a href="/sites" class="btn btn--outline">My sites</a>
-        {% endif %}
+        <a href="/new" class="btn btn-solid btn-lg">Create a page</a>
     </main>
 
     {% include "_footer.html" %}

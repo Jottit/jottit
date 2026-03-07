@@ -1,8 +1,8 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import sentry_sdk
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
 
 from db import init_db
@@ -25,14 +25,21 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_DEBUG") != "1"
 app.config["SESSION_COOKIE_DOMAIN"] = os.environ.get(
     "SESSION_COOKIE_DOMAIN", ".jottit.localhost"
 )
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
 CSRFProtect(app)
 limiter.init_app(app)
 app.register_blueprint(bp)
 
 
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+
+
 _CSP = (
-    "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'"
+    "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self';"
+    " img-src 'self' https://*.fly.storage.tigris.dev"
 )
 
 

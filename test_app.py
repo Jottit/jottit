@@ -1,16 +1,19 @@
 import io
 import json
-import zipfile
+from unittest.mock import patch
 
 from db import (
-    claim_site,
-    create_page,
+    claim_page,
     create_verification_code,
     find_or_create_user,
-    get_site,
+    get_page_meta,
+    get_user,
     save_page,
+    set_user_username,
+    update_user_avatar,
+    update_user_settings,
 )
-from utils import describe_change, parse_nav, slugify
+from utils import describe_change, slugify
 
 # -- Homepage --
 
@@ -39,31 +42,23 @@ def test_edit_get_new_page(client):
     assert b"Write something" in r.data
 
 
+def test_edit_cancel_new_page_goes_home(client):
+    r = client.get("/newslug/edit")
+    assert b'href="/"' in r.data
+
+
+def test_edit_cancel_existing_page_goes_to_page(client):
+    client.post("/existslug/edit", data={"title": "T", "content": "C"})
+    r = client.get("/existslug/edit")
+    assert b'href="/existslug"' in r.data
+
+
 def test_edit_get_existing_page(client):
     client.post("/abc12/edit", data={"title": "Hello", "content": "World"})
     r = client.get("/abc12/edit")
     assert r.status_code == 200
     assert b"Hello" in r.data
     assert b"World" in r.data
-
-
-def test_edit_home_page_hides_draft_checkbox(client):
-    r = client.get("/abc13/edit")
-    assert b"Keep this a draft" not in r.data
-
-
-def test_edit_subpage_shows_draft_checkbox(client):
-    client.post("/abc14/edit", data={"title": "Main", "content": "Home"})
-    r = client.get("/abc14/edit?page=about")
-    assert b"Keep this a draft" in r.data
-
-
-def test_edit_new_page_prefills_title_from_query(client):
-    client.post("/pf1/edit", data={"title": "Main", "content": "Home"})
-    r = client.get("/pf1/edit?page=about&title=About+me")
-    assert r.status_code == 200
-    assert b'value="About me"' in r.data
-    assert b"autofocus" in r.data.split(b"editor-content")[1]
 
 
 def test_publish_creates_page(client):
@@ -77,14 +72,6 @@ def test_trailing_slash_works(client):
     r = client.get("/tslash/")
     assert r.status_code == 200
     assert b"Hi" in r.data
-
-
-def test_publish_with_draft(client):
-    client.post(
-        "/draftpage/edit", data={"title": "Draft", "content": "WIP", "draft": "on"}
-    )
-    r = client.get("/draftpage")
-    assert r.status_code == 200
 
 
 # -- View page --
@@ -109,7 +96,7 @@ def test_view_nonexistent_page(client):
     assert r.status_code == 404
 
 
-def test_view_page_shows_actions_for_owner(client):
+def test_view_page_shows_actions_for_creator(client):
     client.post("/owned/edit", data={"title": "Mine", "content": "Content"})
     client.post("/owned/edit", data={"title": "Mine", "content": "Updated"})
     r = client.get("/owned")
@@ -123,6 +110,55 @@ def test_view_page_shows_latest_content(client):
     r = client.get("/evolve")
     assert b"V2" in r.data
     assert b"Second" in r.data
+
+
+# -- Session-based edit protection --
+
+
+def test_creator_can_edit_unclaimed_page(client):
+    client.post("/prot1/edit", data={"title": "T", "content": "X"})
+    r = client.get("/prot1/edit")
+    assert r.status_code == 200
+
+
+def test_non_creator_cannot_edit_unclaimed_page(client):
+    # Create page in one session
+    client.post("/prot2/edit", data={"title": "T", "content": "X"})
+
+    # Clear session to simulate different browser
+    with client.session_transaction() as sess:
+        sess.clear()
+
+    r = client.get("/prot2/edit")
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/prot2"
+
+
+def test_non_owner_redirected_from_edit(client):
+    client.post("/prot3/edit", data={"title": "T", "content": "X"})
+    user_id = find_or_create_user("owner@example.com")
+    page_meta = get_page_meta("prot3")
+    claim_page(page_meta["id"], user_id)
+
+    with client.session_transaction() as sess:
+        sess.clear()
+
+    r = client.get("/prot3/edit")
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/prot3"
+
+
+def test_owner_can_edit(client):
+    client.post("/prot4/edit", data={"title": "T", "content": "X"})
+    user_id = find_or_create_user("owner@example.com")
+    page_meta = get_page_meta("prot4")
+    claim_page(page_meta["id"], user_id)
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/prot4/edit")
+    assert r.status_code == 200
 
 
 # -- Revisions --
@@ -180,19 +216,6 @@ def test_view_revision_nonexistent(client):
     assert r.status_code == 404
 
 
-def test_view_revision_subpage_link(client):
-    client.post("/vrev3/edit", data={"title": "Main", "content": "Home"})
-    client.post(
-        "/vrev3/edit", data={"title": "About V1", "content": "First", "page": "about"}
-    )
-    client.post(
-        "/vrev3/edit", data={"title": "About V2", "content": "Second", "page": "about"}
-    )
-    r = client.get("/vrev3/about/history/1")
-    assert r.status_code == 200
-    assert b'href="/vrev3/about"' in r.data
-
-
 # -- Change descriptions --
 
 
@@ -219,16 +242,25 @@ def test_describe_same_content():
 # -- Claim banner --
 
 
-def test_unclaimed_page_shows_claim_banner(client):
+def test_unclaimed_page_shows_claim_banner_to_creator(client):
     client.post("/uncl/edit", data={"title": "T", "content": "X"})
     r = client.get("/uncl")
     assert b"Make it yours" in r.data
 
 
+def test_unclaimed_page_hides_claim_banner_from_non_creator(client):
+    client.post("/uncl2/edit", data={"title": "T", "content": "X"})
+    with client.session_transaction() as sess:
+        sess.clear()
+    r = client.get("/uncl2")
+    assert b"Make it yours" not in r.data
+
+
 def test_claimed_page_hides_claim_banner(client):
     client.post("/clmd/edit", data={"title": "T", "content": "X"})
     user_id = find_or_create_user("owner@example.com")
-    claim_site(get_site("clmd")["id"], user_id)
+    page_meta = get_page_meta("clmd")
+    claim_page(page_meta["id"], user_id)
     r = client.get("/clmd")
     assert b"Make it yours" not in r.data
 
@@ -241,47 +273,87 @@ def test_claim_page_shows_form(client):
     r = client.get("/cf1/claim")
     assert r.status_code == 200
     assert b"email" in r.data
+    assert b"username" in r.data
 
 
 def test_claim_already_claimed_redirects(client):
     client.post("/cf2/edit", data={"title": "T", "content": "X"})
     user_id = find_or_create_user("owner@example.com")
-    claim_site(get_site("cf2")["id"], user_id)
+    page_meta = get_page_meta("cf2")
+    claim_page(page_meta["id"], user_id)
     r = client.get("/cf2/claim")
     assert r.status_code == 302
 
 
-def test_claim_full_flow(client):
-    client.post("/cf3/edit", data={"title": "T", "content": "X"})
+def test_claim_requires_username(client):
+    client.post("/cf3a/edit", data={"title": "T", "content": "X"})
+    r = client.post("/cf3a/claim", data={"email": "user@example.com", "username": ""})
+    assert r.status_code == 200
+    assert b"Username is required" in r.data
 
-    # Submit email — renders verify page directly
-    r = client.post("/cf3/claim", data={"email": "user@example.com"})
+
+def test_claim_full_flow(client):
+    client.post("/cf3/edit", data={"title": "My Great Page", "content": "X"})
+
+    r = client.post(
+        "/cf3/claim", data={"email": "user@example.com", "username": "testuser"}
+    )
     assert r.status_code == 200
     assert b"Check your email" in r.data
 
-    # Get the code from the DB
     code = create_verification_code("user@example.com", "claim")
 
-    # Submit code
     r = client.post(
         "/cf3/claim/verify", data={"code": code, "email": "user@example.com"}
     )
     assert r.status_code == 302
-    assert r.headers["Location"] == "/cf3"
+    # Slug gets renamed to slugified title
+    assert "/my-great-page" in r.headers["Location"]
 
-    # Site is now claimed
-    site = get_site("cf3")
-    assert site["user_id"] is not None
+    page_meta = get_page_meta("my-great-page")
+    assert page_meta["user_id"] is not None
 
-    # Banner is gone and edit button is visible
-    r = client.get("/cf3")
-    assert b"Make it yours" not in r.data
-    assert b"Edit" in r.data
+    user = get_user(page_meta["user_id"])
+    assert user["username"] == "testuser"
+
+
+def test_claim_sets_username_on_user(client):
+    client.post("/cfun/edit", data={"title": "Unique Title", "content": "X"})
+    r = client.post(
+        "/cfun/claim", data={"email": "newuser@example.com", "username": "newname"}
+    )
+    assert r.status_code == 200
+
+    code = create_verification_code("newuser@example.com", "claim")
+    client.post(
+        "/cfun/claim/verify", data={"code": code, "email": "newuser@example.com"}
+    )
+
+    page_meta = get_page_meta("unique-title")
+    user = get_user(page_meta["user_id"])
+    assert user["username"] == "newname"
+
+
+def test_returning_user_reuses_existing_username(client):
+    user_id = find_or_create_user("returning@example.com")
+    set_user_username(user_id, "existingname")
+
+    client.post("/cfret/edit", data={"title": "T", "content": "X"})
+    client.post(
+        "/cfret/claim", data={"email": "returning@example.com", "username": "newname"}
+    )
+    code = create_verification_code("returning@example.com", "claim")
+    client.post(
+        "/cfret/claim/verify", data={"code": code, "email": "returning@example.com"}
+    )
+
+    user = get_user(user_id)
+    assert user["username"] == "existingname"
 
 
 def test_claim_invalid_code_rejected(client):
     client.post("/cf4/edit", data={"title": "T", "content": "X"})
-    client.post("/cf4/claim", data={"email": "user@example.com"})
+    client.post("/cf4/claim", data={"email": "user@example.com", "username": "user4"})
     r = client.post(
         "/cf4/claim/verify", data={"code": "000000", "email": "user@example.com"}
     )
@@ -291,14 +363,16 @@ def test_claim_invalid_code_rejected(client):
 
 def test_claim_stores_email_in_session(client):
     client.post("/cf5/edit", data={"title": "T", "content": "X"})
-    client.post("/cf5/claim", data={"email": "session@example.com"})
+    client.post(
+        "/cf5/claim", data={"email": "session@example.com", "username": "user5"}
+    )
     with client.session_transaction() as sess:
         assert sess.get("claim_email") == "session@example.com"
 
 
 def test_claim_rejects_email_substitution(client):
     client.post("/cf6/edit", data={"title": "T", "content": "X"})
-    client.post("/cf6/claim", data={"email": "real@example.com"})
+    client.post("/cf6/claim", data={"email": "real@example.com", "username": "user6"})
     code = create_verification_code("real@example.com", "claim")
     r = client.post(
         "/cf6/claim/verify", data={"code": code, "email": "attacker@example.com"}
@@ -315,53 +389,11 @@ def test_signin_stores_email_in_session(client):
 
 def test_claim_cleans_up_session_email(client):
     client.post("/cf7/edit", data={"title": "T", "content": "X"})
-    client.post("/cf7/claim", data={"email": "clean@example.com"})
+    client.post("/cf7/claim", data={"email": "clean@example.com", "username": "user7"})
     code = create_verification_code("clean@example.com", "claim")
     client.post("/cf7/claim/verify", data={"code": code, "email": "clean@example.com"})
     with client.session_transaction() as sess:
         assert "claim_email" not in sess
-
-
-# -- Edit protection --
-
-
-def test_non_owner_redirected_from_edit(client):
-    client.post("/prot1/edit", data={"title": "T", "content": "X"})
-    user_id = find_or_create_user("owner@example.com")
-    claim_site(get_site("prot1")["id"], user_id)
-
-    # Without session, should redirect
-    r = client.get("/prot1/edit")
-    assert r.status_code == 302
-    assert r.headers["Location"] == "/prot1"
-
-
-def test_owner_can_edit(client):
-    client.post("/prot2/edit", data={"title": "T", "content": "X"})
-    user_id = find_or_create_user("owner@example.com")
-    claim_site(get_site("prot2")["id"], user_id)
-
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/prot2/edit")
-    assert r.status_code == 200
-
-
-def test_unclaimed_page_anyone_can_edit(client):
-    client.post("/prot3/edit", data={"title": "T", "content": "X"})
-    r = client.get("/prot3/edit")
-    assert r.status_code == 200
-
-
-def test_signed_in_user_auto_claims_new_page(client):
-    user_id = find_or_create_user("creator@example.com")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    client.post("/auto1/edit", data={"title": "Mine", "content": "Auto claimed"})
-    site = get_site("auto1")
-    assert site["user_id"] == user_id
 
 
 # -- Sign in flow --
@@ -374,20 +406,16 @@ def test_signin_page(client):
 
 
 def test_signin_full_flow(client):
-    # Submit email — renders verify page directly
     r = client.post("/signin", data={"email": "user@example.com"})
     assert r.status_code == 200
     assert b"Check your email" in r.data
 
-    # Get code
     code = create_verification_code("user@example.com", "signin")
 
-    # Submit code
     r = client.post("/signin/verify", data={"code": code, "email": "user@example.com"})
     assert r.status_code == 302
     assert r.headers["Location"] == "/"
 
-    # Session has user_id
     with client.session_transaction() as sess:
         assert "user_id" in sess
 
@@ -405,8 +433,9 @@ def test_signin_invalid_code(client):
 
 
 def test_signout(client):
+    user_id = find_or_create_user("signout@example.com")
     with client.session_transaction() as sess:
-        sess["user_id"] = 1
+        sess["user_id"] = user_id
 
     r = client.post("/signout")
     assert r.status_code == 302
@@ -415,245 +444,312 @@ def test_signout(client):
         assert "user_id" not in sess
 
 
-# -- Settings --
-
-
-def test_settings_404_without_subdomain(client):
-    r = client.get("/settings")
-    assert r.status_code == 404
-
-
 # -- Homepage sign in / settings link --
 
 
 def test_homepage_shows_signin_when_logged_out(client):
     r = client.get("/")
     assert b"Sign in" in r.data
-    assert b"Settings" not in r.data
 
 
-def test_homepage_shows_signout_when_logged_in(client):
+def test_homepage_shows_avatar_when_logged_in(client):
+    user_id = find_or_create_user("logged@example.com")
     with client.session_transaction() as sess:
-        sess["user_id"] = 1
+        sess["user_id"] = user_id
 
     r = client.get("/")
-    assert b"Sign out" in r.data
+    assert b"/settings" in r.data
     assert b"Sign in" not in r.data
 
 
-# -- Homepage sites list --
+# -- Homepage pages list --
 
 
-def test_homepage_shows_my_sites_link(client):
-    user_id = find_or_create_user("sites@example.com")
-    client.post("/mysite1/edit", data={"title": "First", "content": "A"})
-    claim_site(get_site("mysite1")["id"], user_id)
-
+def test_homepage_no_my_pages_link(client):
+    user_id = find_or_create_user("pages@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
     r = client.get("/")
-    assert b"My sites" in r.data
-    assert b"/sites" in r.data
+    assert b"My pages" not in r.data
 
 
-def test_homepage_no_my_sites_link_when_none(client):
-    user_id = find_or_create_user("nosites@example.com")
+# -- Auto-claim for signed-in users --
+
+
+def test_signed_in_user_auto_claims_new_page(client):
+    user_id = find_or_create_user("creator@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.get("/")
-    assert b"My sites" not in r.data
-
-
-# -- Per-site settings --
-
-
-def _create_claimed_site(client, slug="stest"):
-    client.post(f"/{slug}/edit", data={"title": "T", "content": "X"})
-    user_id = find_or_create_user("owner@example.com")
-    site = get_site(slug)
-    claim_site(site["id"], user_id)
-    return user_id
-
-
-def test_site_settings_requires_owner(client):
-    _create_claimed_site(client, "ss1")
-    r = client.get("/ss1/settings")
+    r = client.post("/auto1/edit", data={"title": "Mine", "content": "Auto claimed"})
+    # Page gets renamed to slugified title
     assert r.status_code == 302
-    assert r.headers["Location"] == "/ss1"
+    assert r.headers["Location"] == "/mine"
+    page_meta = get_page_meta("mine")
+    assert page_meta["user_id"] == user_id
 
 
-def test_site_settings_shows_form(client):
-    user_id = _create_claimed_site(client, "ss2")
+def test_auto_claim_no_rename_on_slug_conflict(client):
+    user_id = find_or_create_user("conflict@example.com")
+    # Create an existing page with the slug "taken"
+    save_page("taken", "# Taken\n\nExisting", False)
+
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.get("/ss2/settings")
+    r = client.post("/auto2/edit", data={"title": "Taken", "content": "New"})
+    assert r.status_code == 302
+    # Keeps original slug since "taken" is already used
+    assert r.headers["Location"] == "/auto2"
+
+
+def test_claim_renames_slug_from_title(client):
+    client.post("/cf3b/edit", data={"title": "The Brand Age", "content": "Essay"})
+    client.post(
+        "/cf3b/claim", data={"email": "slugtest@example.com", "username": "sluguser"}
+    )
+    code = create_verification_code("slugtest@example.com", "claim")
+    r = client.post(
+        "/cf3b/claim/verify", data={"code": code, "email": "slugtest@example.com"}
+    )
+    assert r.status_code == 302
+    assert "/the-brand-age" in r.headers["Location"]
+    assert get_page_meta("the-brand-age") is not None
+    assert get_page_meta("cf3b") is None
+
+
+# -- User settings --
+
+
+def test_settings_requires_signin(client):
+    r = client.get("/settings")
+    assert r.status_code == 302
+    assert "/signin" in r.headers["Location"]
+
+
+def test_user_settings_shows_hub(client):
+    user_id = find_or_create_user("settings@example.com")
+    set_user_username(user_id, "sethub")
+    update_user_settings(user_id, "Hub User", "sethub", "My bio")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/settings")
     assert r.status_code == 200
-    assert b"Site title" in r.data
-    assert b"Subdomain" in r.data
+    assert b"Hub User" in r.data
+    assert b"My bio" in r.data
+    assert b"Address" in r.data
+    assert b"Export" in r.data
+    assert b"Sign out" in r.data
 
 
-def test_site_settings_save_title(client):
-    user_id = _create_claimed_site(client, "ss3")
+def test_settings_profile_shows_form(client):
+    user_id = find_or_create_user("setprof@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post("/ss3/settings", data={"title": "My Site", "subdomain": ""})
+    r = client.get("/settings/profile")
+    assert r.status_code == 200
+    assert b"Your name" in r.data
+    assert b"Bio" in r.data
+
+
+def test_settings_profile_save(client):
+    user_id = find_or_create_user("settings2@example.com")
+    set_user_username(user_id, "profuser")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/settings/profile", data={"name": "My Name", "bio": "Hello"})
     assert r.status_code == 302
 
-    site = get_site("ss3")
-    assert site["title"] == "My Site"
+    user = get_user(user_id)
+    assert user["name"] == "My Name"
+    assert user["bio"] == "Hello"
 
 
-def test_site_settings_save_subdomain(client):
-    user_id = _create_claimed_site(client, "ss4")
+def test_settings_subdomain_shows_form(client):
+    user_id = find_or_create_user("setsub@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post("/ss4/settings", data={"title": "", "subdomain": "mysite"})
+    r = client.get("/settings/subdomain")
+    assert r.status_code == 200
+    assert b"Address" in r.data
+    assert b".jottit.org" in r.data
+
+
+def test_settings_subdomain_save(client):
+    user_id = find_or_create_user("setsub2@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/settings/subdomain", data={"username": "myname"})
     assert r.status_code == 302
 
-    site = get_site("ss4")
-    assert site["subdomain"] == "mysite"
+    user = get_user(user_id)
+    assert user["username"] == "myname"
 
 
-def test_subdomain_invalid_chars_rejected(client):
-    user_id = _create_claimed_site(client, "ss5")
+def test_settings_subdomain_invalid_username(client):
+    user_id = find_or_create_user("settings3@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post("/ss5/settings", data={"title": "", "subdomain": "My Site!"})
+    r = client.post("/settings/subdomain", data={"username": "BAD!"})
     assert r.status_code == 200
     assert b"lowercase" in r.data
 
 
-def test_subdomain_uniqueness(client):
-    user_id = _create_claimed_site(client, "ss6")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    client.post("/ss6/settings", data={"title": "", "subdomain": "taken"})
+def test_settings_subdomain_username_uniqueness(client):
+    user_id1 = find_or_create_user("settings4@example.com")
+    set_user_username(user_id1, "taken")
 
-    user_id2 = _create_claimed_site(client, "ss7")
+    user_id2 = find_or_create_user("settings5@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id2
-    r = client.post("/ss7/settings", data={"title": "", "subdomain": "taken"})
+
+    r = client.post("/settings/subdomain", data={"username": "taken"})
     assert r.status_code == 200
     assert b"already taken" in r.data
 
 
-def test_nav_via_textarea(client):
-    user_id = _create_claimed_site(client, "ss8")
-    site = get_site("ss8")
-    create_page(site["id"], "about")
+def test_settings_export_page(client):
+    user_id = find_or_create_user("setexp@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    client.post(
-        "/ss8/edit", data={"title": "About", "content": "Info", "page": "about"}
-    )
-    client.post(
-        "/ss8/settings",
-        data={"title": "", "subdomain": "", "nav": "About: about"},
-    )
-    r = client.get("/ss8")
-    assert b"/ss8/about" in r.data
-    assert b"About" in r.data
+    r = client.get("/settings/export")
+    assert r.status_code == 200
+    assert b"Download" in r.data
 
 
-def test_nav_remove_item(client):
-    user_id = _create_claimed_site(client, "ss9")
-    site = get_site("ss9")
-    create_page(site["id"], "about")
+# -- Username availability API --
+
+
+def test_check_username_available(client):
+    r = client.get("/api/check-username?username=fresh")
+    data = json.loads(r.data)
+    assert data["available"] is True
+
+
+def test_check_username_taken(client):
+    user_id = find_or_create_user("ucheck@example.com")
+    set_user_username(user_id, "taken1")
+    r = client.get("/api/check-username?username=taken1")
+    data = json.loads(r.data)
+    assert data["available"] is False
+    assert "already taken" in data["error"]
+
+
+def test_check_username_invalid(client):
+    r = client.get("/api/check-username?username=BAD!")
+    data = json.loads(r.data)
+    assert data["available"] is False
+    assert "lowercase" in data["error"]
+
+
+def test_check_username_empty(client):
+    r = client.get("/api/check-username?username=")
+    data = json.loads(r.data)
+    assert data["available"] is False
+
+
+# -- /pages page --
+
+
+def test_pages_page_lists_all(client):
+    user_id = find_or_create_user("pageslist@example.com")
+    for i in range(5):
+        slug = f"pl{i}"
+        save_page(slug, f"# Page {i}\n\nContent", False)
+        page_meta = get_page_meta(slug)
+        claim_page(page_meta["id"], user_id)
+
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    client.post(
-        "/ss9/edit", data={"title": "About", "content": "Info", "page": "about"}
+    r = client.get("/pages")
+    assert r.status_code == 200
+    body = r.data.decode()
+    for i in range(5):
+        assert f"pl{i}" in body
+
+
+def test_pages_page_requires_signin(client):
+    r = client.get("/pages")
+    assert r.status_code == 302
+    assert "/signin" in r.headers["Location"]
+
+
+# -- Subdomain routing --
+
+
+def _create_user_with_username(client, email, username, slug):
+    user_id = find_or_create_user(email)
+    set_user_username(user_id, username)
+    save_page(slug, "# Test\n\nContent", False)
+    page_meta = get_page_meta(slug)
+    claim_page(page_meta["id"], user_id)
+    return user_id
+
+
+def test_slug_redirects_to_subdomain(client):
+    _create_user_with_username(client, "sd@example.com", "mysite", "sd1")
+    r = client.get("/sd1")
+    assert r.status_code == 302
+    assert "mysite.jottit.localhost:8000" in r.headers["Location"]
+
+
+def test_subdomain_home_lists_pages(client):
+    user_id = _create_user_with_username(client, "sub@example.com", "subuser", "subp1")
+    save_page("subp2", "# Second\n\nMore content", False)
+    page_meta = get_page_meta("subp2")
+    claim_page(page_meta["id"], user_id)
+
+    from db import update_user_settings
+
+    update_user_settings(user_id, "Sub User", "subuser")
+
+    host = "subuser.jottit.localhost:8000"
+    r = client.get("/", headers={"Host": host})
+    assert r.status_code == 200
+    assert b"Sub User" in r.data
+    assert b"subp1" in r.data
+    assert b"subp2" in r.data
+
+
+def test_subdomain_serves_page(client):
+    _create_user_with_username(client, "sdp@example.com", "sdpuser", "sdpage")
+    host = "sdpuser.jottit.localhost:8000"
+    r = client.get("/sdpage", headers={"Host": host})
+    assert r.status_code == 200
+    assert b"Content" in r.data
+
+
+def test_subdomain_page_shows_site_title(client):
+    from db import update_user_settings
+
+    user_id = _create_user_with_username(
+        client, "sdt@example.com", "sdtuser", "sdtpage"
     )
-    client.post(
-        "/ss9/settings",
-        data={"title": "", "subdomain": "", "nav": "About: about"},
-    )
-    # Remove by saving empty nav
-    client.post(
-        "/ss9/settings",
-        data={"title": "", "subdomain": "", "nav": ""},
-    )
-    r = client.get("/ss9")
-    assert b"site-nav" not in r.data
+    update_user_settings(user_id, "My Site Title", "sdtuser")
+    host = "sdtuser.jottit.localhost:8000"
+    r = client.get("/sdtpage", headers={"Host": host})
+    assert r.status_code == 200
+    body = r.data.decode()
+    assert "My Site Title" in body
+    assert "h-card" in body
+    assert 'class="p-name u-url"' in body
 
 
-def test_nav_custom_label(client):
-    user_id = _create_claimed_site(client, "ss8b")
-    site = get_site("ss8b")
-    create_page(site["id"], "blog")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    client.post(
-        "/ss8b/edit", data={"title": "Blog", "content": "Posts", "page": "blog"}
-    )
-    client.post(
-        "/ss8b/settings",
-        data={"title": "", "subdomain": "", "nav": "Writing: blog"},
-    )
-    r = client.get("/ss8b")
-    assert b"Writing" in r.data
-    assert b"/ss8b/blog" in r.data
-
-
-def test_nav_nonexisting_page(client):
-    user_id = _create_claimed_site(client, "ss8c")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    client.post(
-        "/ss8c/settings",
-        data={"title": "", "subdomain": "", "nav": "Ideas: ideas"},
-    )
-    r = client.get("/ss8c")
-    assert b'class="wikilink-new"' in r.data
-    assert b"Ideas" in r.data
-
-
-def test_nav_index_links_to_home(client):
-    user_id = _create_claimed_site(client, "ss8d")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    client.post(
-        "/ss8d/settings",
-        data={"title": "", "subdomain": "", "nav": "Home: /"},
-    )
-    r = client.get("/ss8d")
-    assert b'href="/ss8d"' in r.data
-    assert b"Home" in r.data
-    assert b"wikilink-new" not in r.data
-
-
-def test_parse_nav():
-    items = parse_nav("About\nWriting: blog\n\nContact: contact")
-    assert len(items) == 3
-    assert items[0] == {"label": "About", "slug": "about"}
-    assert items[1] == {"label": "Writing", "slug": "blog"}
-    assert items[2] == {"label": "Contact", "slug": "contact"}
-
-
-def test_page_shows_settings_link_for_owner(client):
-    user_id = _create_claimed_site(client, "ss10")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/ss10")
-    assert b"Settings" in r.data
-
-
-def test_page_hides_settings_link_for_non_owner(client):
-    _create_claimed_site(client, "ss11")
-    r = client.get("/ss11")
-    assert b"/ss11/settings" not in r.data
+def test_subdomain_404_for_other_users_page(client):
+    _create_user_with_username(client, "sdp1@example.com", "user1", "page1")
+    _create_user_with_username(client, "sdp2@example.com", "user2", "page2")
+    host = "user1.jottit.localhost:8000"
+    r = client.get("/page2", headers={"Host": host})
+    assert r.status_code == 404
 
 
 # -- RSS Feed --
@@ -669,38 +765,9 @@ def test_rss_feed(client):
     assert b'<rss version="2.0"' in r.data
 
 
-def test_rss_feed_nonexistent_site(client):
+def test_rss_feed_nonexistent(client):
     r = client.get("/nope/feed.xml")
     assert r.status_code == 404
-
-
-def test_rss_feed_excludes_drafts(client):
-    client.post(
-        "/feed2/edit", data={"title": "Draft", "content": "Hidden", "draft": "on"}
-    )
-    r = client.get("/feed2/feed.xml")
-    assert r.status_code == 200
-    assert b"Hidden" not in r.data
-
-
-def test_rss_feed_latest_revision_only(client):
-    client.post("/feed3/edit", data={"title": "V1", "content": "Old"})
-    client.post("/feed3/edit", data={"title": "V2", "content": "New"})
-    r = client.get("/feed3/feed.xml")
-    body = r.data.decode()
-    assert body.count("<item>") == 1
-    assert "V2" in body
-    assert "New" in body
-
-
-def test_rss_feed_site_title(client):
-    user_id = _create_claimed_site(client, "feed4")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    client.post("/feed4/settings", data={"title": "My Blog", "subdomain": ""})
-    r = client.get("/feed4/feed.xml")
-    body = r.data.decode()
-    assert "<title>My Blog</title>" in body
 
 
 def test_rss_feed_has_source_markdown(client):
@@ -720,25 +787,16 @@ def test_json_feed(client):
     assert r.content_type == "application/feed+json; charset=utf-8"
     feed = json.loads(r.data)
     assert feed["version"] == "https://jsonfeed.org/version/1.1"
-    assert feed["title"] == "jf1"
+    assert feed["title"] == "Hello"
     assert len(feed["items"]) == 1
     assert feed["items"][0]["title"] == "Hello"
     assert "World" in feed["items"][0]["content_html"]
     assert feed["items"][0]["_source_markdown"] == "World"
 
 
-def test_json_feed_nonexistent_site(client):
+def test_json_feed_nonexistent(client):
     r = client.get("/nope/feed.json")
     assert r.status_code == 404
-
-
-def test_json_feed_excludes_drafts(client):
-    client.post(
-        "/jf2/edit", data={"title": "Draft", "content": "Hidden", "draft": "on"}
-    )
-    r = client.get("/jf2/feed.json")
-    feed = json.loads(r.data)
-    assert len(feed["items"]) == 0
 
 
 # -- Feed discovery --
@@ -756,239 +814,76 @@ def test_page_has_feed_discovery_links(client):
 # -- Draft visibility --
 
 
-def test_draft_hidden_from_non_owner(client):
-    _create_claimed_site(client, "dv1")
-    save_page("dv1", "# Secret\n\nDraft content", True, "secret")
-    r = client.get("/dv1/secret")
-    assert r.status_code == 404
-
-
-def test_draft_visible_to_owner(client):
-    user_id = _create_claimed_site(client, "dv2")
-    save_page("dv2", "# Secret\n\nDraft content", True, "secret")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/dv2/secret")
+def test_draft_visible_to_creator(client):
+    client.post(
+        "/dv1/edit", data={"title": "Secret", "content": "Draft content", "draft": "on"}
+    )
+    r = client.get("/dv1")
     assert r.status_code == 200
     assert b"draft" in r.data.lower()
 
 
-def test_draft_checkbox_prechecked_when_editing_draft(client):
-    user_id = _create_claimed_site(client, "dv3")
-    save_page("dv3", "# Draft\n\nWIP", True, "wip")
+def test_draft_hidden_from_non_creator(client):
+    client.post(
+        "/dv2/edit", data={"title": "Secret", "content": "Draft content", "draft": "on"}
+    )
     with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/dv3/edit?page=wip")
-    assert b"checked" in r.data
+        sess.clear()
+    r = client.get("/dv2")
+    assert r.status_code == 404
 
 
 # -- Delete page --
 
 
-def test_owner_can_delete_subpage(client):
-    user_id = _create_claimed_site(client, "del1")
-    save_page("del1", "# About\n\nAbout page", False, "about")
+def test_owner_can_delete_page(client):
+    user_id = find_or_create_user("del@example.com")
+    save_page("del1", "# T\n\nX", False)
+    page_meta = get_page_meta("del1")
+    claim_page(page_meta["id"], user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/del1/delete", data={"page": "about"})
+    r = client.post("/del1/delete", data={"confirmation": "delete"})
     assert r.status_code == 302
-    r = client.get("/del1/about")
+    r = client.get("/del1")
     assert r.status_code == 404
 
 
 def test_non_owner_cannot_delete(client):
-    _create_claimed_site(client, "del2")
-    save_page("del2", "# About\n\nAbout page", False, "about")
-    r = client.post("/del2/delete", data={"page": "about"})
+    user_id = find_or_create_user("del2@example.com")
+    save_page("del2", "# T\n\nX", False)
+    page_meta = get_page_meta("del2")
+    claim_page(page_meta["id"], user_id)
+
+    r = client.post("/del2/delete", data={"confirmation": "delete"})
     assert r.status_code == 302
     assert r.headers["Location"] == "/del2"
-    r = client.get("/del2/about")
+    r = client.get("/del2")
     assert r.status_code == 200
 
 
-def test_cannot_delete_index_page(client):
-    user_id = _create_claimed_site(client, "del3")
+def test_delete_wrong_confirmation(client):
+    user_id = find_or_create_user("del3@example.com")
+    save_page("del3", "# T\n\nX", False)
+    page_meta = get_page_meta("del3")
+    claim_page(page_meta["id"], user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/del3/delete", data={})
-    assert r.status_code == 302
-    r = client.get("/del3")
-    assert r.status_code == 200
-
-
-# -- Delete site --
-
-
-def test_delete_site_shows_confirmation_page(client):
-    user_id = _create_claimed_site(client, "dsite1")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/dsite1/delete-site")
-    assert r.status_code == 200
-    assert b'Type "delete" to confirm' in r.data
-
-
-def test_delete_site_requires_owner(client):
-    _create_claimed_site(client, "dsite2")
-    r = client.get("/dsite2/delete-site")
-    assert r.status_code == 302
-    assert r.headers["Location"] == "/dsite2"
-
-
-def test_delete_site_wrong_confirmation(client):
-    user_id = _create_claimed_site(client, "dsite3")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.post("/dsite3/delete-site", data={"confirmation": "wrong"})
+    r = client.post("/del3/delete", data={"confirmation": "wrong"})
     assert r.status_code == 200
     assert b"Please type" in r.data
-    assert get_site("dsite3") is not None
-
-
-def test_delete_site_success(client):
-    user_id = _create_claimed_site(client, "dsite4")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.post("/dsite4/delete-site", data={"confirmation": "delete"})
-    assert r.status_code == 302
-    assert "/" in r.headers["Location"]
-    assert get_site("dsite4") is None
-
-
-def test_settings_shows_danger_zone(client):
-    user_id = _create_claimed_site(client, "dsite5")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/dsite5/settings")
-    assert b"Delete site" in r.data
-    assert b"delete-site" in r.data
+    assert get_page_meta("del3") is not None
 
 
 # -- Export --
 
 
-def test_export_requires_owner(client):
-    _create_claimed_site(client, "exp1")
-    r = client.get("/exp1/export")
-    assert r.status_code == 302
-    assert r.headers["Location"] == "/exp1"
-
-
 def test_export_zip(client):
-    user_id = _create_claimed_site(client, "exp2")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/exp2/export")
+    client.post("/exp1/edit", data={"title": "T", "content": "X"})
+    r = client.get("/exp1/export")
     assert r.status_code == 200
     assert r.content_type == "application/zip"
-    assert 'filename="exp2.zip"' in r.headers["Content-Disposition"]
-
-    zf = zipfile.ZipFile(io.BytesIO(r.data))
-    names = zf.namelist()
-    assert "exp2/index.md" in names
-    content = zf.read("exp2/index.md").decode()
-    assert "title: T" in content
-    assert "date:" in content
-    assert "X" in content
-
-
-def test_export_excludes_drafts(client):
-    user_id = _create_claimed_site(client, "exp3")
-    # Add a draft-only page
-    site = get_site("exp3")
-    create_page(site["id"], "draftpage")
-    client.post(
-        "/exp3/edit",
-        data={
-            "title": "Draft",
-            "content": "Hidden",
-            "page": "draftpage",
-            "draft": "on",
-        },
-    )
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/exp3/export")
-    zf = zipfile.ZipFile(io.BytesIO(r.data))
-    names = zf.namelist()
-    assert "exp3/draftpage.md" not in names
-
-
-def test_export_settings_has_link(client):
-    user_id = _create_claimed_site(client, "exp4")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/exp4/settings")
-    assert b"/exp4/export" in r.data
-
-
-# -- Wikilinks --
-
-
-def test_slugify():
-    assert slugify("Good Writing") == "good-writing"
-    assert slugify("Hello World!") == "hello-world"
-    assert slugify("  Multiple   Spaces  ") == "multiple-spaces"
-    assert slugify("Already-Slugged") == "already-slugged"
-    assert slugify("123 Numbers") == "123-numbers"
-
-
-def test_wikilink_existing_page(client):
-    user_id = _create_claimed_site(client, "wl1")
-    site = get_site("wl1")
-    create_page(site["id"], "about")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    client.post("/wl1/edit", data={"title": "", "content": "See [[About]]"})
-    r = client.get("/wl1")
-    assert b'<a href="/wl1/about">About</a>' in r.data
-
-
-def test_wikilink_nonexisting_page(client):
-    client.post("/wl2/edit", data={"title": "", "content": "See [[New Page]]"})
-    r = client.get("/wl2")
-    assert b'class="wikilink-new"' in r.data
-    assert b'href="/wl2/edit?page=new-page&amp;title=New%20Page"' in r.data
-    assert b"New Page</a>" in r.data
-
-
-def test_wikilink_preserves_regular_markdown(client):
-    client.post(
-        "/wl3/edit",
-        data={"title": "", "content": "A [link](http://example.com) and [[Wiki]]"},
-    )
-    r = client.get("/wl3")
-    assert b'href="http://example.com"' in r.data
-    assert b"Wiki</a>" in r.data
-
-
-def test_view_subpage(client):
-    client.post("/sp1/edit", data={"title": "Main", "content": "Home"})
-    client.post(
-        "/sp1/edit", data={"title": "About", "content": "Info", "page": "about"}
-    )
-    r = client.get("/sp1/about")
-    assert r.status_code == 200
-    assert b"Info" in r.data
-
-
-def test_home_page_not_replaced_by_subpage(client):
-    client.post("/sp3/edit", data={"title": "Home", "content": "Welcome"})
-    client.post(
-        "/sp3/edit", data={"title": "Contact", "content": "Email me", "page": "contact"}
-    )
-    r = client.get("/sp3")
-    assert b"Welcome" in r.data
-    assert b"Email me" not in r.data
-
-
-def test_view_subpage_404(client):
-    client.post("/sp2/edit", data={"title": "Main", "content": "Home"})
-    r = client.get("/sp2/nope")
-    assert r.status_code == 404
+    assert 'filename="exp1.zip"' in r.headers["Content-Disposition"]
 
 
 # -- Microformats --
@@ -1007,243 +902,142 @@ def test_page_has_h_entry_markup(client):
     assert 'href="/mf1"' in body
 
 
-def test_site_header_has_h_card(client):
-    user_id = _create_claimed_site(client, "mf2")
+# -- Wikilinks --
+
+
+def test_slugify():
+    assert slugify("Good Writing") == "good-writing"
+    assert slugify("Hello World!") == "hello-world"
+    assert slugify("  Multiple   Spaces  ") == "multiple-spaces"
+    assert slugify("Already-Slugged") == "already-slugged"
+    assert slugify("123 Numbers") == "123-numbers"
+
+
+def test_wikilink_renders(client):
+    client.post("/wl1/edit", data={"title": "", "content": "See [[About]]"})
+    r = client.get("/wl1")
+    assert b'<a href="/about">About</a>' in r.data
+
+
+# -- Avatar and Bio --
+
+
+def test_settings_profile_shows_bio_field(client):
+    user_id = find_or_create_user("bio@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/mf2/settings", data={"title": "My Site", "subdomain": ""})
-    r = client.get("/mf2")
-    body = r.data.decode()
-    assert "h-card" in body
-    assert 'class="p-name u-url"' in body
-    assert "My Site</a>" in body
+
+    r = client.get("/settings/profile")
+    assert r.status_code == 200
+    assert b"Bio" in r.data
 
 
-def test_subpage_u_url_includes_page_slug(client):
-    client.post("/mf3/edit", data={"title": "Main", "content": "Home"})
-    client.post(
-        "/mf3/edit", data={"title": "About", "content": "Info", "page": "about"}
-    )
-    r = client.get("/mf3/about")
-    assert b'href="/mf3/about" hidden' in r.data
+def test_settings_profile_saves_bio(client):
+    user_id = find_or_create_user("bio2@example.com")
+    set_user_username(user_id, "biouser")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
 
-
-def test_edit_subpage_redirects_to_subpage(client):
-    client.post("/sp3/edit", data={"title": "Main", "content": "Home"})
     r = client.post(
-        "/sp3/edit", data={"title": "About", "content": "Info", "page": "about"}
+        "/settings/profile", data={"name": "Bio User", "bio": "Hello world"}
     )
     assert r.status_code == 302
-    assert r.headers["Location"] == "/sp3/about"
+
+    user = get_user(user_id)
+    assert user["bio"] == "Hello world"
 
 
-# -- Subdomain routing --
-
-
-def test_slug_redirects_to_subdomain(client):
-    user_id = _create_claimed_site(client, "sd1")
+@patch("routes.upload_image", return_value="/uploads/1/avatar.jpg")
+@patch("routes.crop_square")
+def test_avatar_upload(mock_crop, mock_upload, client):
+    mock_crop.return_value = io.BytesIO(b"cropped")
+    user_id = find_or_create_user("avatar@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/sd1/settings", data={"title": "", "subdomain": "mysite", "nav": ""})
-    r = client.get("/sd1")
+
+    data = {
+        "avatar": (io.BytesIO(b"fake-image-data"), "photo.jpg", "image/jpeg"),
+    }
+    r = client.post("/settings/avatar", data=data, content_type="multipart/form-data")
     assert r.status_code == 302
-    assert "mysite.jottit.localhost:8000" in r.headers["Location"]
+    mock_upload.assert_called_once()
+    user = get_user(user_id)
+    assert user["avatar"] == "/uploads/1/avatar.jpg"
 
 
-def test_slug_subpage_redirects_to_subdomain(client):
-    user_id = _create_claimed_site(client, "sd2")
+def test_avatar_upload_rejects_invalid_type(client):
+    user_id = find_or_create_user("avatar2@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/sd2/settings", data={"title": "", "subdomain": "sub2", "nav": ""})
-    client.post(
-        "/sd2/edit", data={"title": "About", "content": "Info", "page": "about"}
-    )
-    r = client.get("/sd2/about")
-    assert r.status_code == 302
-    assert "/about" in r.headers["Location"]
 
-
-def test_settings_redirects_to_subdomain_after_save(client):
-    user_id = _create_claimed_site(client, "sd3")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.post(
-        "/sd3/settings", data={"title": "", "subdomain": "newname", "nav": ""}
-    )
-    assert r.status_code == 302
-    assert "newname.jottit.localhost:8000" in r.headers["Location"]
-    assert "/settings" in r.headers["Location"]
-
-
-# -- Home page sites limit --
-
-
-def _create_user_with_sites(client, count):
-    user_id = find_or_create_user(f"limit{count}@example.com")
-    for i in range(count):
-        slug = f"limit{count}s{i}"
-        save_page(slug, f"# Site {i}\n\nContent", False)
-        claim_site(get_site(slug)["id"], user_id)
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    return user_id
-
-
-# -- /sites page --
-
-
-# -- Subdomain availability API --
-
-
-def test_check_subdomain_available(client):
-    r = client.get("/api/check-subdomain?subdomain=fresh")
-    data = json.loads(r.data)
-    assert data["available"] is True
-
-
-def test_check_subdomain_taken(client):
-    user_id = _create_claimed_site(client, "csd1")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    client.post("/csd1/settings", data={"title": "", "subdomain": "taken1", "nav": ""})
-    r = client.get("/api/check-subdomain?subdomain=taken1")
-    data = json.loads(r.data)
-    assert data["available"] is False
-    assert "already taken" in data["error"]
-
-
-def test_check_subdomain_invalid(client):
-    r = client.get("/api/check-subdomain?subdomain=BAD!")
-    data = json.loads(r.data)
-    assert data["available"] is False
-    assert "lowercase" in data["error"]
-
-
-def test_check_subdomain_empty(client):
-    r = client.get("/api/check-subdomain?subdomain=")
-    data = json.loads(r.data)
-    assert data["available"] is False
-
-
-# -- /sites page --
-
-
-def test_sites_page_lists_all(client):
-    _create_user_with_sites(client, 5)
-    r = client.get("/sites")
+    data = {
+        "avatar": (io.BytesIO(b"not-an-image"), "file.txt", "text/plain"),
+    }
+    r = client.post("/settings/avatar", data=data, content_type="multipart/form-data")
     assert r.status_code == 200
-    body = r.data.decode()
-    assert body.count("sites-menu") >= 1
-    for i in range(5):
-        assert f"limit5s{i}" in body
+    assert b"not allowed" in r.data
+    assert b"Profile" in r.data
 
 
-def test_sites_page_requires_signin(client):
-    r = client.get("/sites")
-    assert r.status_code == 302
-    assert "/signin" in r.headers["Location"]
-
-
-# -- Subdomain page serving --
-
-
-def _create_subdomain_site(client, slug="sdsub", subdomain="testsub"):
-    """Create a claimed site with a subdomain and return (user_id, subdomain host)."""
-    user_id = _create_claimed_site(client, slug)
+@patch("routes.delete_image")
+def test_avatar_removal(mock_delete, client):
+    user_id = find_or_create_user("avatar3@example.com")
+    update_user_avatar(user_id, "/uploads/1/avatar.jpg")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post(
-        f"/{slug}/settings",
-        data={"title": "Test Site", "subdomain": subdomain, "nav": ""},
-    )
-    host = f"{subdomain}.jottit.localhost:8000"
-    return user_id, host
 
-
-def test_subdomain_serves_about_page(client):
-    host = _create_unclaimed_subdomain_site(client, "sdab", "aboutsub")
-    client.post(
-        "/sdab/edit",
-        data={"title": "About Us", "content": "Info here", "page": "about"},
-    )
-    r = client.get("/about", headers={"Host": host})
-    assert r.status_code == 200
-    assert b"Info here" in r.data
-
-
-def test_subdomain_serves_talk_page(client):
-    host = _create_unclaimed_subdomain_site(client, "sdtk", "talksub")
-    client.post(
-        "/sdtk/edit",
-        data={"title": "Talk", "content": "Discussion", "page": "talk"},
-    )
-    r = client.get("/talk", headers={"Host": host})
-    assert r.status_code == 200
-    assert b"Discussion" in r.data
-
-
-def _create_unclaimed_subdomain_site(client, slug="sdunc", subdomain="uncsub"):
-    """Create an unclaimed site with a subdomain (via direct DB setup)."""
-    from db import update_site_settings
-
-    client.post(f"/{slug}/edit", data={"title": "T", "content": "X"})
-    site = get_site(slug)
-    update_site_settings(site["id"], "", subdomain, "")
-    host = f"{subdomain}.jottit.localhost:8000"
-    return host
-
-
-def test_subdomain_edit_form_action(client):
-    host = _create_unclaimed_subdomain_site(client, "sdfe", "editsub")
-    r = client.get("/edit", headers={"Host": host})
-    assert r.status_code == 200
-    assert b'action="/edit"' in r.data
-
-
-def test_subdomain_edit_post_redirects_to_root(client):
-    host = _create_unclaimed_subdomain_site(client, "sdep", "editpost")
-    r = client.post(
-        "/edit",
-        data={"title": "New", "content": "Content"},
-        headers={"Host": host},
-    )
+    r = client.post("/settings/avatar/delete")
     assert r.status_code == 302
-    assert r.headers["Location"] == "/"
+    mock_delete.assert_called_once_with("1/avatar.jpg")
+    user = get_user(user_id)
+    assert user["avatar"] is None
 
 
-def test_subdomain_links_omit_slug(client):
-    host = _create_unclaimed_subdomain_site(client, "sdln", "linksub")
-    # Create a second revision so history link appears
-    client.post(
-        "/sdln/edit",
-        data={"title": "V1", "content": "First"},
+def test_subdomain_home_shows_bio(client):
+    user_id = _create_user_with_username(
+        client, "biohome@example.com", "biohome", "bh1"
     )
-    client.post(
-        "/sdln/edit",
-        data={"title": "V2", "content": "Second"},
-    )
+    update_user_settings(user_id, "Bio Home", "biohome", "My cool bio")
+
+    host = "biohome.jottit.localhost:8000"
     r = client.get("/", headers={"Host": host})
     assert r.status_code == 200
-    body = r.data.decode()
-    assert 'href="/edit"' in body or 'href="/edit?' in body
-    assert 'href="/history"' in body
-    # Should NOT contain the slug in links
-    assert "/sdln/edit" not in body
-    assert "/sdln/history" not in body
+    assert b"My cool bio" in r.data
+    assert b"p-note" in r.data
 
 
-def test_subdomain_subpage_links_omit_slug(client):
-    host = _create_unclaimed_subdomain_site(client, "sdsp", "subpagesub")
-    client.post(
-        "/sdsp/edit",
-        data={"title": "About", "content": "Info", "page": "about"},
-    )
-    client.post(
-        "/sdsp/edit",
-        data={"title": "About", "content": "Updated info", "page": "about"},
-    )
-    r = client.get("/about", headers={"Host": host})
+def test_subdomain_home_shows_avatar(client):
+    user_id = _create_user_with_username(client, "avhome@example.com", "avhome", "ah1")
+    update_user_avatar(user_id, "/uploads/test/avatar.jpg")
+
+    host = "avhome.jottit.localhost:8000"
+    r = client.get("/", headers={"Host": host})
     assert r.status_code == 200
-    body = r.data.decode()
-    assert 'href="/about/history"' in body
-    assert "/sdsp/" not in body
+    assert b"u-photo" in r.data
+    assert b"profile-avatar" in r.data
+
+
+def test_subdomain_home_no_avatar_graceful(client):
+    user_id = _create_user_with_username(client, "noav@example.com", "noavuser", "na1")
+    update_user_settings(user_id, "No Avatar", "noavuser")
+
+    host = "noavuser.jottit.localhost:8000"
+    r = client.get("/", headers={"Host": host})
+    assert r.status_code == 200
+    assert b"u-photo" not in r.data
+    assert b"No Avatar" in r.data
+
+
+def test_subdomain_page_shows_profile_header(client):
+    user_id = _create_user_with_username(
+        client, "profpage@example.com", "profpage", "pp1"
+    )
+    update_user_settings(user_id, "Prof Page", "profpage", "Writer")
+    update_user_avatar(user_id, "/uploads/test/avatar.jpg")
+
+    host = "profpage.jottit.localhost:8000"
+    r = client.get("/pp1", headers={"Host": host})
+    assert r.status_code == 200
+    assert b"profile-header" in r.data
+    assert b"Writer" in r.data
+    assert b"u-photo" in r.data

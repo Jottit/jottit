@@ -14,15 +14,16 @@ RESERVED_SLUGS = {
     "settings",
     "about",
     "talk",
-    "sites",
+    "pages",
     "admin",
     "api",
     "static",
     "favicon.ico",
     "robots.txt",
+    "export",
 }
 
-RESERVED_SUBDOMAINS = {
+RESERVED_USERNAMES = {
     "www",
     "api",
     "admin",
@@ -37,8 +38,6 @@ RESERVED_SUBDOMAINS = {
     "cdn",
     "assets",
 }
-
-INDEX_PAGE_SLUG = "-"
 
 _SANITIZE_ATTRIBUTES = {**nh3.ALLOWED_ATTRIBUTES, "*": {"class"}}
 
@@ -61,28 +60,11 @@ def slugify(name):
     return s.strip("-")
 
 
-def valid_subdomain(s):
+def valid_username(s):
     return bool(re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", s))
 
 
-def parse_nav(text):
-    items = []
-    for line in (text or "").strip().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        if ":" in line:
-            label, slug = line.split(":", 1)
-            label, slug = label.strip(), slug.strip()
-        else:
-            label = line
-            slug = slugify(line)
-        if label and slug:
-            items.append({"label": label, "slug": slug})
-    return items
-
-
-def process_wikilinks(content, site_slug, existing_page_slugs=None):
+def process_wikilinks(content):
     def replace(match):
         name = match.group(1).strip()
         if not name:
@@ -91,11 +73,7 @@ def process_wikilinks(content, site_slug, existing_page_slugs=None):
         if not page_slug:
             return match.group(0)
         display = html_escape(name)
-        if existing_page_slugs is not None and page_slug not in existing_page_slugs:
-            from urllib.parse import quote
-
-            return f'<a href="/{site_slug}/edit?page={page_slug}&amp;title={quote(name)}" class="wikilink-new">{display}</a>'
-        return f'<a href="/{site_slug}/{page_slug}">{display}</a>'
+        return f'<a href="/{page_slug}">{display}</a>'
 
     return re.sub(r"\[\[([^\[\]]+)\]\]", replace, content)
 

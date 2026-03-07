@@ -3,8 +3,8 @@ import json
 import os
 import zipfile
 from email.utils import format_datetime
-from functools import wraps
 from xml.sax.saxutils import escape as xml_escape
+
 
 from flask import (
     Blueprint,
@@ -15,45 +15,55 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_from_directory,
     session,
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from db import (
-    check_subdomain_available,
-    claim_site,
+    check_username_available,
+    claim_page,
     create_verification_code,
     delete_page,
-    delete_site,
     find_or_create_user,
     get_export_pages,
+    get_export_pages_for_user,
     get_feed_entries,
     get_page,
-    get_pages_for_site,
+    get_page_meta,
+    get_pages_for_user,
     get_revision,
     get_revision_count,
     get_revisions_paginated,
-    get_site,
-    get_site_by_subdomain,
-    get_sites_for_user,
+    get_user,
+    get_user_by_username,
+    rename_page,
+    set_user_username,
     save_page,
-    update_site_settings,
+    update_user_settings,
     verify_code,
+)
+from db import update_user_avatar
+from storage import (
+    ALLOWED_IMAGE_TYPES,
+    crop_square,
+    delete_image,
+    upload_image,
+    validate_image,
 )
 from mail import send_verification_email
 from utils import (
-    INDEX_PAGE_SLUG,
     RESERVED_SLUGS,
-    RESERVED_SUBDOMAINS,
+    RESERVED_USERNAMES,
     generate_slug,
     get_body,
     get_description,
     get_title,
-    parse_nav,
     process_wikilinks,
     render_markdown,
-    valid_subdomain,
+    slugify,
+    valid_username,
 )
 
 limiter = Limiter(get_remote_address, storage_uri="memory://")
@@ -70,21 +80,28 @@ def _get_subdomain():
     return None
 
 
+def _compute_initials(user):
+    name = user.get("name")
+    if name:
+        words = name.split()
+        return (words[0][0] + (words[1][0] if len(words) > 1 else "")).upper()
+    username = user.get("username") or ""
+    return username[:2].upper()
+
+
 def _base_url(path=""):
     return f"{request.scheme}://{BASE_DOMAIN}{path}"
 
 
-def _subdomain_url(subdomain, path=""):
-    return f"{request.scheme}://{subdomain}.{BASE_DOMAIN}{path}"
+def _subdomain_url(username, path=""):
+    return f"{request.scheme}://{username}.{BASE_DOMAIN}{path}"
 
 
-def _site_path(slug, *parts):
-    """Build a URL path for a site, omitting the slug on subdomain sites."""
-    prefix = "" if g.subdomain_site else f"/{slug}"
-    suffix = "/".join(str(p) for p in parts if p)
-    if suffix:
-        return f"{prefix}/{suffix}"
-    return prefix or "/"
+@bp.before_request
+def validate_session():
+    user_id = session.get("user_id")
+    if user_id and not get_user(user_id):
+        session.pop("user_id", None)
 
 
 @bp.before_request
@@ -93,12 +110,21 @@ def resolve_subdomain():
     if subdomain == "www":
         return redirect(f"{request.scheme}://{BASE_DOMAIN}{request.full_path}", 301)
     if not subdomain:
-        g.subdomain_site = None
+        g.subdomain_user = None
         return
-    site = get_site_by_subdomain(subdomain)
-    if not site:
+    user = get_user_by_username(subdomain)
+    if not user:
         abort(404)
-    g.subdomain_site = site
+    g.subdomain_user = user
+
+
+@bp.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    from flask import current_app
+
+    return send_from_directory(
+        os.path.join(current_app.instance_path, "uploads"), filename
+    )
 
 
 @bp.route("/robots.txt")
@@ -108,134 +134,124 @@ def robots():
 
 @bp.route("/")
 def home():
-    site = g.subdomain_site
-    if site:
-        return view_page(site["slug"])
+    subdomain_user = g.subdomain_user
+    if subdomain_user:
+        return subdomain_home(subdomain_user)
 
     signed_in = "user_id" in session
-    sites = []
-    has_more_sites = False
+    pages = []
+    owner_avatar_url = None
+    owner_initials = None
+    user = None
     if signed_in:
         user_id = session["user_id"]
-        sites = get_sites_for_user(user_id, limit=4)
-        has_more_sites = len(sites) > 3
-        sites = sites[:3]
+        pages = get_pages_for_user(user_id)
+        user = get_user(user_id)
+        if user:
+            owner_avatar_url = user.get("avatar")
+            owner_initials = _compute_initials(user)
+    profile_url = (
+        _subdomain_url(user["username"])
+        if user and user.get("username")
+        else "/settings"
+    )
     return render_template(
-        "home.html", signed_in=signed_in, sites=sites, has_more_sites=has_more_sites
+        "home.html",
+        signed_in=signed_in,
+        pages=pages[:3],
+        has_more_pages=len(pages) > 3,
+        owner_avatar_url=owner_avatar_url,
+        owner_initials=owner_initials,
+        profile_url=profile_url,
+    )
+
+
+def subdomain_home(user):
+    pages = get_pages_for_user(user["id"])
+    page_list = []
+    for p in pages:
+        if p["draft"]:
+            continue
+        title = get_title(p["content"]) if p["content"] else None
+        body = get_body(p["content"]) if p["content"] else ""
+        description = body[:130].rsplit(" ", 1)[0] + "..." if len(body) > 130 else body
+        page_list.append(
+            {
+                "slug": p["slug"],
+                "title": title or p["slug"],
+                "description": description,
+                "updated_at": p["updated_at"],
+            }
+        )
+    site_title = user.get("name") or user.get("username")
+    is_owner = session.get("user_id") == user["id"]
+    owner_initials = None
+    owner_avatar_url = None
+    if is_owner:
+        owner_initials = _compute_initials(user)
+        owner_avatar_url = user.get("avatar")
+    return render_template(
+        "subdomain_home.html",
+        user=user,
+        pages=page_list,
+        site_title=site_title,
+        is_owner=is_owner,
+        owner_initials=owner_initials,
+        owner_avatar_url=owner_avatar_url,
+        avatar_url=user.get("avatar"),
+        bio=user.get("bio"),
+        base_url=f"{request.scheme}://{BASE_DOMAIN}",
     )
 
 
 @bp.route("/about")
 def about():
-    if g.subdomain_site:
+    if g.subdomain_user:
         return view_page("about")
     return render_template("about.html", signed_in="user_id" in session)
 
 
 @bp.route("/talk")
 def talk():
-    if g.subdomain_site:
+    if g.subdomain_user:
         return view_page("talk")
     return render_template("talk.html", signed_in="user_id" in session)
 
 
-@bp.route("/api/check-subdomain")
-def check_subdomain():
-    subdomain = request.args.get("subdomain", "").strip().lower()
-    if not subdomain:
+@bp.route("/api/check-username")
+def check_username_route():
+    username = request.args.get("username", "").strip().lower()
+    if not username:
         return {"available": False}
-    if not valid_subdomain(subdomain):
+    if not valid_username(username):
         return {
             "available": False,
-            "error": "Subdomain must be lowercase letters, numbers, and hyphens only.",
+            "error": "Username must be lowercase letters, numbers, and hyphens only.",
         }
-    if subdomain in RESERVED_SUBDOMAINS:
-        return {"available": False, "error": "That subdomain is reserved."}
-    if not check_subdomain_available(subdomain):
-        return {"available": False, "error": "That subdomain is already taken."}
+    if username in RESERVED_USERNAMES:
+        return {"available": False, "error": "That username is reserved."}
+    if not check_username_available(username):
+        return {"available": False, "error": "That username is already taken."}
     return {"available": True}
 
 
-@bp.route("/sites")
-def sites_list():
+@bp.route("/pages")
+def pages_list():
     user_id = session.get("user_id")
     if not user_id:
         return redirect("/signin")
-    sites = get_sites_for_user(user_id)
-    return render_template("sites.html", sites=sites)
-
-
-def _require_subdomain_site():
-    site = g.subdomain_site
-    if not site:
-        abort(404)
-    return site
-
-
-@bp.route("/edit", methods=["GET", "POST"])
-def subdomain_edit():
-    site = _require_subdomain_site()
-    return edit_page(site["slug"], site=site)
-
-
-@bp.route("/export")
-def subdomain_export():
-    site = _require_subdomain_site()
-    return export_site(site["slug"], site=site)
-
-
-@bp.route("/history")
-def subdomain_history():
-    site = _require_subdomain_site()
-    return page_history(site["slug"], site=site)
-
-
-@bp.route("/history/<int:revision>")
-def subdomain_revision(revision):
-    site = _require_subdomain_site()
-    return view_revision(site["slug"], revision, site=site)
-
-
-@bp.route("/claim", methods=["GET", "POST"])
-def subdomain_claim():
-    site = _require_subdomain_site()
-    return claim_page(site["slug"], site=site)
-
-
-@bp.route("/claim/verify", methods=["GET", "POST"])
-def subdomain_claim_verify():
-    site = _require_subdomain_site()
-    return claim_verify(site["slug"], site=site)
-
-
-@bp.route("/settings")
-def subdomain_settings():
-    site = _require_subdomain_site()
-    return site_settings(site["slug"], site=site)
-
-
-@bp.route("/delete", methods=["POST"])
-def subdomain_delete():
-    site = _require_subdomain_site()
-    return delete_site_page(site["slug"], site=site)
-
-
-@bp.route("/delete-site", methods=["GET", "POST"])
-def subdomain_delete_site():
-    site = _require_subdomain_site()
-    return delete_site_page_confirm(site["slug"], site=site)
-
-
-@bp.route("/feed.xml")
-def subdomain_rss():
-    site = _require_subdomain_site()
-    return rss_feed(site["slug"], site=site)
-
-
-@bp.route("/feed.json")
-def subdomain_json_feed():
-    site = _require_subdomain_site()
-    return json_feed(site["slug"], site=site)
+    pages = get_pages_for_user(user_id)
+    page_list = []
+    for p in pages:
+        title = get_title(p["content"]) if p["content"] else None
+        page_list.append(
+            {
+                "slug": p["slug"],
+                "title": title or p["slug"],
+                "draft": p["draft"],
+            }
+        )
+    return render_template("pages.html", pages=page_list)
 
 
 @bp.route("/new")
@@ -244,39 +260,50 @@ def new_page():
     return redirect(f"/{slug}/edit")
 
 
+def _is_creator(page_meta):
+    created_pages = session.get("created_pages", [])
+    return page_meta and page_meta["id"] in created_pages
+
+
+def _can_edit(page_meta):
+    if not page_meta:
+        return True
+    if page_meta["user_id"] is not None:
+        return session.get("user_id") == page_meta["user_id"]
+    return _is_creator(page_meta)
+
+
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
 @limiter.limit("30 per hour", methods=["POST"])
-def edit_page(slug, site=None):
-    if site is None:
-        site = get_site(slug)
-    if not site and slug in RESERVED_SLUGS:
+def edit_page(slug):
+    if slug in RESERVED_SLUGS:
         abort(404)
-    if site and site["user_id"] is not None:
-        if session.get("user_id") != site["user_id"]:
-            return redirect(_site_path(slug))
 
-    page_slug = (
-        request.args.get("page")
-        if request.method == "GET"
-        else request.form.get("page")
-    )
+    subdomain_user = g.subdomain_user
+    if subdomain_user:
+        page_meta = get_page_meta(slug)
+        if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
+            abort(404)
+    else:
+        page_meta = get_page_meta(slug)
+
+    if not _can_edit(page_meta):
+        return redirect(f"/{slug}")
 
     if request.method == "GET":
-        row = get_page(site["id"], page_slug) if site else None
+        row = get_page(slug) if page_meta else None
         content = row["content"] if row else ""
         draft = row["draft"] if row else False
         title = get_title(content) or ""
         content = get_body(content)
-        if not row and not title:
-            title = request.args.get("title", "")
         return render_template(
             "edit.html",
             slug=slug,
             title=title,
             content=content,
             draft=draft,
-            page_slug=page_slug,
-            site_path=_site_path,
+            is_new=page_meta is None,
+            is_subdomain=subdomain_user is not None,
         )
 
     title = request.form.get("title", "").strip()
@@ -286,32 +313,86 @@ def edit_page(slug, site=None):
     if title:
         content = f"# {title}\n\n{content}"
 
-    is_new = site is None
-    save_page(slug, content, draft, page_slug)
-    if is_new and session.get("user_id"):
-        new_site = get_site(slug)
-        claim_site(new_site["id"], session["user_id"])
-    return redirect(_site_path(slug, page_slug))
+    is_new = page_meta is None
+    save_page(slug, content, draft)
+
+    if is_new:
+        new_page_meta = get_page_meta(slug)
+        if new_page_meta:
+            created_pages = session.get("created_pages", [])
+            created_pages.append(new_page_meta["id"])
+            session["created_pages"] = created_pages
+
+            if session.get("user_id"):
+                claim_page(new_page_meta["id"], session["user_id"])
+                # Generate a nice slug from the title
+                if title:
+                    nice_slug = slugify(title)
+                    if (
+                        nice_slug
+                        and nice_slug != slug
+                        and nice_slug not in RESERVED_SLUGS
+                        and not get_page_meta(nice_slug)
+                    ):
+                        rename_page(slug, nice_slug)
+                        slug = nice_slug
+
+    if subdomain_user:
+        return redirect(f"/{slug}")
+    return redirect(f"/{slug}")
 
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])
 @limiter.limit("5 per hour", methods=["POST"])
-def claim_page(slug, site=None):
-    if site is None:
-        site = get_site(slug)
-    if not site or site["user_id"] is not None:
+def claim_page_route(slug):
+    page_meta = get_page_meta(slug)
+    if not page_meta or page_meta["user_id"] is not None:
+        return redirect(f"/{slug}")
+
+    if not _is_creator(page_meta):
         return redirect(f"/{slug}")
 
     if request.method == "GET":
         return render_template("claim.html", slug=slug)
 
     email = request.form.get("email", "").strip().lower()
+    username = request.form.get("username", "").strip().lower()
+
     if not email:
         return render_template("claim.html", slug=slug, error="Email is required.")
+    if not username:
+        return render_template(
+            "claim.html", slug=slug, error="Username is required.", email=email
+        )
+    if not valid_username(username):
+        return render_template(
+            "claim.html",
+            slug=slug,
+            error="Username must be lowercase letters, numbers, and hyphens only.",
+            email=email,
+            username=username,
+        )
+    if username in RESERVED_USERNAMES:
+        return render_template(
+            "claim.html",
+            slug=slug,
+            error="That username is reserved.",
+            email=email,
+            username=username,
+        )
+    if not check_username_available(username):
+        return render_template(
+            "claim.html",
+            slug=slug,
+            error="That username is already taken.",
+            email=email,
+            username=username,
+        )
 
     code = create_verification_code(email, "claim")
     send_verification_email(email, code)
     session["claim_email"] = email
+    session["claim_username"] = username
     return render_template(
         "verify.html", slug=slug, email=email, action=f"/{slug}/claim/verify"
     )
@@ -319,10 +400,9 @@ def claim_page(slug, site=None):
 
 @bp.route("/<slug>/claim/verify", methods=["GET", "POST"])
 @limiter.limit("5 per 10 minutes", methods=["POST"])
-def claim_verify(slug, site=None):
-    if site is None:
-        site = get_site(slug)
-    if not site or site["user_id"] is not None:
+def claim_verify(slug):
+    page_meta = get_page_meta(slug)
+    if not page_meta or page_meta["user_id"] is not None:
         return redirect(f"/{slug}")
 
     email = request.form.get("email") or session.get("claim_email")
@@ -350,9 +430,36 @@ def claim_verify(slug, site=None):
         )
 
     user_id = find_or_create_user(email)
-    claim_site(site["id"], user_id)
+
+    username = session.get("claim_username")
+    if username:
+        existing_user = get_user(user_id)
+        if existing_user and not existing_user.get("username"):
+            set_user_username(user_id, username)
+
+    claim_page(page_meta["id"], user_id)
     session.pop("claim_email", None)
+    session.pop("claim_username", None)
     session["user_id"] = user_id
+
+    # Generate a nice slug from the page title
+    row = get_page(slug)
+    if row:
+        title = get_title(row["content"])
+        if title:
+            nice_slug = slugify(title)
+            if (
+                nice_slug
+                and nice_slug != slug
+                and nice_slug not in RESERVED_SLUGS
+                and not get_page_meta(nice_slug)
+            ):
+                rename_page(slug, nice_slug)
+                slug = nice_slug
+
+    user = get_user(user_id)
+    if user and user.get("username"):
+        return redirect(_subdomain_url(user["username"], f"/{slug}"))
     return redirect(f"/{slug}")
 
 
@@ -403,77 +510,148 @@ def signout():
     return redirect("/")
 
 
-def _require_site_owner(f):
-    @wraps(f)
-    def decorated(slug, *args, **kwargs):
-        user_id = session.get("user_id")
-        site = kwargs.pop("site", None) or get_site(slug)
-        if not site or not user_id or site["user_id"] != user_id:
-            return redirect(f"/{slug}")
-        return f(slug, site, *args, **kwargs)
-
-    return decorated
+def _require_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None, None
+    user = get_user(user_id)
+    if not user:
+        return None, None
+    return user_id, user
 
 
-@bp.route("/<slug>/settings", methods=["GET", "POST"])
-@_require_site_owner
-def site_settings(slug, site):
+@bp.route("/settings")
+def user_settings():
+    user_id, user = _require_user()
+    if not user:
+        return redirect("/signin")
+
+    back_url = _subdomain_url(user["username"]) if user.get("username") else "/"
+    return render_template("settings.html", user=user, back_url=back_url)
+
+
+@bp.route("/settings/profile", methods=["GET", "POST"])
+def settings_profile():
+    user_id, user = _require_user()
+    if not user:
+        return redirect("/signin")
 
     if request.method == "GET":
-        nav_text = site["nav"] or ""
-        return render_template(
-            "site_settings.html",
-            site=site,
-            nav_text=nav_text,
-            slug=slug,
-            site_path=_site_path,
-        )
+        return render_template("settings_profile.html", user=user)
 
-    title = request.form.get("title", "").strip()
-    subdomain = request.form.get("subdomain", "").strip().lower()
-    nav = request.form.get("nav", "").strip()
+    name = request.form.get("name", "").strip()
+    bio = request.form.get("bio", "").strip()
+
+    update_user_settings(user_id, name, user.get("username") or "", bio)
+    flash("Profile saved")
+    return redirect("/settings/profile")
+
+
+@bp.route("/settings/subdomain", methods=["GET", "POST"])
+def settings_subdomain():
+    user_id, user = _require_user()
+    if not user:
+        return redirect("/signin")
+
+    if request.method == "GET":
+        return render_template("settings_subdomain.html", user=user)
+
+    username = request.form.get("username", "").strip().lower()
 
     error = None
-    if subdomain and subdomain != site["subdomain"]:
-        if not valid_subdomain(subdomain):
-            error = "Subdomain must be lowercase letters, numbers, and hyphens only."
-        elif subdomain in RESERVED_SUBDOMAINS:
-            error = "That subdomain is reserved."
-        elif not check_subdomain_available(subdomain):
-            error = "That subdomain is already taken."
+    if username and username != user.get("username"):
+        if not valid_username(username):
+            error = "Username must be lowercase letters, numbers, and hyphens only."
+        elif username in RESERVED_USERNAMES:
+            error = "That username is reserved."
+        elif not check_username_available(username):
+            error = "That username is already taken."
 
     if error:
         return render_template(
-            "site_settings.html",
-            site={**site, "title": title, "subdomain": subdomain},
-            nav_text=nav,
-            slug=slug,
-            site_path=_site_path,
+            "settings_subdomain.html",
+            user={**user, "username": username},
             error=error,
         )
 
-    update_site_settings(site["id"], title, subdomain, nav)
-    flash("Changes saved")
-    if subdomain:
-        return redirect(_subdomain_url(subdomain, "/settings"))
-    return redirect(_base_url(f"/{slug}/settings"))
+    update_user_settings(
+        user_id, user.get("name") or "", username, user.get("bio") or ""
+    )
+    flash("Subdomain saved")
+    return redirect("/settings/subdomain")
+
+
+@bp.route("/settings/export")
+def settings_export():
+    user_id, user = _require_user()
+    if not user:
+        return redirect("/signin")
+
+    return render_template("settings_export.html")
+
+
+@bp.route("/settings/avatar", methods=["POST"])
+def settings_avatar():
+    user_id, user = _require_user()
+    if not user:
+        return redirect("/signin")
+
+    file = request.files.get("avatar")
+    if not file:
+        return redirect("/settings/profile")
+
+    error = validate_image(file)
+    if error:
+        return render_template("settings_profile.html", user=user, error=f"{error}.")
+
+    ext = ALLOWED_IMAGE_TYPES[file.content_type]
+    fmt = file.content_type.split("/")[-1].upper()
+    if fmt == "JPG":
+        fmt = "JPEG"
+    cropped = crop_square(file, fmt)
+    key = f"{user_id}/avatar.{ext}"
+    url = upload_image(key, cropped, file.content_type)
+    update_user_avatar(user_id, url)
+    flash("Avatar updated")
+    return redirect("/settings/profile")
+
+
+@bp.route("/settings/avatar/delete", methods=["POST"])
+def settings_avatar_delete():
+    user_id, user = _require_user()
+    if not user:
+        return redirect("/signin")
+
+    if user.get("avatar"):
+        url = user["avatar"]
+        if url.startswith("/uploads/"):
+            key = url.removeprefix("/uploads/")
+        else:
+            key = "/".join(url.split("/")[3:])
+        if key:
+            delete_image(key)
+        update_user_avatar(user_id, None)
+    flash("Avatar removed")
+    return redirect("/settings/profile")
 
 
 @bp.route("/<slug>/export")
-@_require_site_owner
-def export_site(slug, site):
-    pages = get_export_pages(site["id"])
+def export_page_route(slug):
+    page_meta = get_page_meta(slug)
+    if not page_meta:
+        abort(404)
+    if not _can_edit(page_meta):
+        return redirect(f"/{slug}")
+
+    pages = get_export_pages(slug)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for page in pages:
-            title = get_title(page["content"]) or page["page_slug"]
-            body = get_body(page["content"])
-            date = page["created_at"].strftime("%Y-%m-%d")
-            filename = (
-                page["page_slug"] if page["page_slug"] != INDEX_PAGE_SLUG else "index"
-            )
+        for p in pages:
+            title = get_title(p["content"]) or slug
+            body = get_body(p["content"])
+            date = p["created_at"].strftime("%Y-%m-%d")
             md = f"---\ntitle: {title}\ndate: {date}\n---\n\n{body}\n"
-            zf.writestr(f"{slug}/{filename}.md", md)
+            zf.writestr(f"{slug}.md", md)
     buf.seek(0)
 
     return Response(
@@ -483,19 +661,41 @@ def export_site(slug, site):
     )
 
 
+@bp.route("/export")
+def export_all():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/signin")
+    pages = get_export_pages_for_user(user_id)
+    user = get_user(user_id)
+    name = (user.get("username") or "jottit") if user else "jottit"
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in pages:
+            title = get_title(p["content"]) or p["slug"]
+            body = get_body(p["content"])
+            date = p["created_at"].strftime("%Y-%m-%d")
+            md = f"---\ntitle: {title}\ndate: {date}\n---\n\n{body}\n"
+            zf.writestr(f"{name}/{p['slug']}.md", md)
+    buf.seek(0)
+
+    return Response(
+        buf.getvalue(),
+        content_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{name}.zip"'},
+    )
+
+
 @bp.route("/<slug>/history")
-@bp.route("/<slug>/<page_slug>/history")
-def page_history(slug, page_slug=None, site=None):
-    subdomain_site = g.subdomain_site
-    if subdomain_site and slug != subdomain_site["slug"]:
-        page_slug = slug
-        slug = subdomain_site["slug"]
-        site = subdomain_site
-    if site is None:
-        site = get_site(slug)
-    if not site:
-        abort(404)
-    total = get_revision_count(site["id"], page_slug)
+def page_history(slug):
+    subdomain_user = g.subdomain_user
+    if subdomain_user:
+        page_meta = get_page_meta(slug)
+        if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
+            abort(404)
+
+    total = get_revision_count(slug)
     if total == 0:
         abort(404)
 
@@ -504,7 +704,7 @@ def page_history(slug, page_slug=None, site=None):
     total_pages = (total + per_page - 1) // per_page
     page = max(1, min(page, total_pages))
 
-    revisions = get_revisions_paginated(site["id"], page_slug, page, per_page)
+    revisions = get_revisions_paginated(slug, page, per_page)
 
     paginated = []
     for rev in revisions:
@@ -522,75 +722,63 @@ def page_history(slug, page_slug=None, site=None):
     return render_template(
         "history.html",
         slug=slug,
-        page_slug=page_slug,
-        site_path=_site_path,
         revisions=paginated,
         page=page,
         total_pages=total_pages,
+        is_subdomain=subdomain_user is not None,
     )
 
 
 @bp.route("/<slug>/history/<int:revision>")
-@bp.route("/<slug>/<page_slug>/history/<int:revision>")
-def view_revision(slug, revision, page_slug=None, site=None):
-    subdomain_site = g.subdomain_site
-    if subdomain_site and slug != subdomain_site["slug"]:
-        page_slug = slug
-        slug = subdomain_site["slug"]
-        site = subdomain_site
-    if site is None:
-        site = get_site(slug)
-    if not site:
-        abort(404)
-    row = get_revision(site["id"], revision, page_slug)
+def view_revision(slug, revision):
+    subdomain_user = g.subdomain_user
+    if subdomain_user:
+        page_meta = get_page_meta(slug)
+        if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
+            abort(404)
 
+    row = get_revision(slug, revision)
     if not row:
         abort(404)
 
-    html = render_markdown(process_wikilinks(row["content"], slug))
+    html = render_markdown(process_wikilinks(row["content"]))
     return render_template(
         "revision.html",
         content=html,
         slug=slug,
-        page_slug=page_slug,
-        site_path=_site_path,
         revision=row["revision"],
         created_at=row["created_at"],
+        is_subdomain=subdomain_user is not None,
     )
 
 
-def _build_feed_entries(site_id, slug):
-    entries = get_feed_entries(site_id)
+def _build_feed_entries(slug):
+    entries = get_feed_entries(slug)
     base_url = request.url_root.rstrip("/")
-    site_url = f"{base_url}/{slug}"
+    page_url = f"{base_url}/{slug}"
     items = []
     for entry in entries:
-        page_slug = entry["page_slug"]
-        page_url = (
-            site_url if page_slug == INDEX_PAGE_SLUG else f"{base_url}/{page_slug}"
-        )
         body = get_body(entry["content"])
         items.append(
             {
                 "title": get_title(entry["content"]) or slug,
                 "url": page_url,
                 "body": body,
-                "body_html": render_markdown(process_wikilinks(body, slug)),
+                "body_html": render_markdown(process_wikilinks(body)),
                 "created_at": entry["created_at"],
             }
         )
-    return items, site_url
+    return items, page_url
 
 
 @bp.route("/<slug>/feed.xml")
-def rss_feed(slug, site=None):
-    if site is None:
-        site = get_site(slug)
-    if not site:
+def rss_feed(slug):
+    page_meta = get_page_meta(slug)
+    if not page_meta:
         abort(404)
 
-    items, site_url = _build_feed_entries(site["id"], slug)
-    site_title = site["title"] or slug
+    items, page_url = _build_feed_entries(slug)
+    page_title = get_title(get_page(slug)["content"]) if get_page(slug) else slug
 
     last_build_date = format_datetime(items[0]["created_at"]) if items else ""
 
@@ -612,8 +800,8 @@ def rss_feed(slug, site=None):
         '<?xml version="1.0" encoding="utf-8"?>',
         '<rss version="2.0" xmlns:source="http://source.scripting.com/">',
         "  <channel>",
-        f"    <title>{xml_escape(site_title)}</title>",
-        f"    <link>{xml_escape(site_url)}</link>",
+        f"    <title>{xml_escape(page_title)}</title>",
+        f"    <link>{xml_escape(page_url)}</link>",
         "    <description></description>",
         f"    <lastBuildDate>{last_build_date}</lastBuildDate>",
     ]
@@ -626,20 +814,19 @@ def rss_feed(slug, site=None):
 
 
 @bp.route("/<slug>/feed.json")
-def json_feed(slug, site=None):
-    if site is None:
-        site = get_site(slug)
-    if not site:
+def json_feed(slug):
+    page_meta = get_page_meta(slug)
+    if not page_meta:
         abort(404)
 
-    items, site_url = _build_feed_entries(site["id"], slug)
-    site_title = site["title"] or slug
+    items, page_url = _build_feed_entries(slug)
+    page_title = get_title(get_page(slug)["content"]) if get_page(slug) else slug
 
     feed = {
         "version": "https://jsonfeed.org/version/1.1",
-        "title": site_title,
-        "home_page_url": site_url,
-        "feed_url": f"{site_url}/feed.json",
+        "title": page_title,
+        "home_page_url": page_url,
+        "feed_url": f"{page_url}/feed.json",
         "items": [
             {
                 "id": item["url"],
@@ -658,107 +845,112 @@ def json_feed(slug, site=None):
     )
 
 
-@bp.route("/<slug>/delete", methods=["POST"])
-@_require_site_owner
-def delete_site_page(slug, site):
-    page_slug = request.form.get("page")
-    if not page_slug:
-        return redirect(_site_path(slug))
-    delete_page(site["id"], page_slug)
-    return redirect(_site_path(slug))
+@bp.route("/<slug>/delete", methods=["GET", "POST"])
+def delete_page_route(slug):
+    page_meta = get_page_meta(slug)
+    if not page_meta:
+        return redirect("/")
 
-
-@bp.route("/<slug>/delete-site", methods=["GET", "POST"])
-@_require_site_owner
-def delete_site_page_confirm(slug, site):
-    site_name = site["title"] or site["subdomain"] or slug
+    user_id = session.get("user_id")
+    if not page_meta["user_id"] or page_meta["user_id"] != user_id:
+        return redirect(f"/{slug}")
 
     if request.method == "GET":
-        return render_template("delete_site.html", slug=slug, site_name=site_name)
+        page_title = None
+        row = get_page(slug)
+        if row:
+            page_title = get_title(row["content"])
+        return render_template(
+            "delete_page.html", slug=slug, page_title=page_title or slug
+        )
 
     confirmation = request.form.get("confirmation", "").strip()
     if confirmation != "delete":
+        page_title = None
+        row = get_page(slug)
+        if row:
+            page_title = get_title(row["content"])
         return render_template(
-            "delete_site.html",
+            "delete_page.html",
             slug=slug,
-            site_name=site_name,
+            page_title=page_title or slug,
             error='Please type "delete" to confirm.',
         )
 
-    delete_site(site["id"])
+    delete_page(slug)
     return redirect(_base_url("/"))
 
 
 @bp.route("/<slug>")
-@bp.route("/<slug>/<page_slug>")
-def view_page(slug, page_slug=None):
-    subdomain_site = g.subdomain_site
-    if subdomain_site and slug != subdomain_site["slug"]:
-        page_slug = slug
-        slug = subdomain_site["slug"]
+def view_page(slug):
+    subdomain_user = g.subdomain_user
 
-    site = subdomain_site or get_site(slug)
-    if not subdomain_site and site and site["subdomain"]:
-        path = f"/{page_slug}" if page_slug else ""
-        return redirect(_subdomain_url(site["subdomain"], path))
+    if subdomain_user:
+        page_meta = get_page_meta(slug)
+        if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
+            abort(404)
+    else:
+        page_meta = get_page_meta(slug)
+        if page_meta and page_meta["user_id"] is not None:
+            user = get_user(page_meta["user_id"])
+            if user and user.get("username"):
+                return redirect(_subdomain_url(user["username"], f"/{slug}"))
 
-    if not site:
+    if not page_meta:
         abort(404)
 
-    row = get_page(site["id"], page_slug)
-
+    row = get_page(slug)
     if not row:
         abort(404)
-    unclaimed = site["user_id"] is None
-    is_owner = session.get("user_id") == site["user_id"] and not unclaimed
 
-    if row["draft"] and not is_owner and not unclaimed:
+    unclaimed = page_meta["user_id"] is None
+    is_owner = session.get("user_id") == page_meta["user_id"] and not unclaimed
+    is_creator = _is_creator(page_meta)
+
+    if row["draft"] and not is_owner and not is_creator:
         abort(404)
-    show_actions = is_owner or unclaimed
 
-    nav_pages = []
-    existing_page_slugs = set()
-    if site:
-        pages = get_pages_for_site(site["id"])
-        existing_page_slugs = {p["slug"] for p in pages}
-        for item in parse_nav(site["nav"]):
-            item_slug = item["slug"]
-            is_index = item_slug == "/"
-            exists = (
-                INDEX_PAGE_SLUG in existing_page_slugs
-                if is_index
-                else item_slug in existing_page_slugs
-            )
-            nav_pages.append(
-                {
-                    "slug": item_slug,
-                    "title": item["label"],
-                    "exists": exists,
-                    "is_index": is_index,
-                }
-            )
+    show_actions = is_owner or is_creator
 
     page_title = get_title(row["content"])
     page_description = get_description(row["content"])
-    content = process_wikilinks(row["content"], slug, existing_page_slugs)
+    content = process_wikilinks(row["content"])
     html = render_markdown(content)
     html = html.replace("<h1>", '<h1 class="p-name">', 1)
+
+    site_title = None
+    avatar_url = None
+    bio = None
+    if subdomain_user:
+        site_title = subdomain_user.get("name") or subdomain_user.get("username")
+        avatar_url = subdomain_user.get("avatar")
+        bio = subdomain_user.get("bio")
+
+    owner_initials = None
+    owner_avatar_url = None
+    if is_owner:
+        user = get_user(session["user_id"])
+        if user:
+            owner_initials = _compute_initials(user)
+            owner_avatar_url = user.get("avatar")
 
     return render_template(
         "page.html",
         content=html,
         draft=row["draft"],
         slug=slug,
-        site_path=_site_path,
         show_actions=show_actions,
-        unclaimed=unclaimed,
+        unclaimed=unclaimed and is_creator,
         is_owner=is_owner,
-        site_title=site["title"] if site else None,
-        nav_pages=nav_pages,
+        owner_initials=owner_initials,
+        owner_avatar_url=owner_avatar_url,
+        avatar_url=avatar_url,
+        bio=bio,
         updated_at=row["created_at"],
-        page_slug=page_slug,
         page_title=page_title,
         page_description=page_description,
+        site_title=site_title,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
-        has_history=get_revision_count(site["id"], page_slug) > 1,
+        has_history=get_revision_count(slug) > 1,
+        is_subdomain=subdomain_user is not None,
     )

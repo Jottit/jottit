@@ -7,7 +7,7 @@
 {% block body %}
 <div class="revision-banner">
     You're viewing revision #{{ revision }} from {{ created_at | relative_time }}.
-    <a href="{{ site_path(slug, page_slug) }}">View current version</a>
+    <a href="/{{ slug }}">View current version</a>
 </div>
 <main class="page-main">
     <article class="page">

@@ -5,8 +5,6 @@ from contextlib import contextmanager
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-from utils import INDEX_PAGE_SLUG
-
 DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
 
 _pool = None
@@ -54,26 +52,11 @@ def init_db():
         conn.commit()
 
 
-def save_page(slug, content, draft, page_slug=None):
+def save_page(slug, content, draft):
     with get_db() as conn:
-        site = conn.execute("SELECT id FROM sites WHERE slug = %s", (slug,)).fetchone()
+        page = conn.execute("SELECT id FROM pages WHERE slug = %s", (slug,)).fetchone()
 
-        if site:
-            if page_slug:
-                page = conn.execute(
-                    "SELECT id FROM pages WHERE site_id = %s AND slug = %s",
-                    (site["id"], page_slug),
-                ).fetchone()
-                if not page:
-                    page = conn.execute(
-                        "INSERT INTO pages (site_id, slug, draft) VALUES (%s, %s, %s) RETURNING id",
-                        (site["id"], page_slug, draft),
-                    ).fetchone()
-            else:
-                page = conn.execute(
-                    "SELECT id FROM pages WHERE site_id = %s AND slug = %s",
-                    (site["id"], INDEX_PAGE_SLUG),
-                ).fetchone()
+        if page:
             conn.execute(
                 """INSERT INTO revisions (page_id, revision, content)
                    VALUES (%s, (SELECT COALESCE(MAX(revision), 0) + 1 FROM revisions WHERE page_id = %s), %s)""",
@@ -85,12 +68,8 @@ def save_page(slug, content, draft, page_slug=None):
             )
         else:
             cursor = conn.execute(
-                "INSERT INTO sites (slug) VALUES (%s) RETURNING id", (slug,)
-            )
-            site_id = cursor.fetchone()["id"]
-            cursor = conn.execute(
-                "INSERT INTO pages (site_id, slug, draft) VALUES (%s, %s, %s) RETURNING id",
-                (site_id, page_slug or INDEX_PAGE_SLUG, draft),
+                "INSERT INTO pages (slug, draft) VALUES (%s, %s) RETURNING id",
+                (slug, draft),
             )
             page_id = cursor.fetchone()["id"]
             conn.execute(
@@ -101,39 +80,38 @@ def save_page(slug, content, draft, page_slug=None):
         conn.commit()
 
 
-def get_page(site_id, page_slug=None):
+def get_page(slug):
     with get_db() as conn:
-        if page_slug:
-            return conn.execute(
-                """SELECT r.content, p.draft, r.created_at
-                   FROM revisions r
-                   JOIN pages p ON r.page_id = p.id
-                   WHERE p.site_id = %s AND p.slug = %s
-                   ORDER BY r.revision DESC LIMIT 1""",
-                (site_id, page_slug),
-            ).fetchone()
         return conn.execute(
             """SELECT r.content, p.draft, r.created_at
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.site_id = %s AND p.slug = %s
+               WHERE p.slug = %s
                ORDER BY r.revision DESC LIMIT 1""",
-            (site_id, INDEX_PAGE_SLUG),
+            (slug,),
         ).fetchone()
 
 
-def get_revisions(site_id, page_slug=None):
+def get_page_meta(slug):
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT id, slug, user_id, draft FROM pages WHERE slug = %s",
+            (slug,),
+        ).fetchone()
+
+
+def get_revisions(slug):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.revision, r.created_at, r.content FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.site_id = %s AND p.slug = %s
+               WHERE p.slug = %s
                ORDER BY r.revision ASC""",
-            (site_id, page_slug or INDEX_PAGE_SLUG),
+            (slug,),
         ).fetchall()
 
 
-def get_revisions_paginated(site_id, page_slug=None, page=1, per_page=6):
+def get_revisions_paginated(slug, page=1, per_page=6):
     offset = (page - 1) * per_page
     with get_db() as conn:
         return conn.execute(
@@ -143,47 +121,47 @@ def get_revisions_paginated(site_id, page_slug=None, page=1, per_page=6):
                           OVER (ORDER BY r.revision ASC) AS prev_word_count
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.site_id = %s AND p.slug = %s
+               WHERE p.slug = %s
                ORDER BY r.revision DESC
                LIMIT %s OFFSET %s""",
-            (site_id, page_slug or INDEX_PAGE_SLUG, per_page, offset),
+            (slug, per_page, offset),
         ).fetchall()
 
 
-def get_revision_count(site_id, page_slug=None):
+def get_revision_count(slug):
     with get_db() as conn:
         row = conn.execute(
             """SELECT COUNT(*) AS cnt FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.site_id = %s AND p.slug = %s""",
-            (site_id, page_slug or INDEX_PAGE_SLUG),
+               WHERE p.slug = %s""",
+            (slug,),
         ).fetchone()
         return row["cnt"]
 
 
-def get_revision(site_id, revision, page_slug=None):
+def get_revision(slug, revision):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.content, r.created_at, r.revision FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.site_id = %s AND p.slug = %s AND r.revision = %s""",
-            (site_id, page_slug or INDEX_PAGE_SLUG, revision),
+               WHERE p.slug = %s AND r.revision = %s""",
+            (slug, revision),
         ).fetchone()
 
 
-def get_site(slug):
+def get_user(user_id):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, slug, user_id, visibility, title, subdomain, nav FROM sites WHERE slug = %s",
-            (slug,),
+            "SELECT id, email, username, name, bio, avatar FROM users WHERE id = %s",
+            (user_id,),
         ).fetchone()
 
 
-def get_site_by_subdomain(subdomain):
+def get_user_by_username(username):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, slug, user_id, visibility, title, subdomain, nav FROM sites WHERE subdomain = %s",
-            (subdomain,),
+            "SELECT id, email, username, name, bio, avatar FROM users WHERE username = %s",
+            (username,),
         ).fetchone()
 
 
@@ -201,11 +179,20 @@ def find_or_create_user(email):
         return user_id
 
 
-def claim_site(site_id, user_id):
+def set_user_username(user_id, username):
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE users SET username = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (username, user_id),
+        )
+        conn.commit()
+
+
+def claim_page(page_id, user_id):
     with get_db() as conn:
         result = conn.execute(
-            "UPDATE sites SET user_id = %s WHERE id = %s AND user_id IS NULL",
-            (user_id, site_id),
+            "UPDATE pages SET user_id = %s WHERE id = %s AND user_id IS NULL",
+            (user_id, page_id),
         )
         conn.commit()
         return result.rowcount > 0
@@ -237,105 +224,123 @@ def verify_code(email, code, purpose):
         return row is not None
 
 
-def get_sites_for_user(user_id, limit=None):
+def rename_page(old_slug, new_slug):
     with get_db() as conn:
-        query = """SELECT slug, title, subdomain, visibility
-                   FROM sites
-                   WHERE user_id = %s
-                   ORDER BY subdomain NULLS LAST, slug"""
-        params = [user_id]
-        if limit is not None:
-            query += " LIMIT %s"
-            params.append(limit)
-        return conn.execute(query, params).fetchall()
+        result = conn.execute(
+            "UPDATE pages SET slug = %s, updated_at = CURRENT_TIMESTAMP WHERE slug = %s",
+            (new_slug, old_slug),
+        )
+        conn.commit()
+        return result.rowcount > 0
 
 
-def update_site_settings(site_id, title, subdomain, nav=None):
+def get_pages_for_user(user_id):
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT p.slug, p.draft, p.updated_at,
+                      (SELECT r.content FROM revisions r WHERE r.page_id = p.id ORDER BY r.revision DESC LIMIT 1) AS content
+               FROM pages p
+               WHERE p.user_id = %s
+               ORDER BY p.updated_at DESC""",
+            (user_id,),
+        ).fetchall()
+
+
+def update_user_settings(user_id, name, username, bio=None):
     with get_db() as conn:
         conn.execute(
-            "UPDATE sites SET title = %s, subdomain = %s, nav = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-            (title or None, subdomain or None, nav or None, site_id),
+            "UPDATE users SET name = %s, username = %s, bio = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (name or None, username or None, bio or None, user_id),
         )
         conn.commit()
 
 
-def get_pages_for_site(site_id):
+def update_user_avatar(user_id, avatar_url):
     with get_db() as conn:
-        return conn.execute(
-            """SELECT p.id, p.slug, p.nav_order,
-                      (SELECT r.content FROM revisions r WHERE r.page_id = p.id ORDER BY r.revision DESC LIMIT 1) AS content
-               FROM pages p
-               WHERE p.site_id = %s
-               ORDER BY p.nav_order ASC NULLS LAST, p.created_at ASC""",
-            (site_id,),
-        ).fetchall()
+        conn.execute(
+            "UPDATE users SET avatar = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (avatar_url, user_id),
+        )
+        conn.commit()
 
 
-def create_page(site_id, slug):
+def check_username_available(username):
     with get_db() as conn:
         row = conn.execute(
-            "INSERT INTO pages (site_id, slug) VALUES (%s, %s) RETURNING id",
-            (site_id, slug),
+            "SELECT id FROM users WHERE username = %s", (username,)
         ).fetchone()
-        conn.commit()
-        return row["id"]
+        return row is None
 
 
-def get_export_pages(site_id):
+def get_export_pages(slug):
     with get_db() as conn:
         return conn.execute(
-            """SELECT * FROM (
-                   SELECT DISTINCT ON (p.id)
-                       p.slug AS page_slug,
-                       r.content,
-                       r.created_at
-                   FROM pages p
-                   JOIN revisions r ON r.page_id = p.id
-                   WHERE p.site_id = %s AND p.draft = FALSE
-                   ORDER BY p.id, r.revision DESC
-               ) sub
-               ORDER BY page_slug ASC""",
-            (site_id,),
+            """SELECT p.slug, r.content, r.created_at
+               FROM pages p
+               JOIN revisions r ON r.page_id = p.id
+               WHERE p.slug = %s AND p.draft = FALSE
+               AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)""",
+            (slug,),
         ).fetchall()
 
 
-def get_feed_entries(site_id):
+def get_export_pages_for_user(user_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT * FROM (
                    SELECT DISTINCT ON (p.id)
-                       p.slug AS page_slug,
+                       p.slug,
                        r.content,
                        r.created_at
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
-                   WHERE p.site_id = %s AND p.draft = FALSE
+                   WHERE p.user_id = %s AND p.draft = FALSE
+                   ORDER BY p.id, r.revision DESC
+               ) sub
+               ORDER BY slug ASC""",
+            (user_id,),
+        ).fetchall()
+
+
+def get_feed_entries(slug):
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT p.slug, r.content, r.created_at
+               FROM pages p
+               JOIN revisions r ON r.page_id = p.id
+               WHERE p.slug = %s AND p.draft = FALSE
+               AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)""",
+            (slug,),
+        ).fetchall()
+
+
+def get_feed_entries_for_user(user_id):
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT * FROM (
+                   SELECT DISTINCT ON (p.id)
+                       p.slug,
+                       r.content,
+                       r.created_at
+                   FROM pages p
+                   JOIN revisions r ON r.page_id = p.id
+                   WHERE p.user_id = %s AND p.draft = FALSE
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY created_at DESC
                LIMIT 20""",
-            (site_id,),
+            (user_id,),
         ).fetchall()
 
 
-def delete_page(site_id, page_slug):
+def delete_page(slug):
     with get_db() as conn:
-        conn.execute(
-            "DELETE FROM pages WHERE site_id = %s AND slug = %s",
-            (site_id, page_slug),
-        )
+        conn.execute("DELETE FROM pages WHERE slug = %s", (slug,))
         conn.commit()
 
 
-def delete_site(site_id):
+def delete_user(user_id):
     with get_db() as conn:
-        conn.execute("DELETE FROM sites WHERE id = %s", (site_id,))
+        conn.execute("UPDATE pages SET user_id = NULL WHERE user_id = %s", (user_id,))
+        conn.execute("DELETE FROM users WHERE id = %s", (user_id,))
         conn.commit()
-
-
-def check_subdomain_available(subdomain):
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT id FROM sites WHERE subdomain = %s", (subdomain,)
-        ).fetchone()
-        return row is None

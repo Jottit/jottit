@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site_title }}{% endblock %}
+
+{% block body %}
+{% if is_owner %}
+<div class="admin-banner">
+    <a href="{{ base_url }}" class="admin-banner-home">Jottit</a>
+    <div class="admin-banner-actions">
+        <a href="{{ base_url }}/new" class="btn btn--outline btn--sm"><span class="btn-plus">+</span> Create a page</a>
+        {% if owner_avatar_url %}
+        <a href="{{ base_url }}/settings" title="Settings"><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"></a>
+        {% else %}
+        <a href="{{ base_url }}/settings" class="admin-avatar" title="Settings">{{ owner_initials }}</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% if site_title %}
+<header class="profile-header h-card">
+    {% if avatar_url %}
+    <img src="{{ avatar_url }}" alt="{{ site_title }}" class="profile-avatar u-photo">
+    {% endif %}
+    <h1 class="profile-name"><a class="p-name u-url" href="/">{{ site_title }}</a></h1>
+    {% if bio %}
+    <p class="profile-bio p-note">{{ bio }}</p>
+    {% endif %}
+</header>
+{% endif %}
+<main class="page-main">
+    <article class="page">
+        {% if pages %}
+        {% for page in pages %}
+        <div class="page-listing-item">
+            <a href="/{{ page.slug }}" class="page-listing-link">
+                <h2 class="page-listing-title">{{ page.title }}</h2>
+                {% if page.description %}
+                <p class="page-listing-desc">{{ page.description }}</p>
+                {% endif %}
+                <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">{{ page.updated_at | relative_time }}</time>
+            </a>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No pages yet.</p>
+        {% endif %}
+    </article>
+    <footer class="page-footer">
+        <span>powered by <a href="{{ base_url }}">Jottit</a></span>
+    </footer>
+</main>
+{% endblock %}

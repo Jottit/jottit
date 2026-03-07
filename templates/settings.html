@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="{{ back_url }}" class="panel-back"><span class="panel-back-chevron">&lsaquo;</span> My pages</a>
+    <h1 class="title">Settings</h1>
+    <div class="panel">
+
+        {% for message in get_flashed_messages() %}
+        <p class="notice notice--success">{{ message }}</p>
+        {% endfor %}
+
+        <a href="/settings/profile" class="settings-identity">
+            {% if user.avatar %}
+            <img src="{{ user.avatar }}" alt="Avatar" class="settings-identity-avatar">
+            {% else %}
+            <div class="settings-identity-avatar settings-avatar-placeholder">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="40" cy="30" r="14" fill="currentColor"/>
+                    <ellipse cx="40" cy="68" rx="24" ry="20" fill="currentColor"/>
+                </svg>
+            </div>
+            {% endif %}
+            <div class="settings-identity-info">
+                <span class="settings-identity-name">{{ user.name or "Add your name" }}</span>
+                {% if user.bio %}
+                <span class="settings-identity-bio">{{ user.bio }}</span>
+                {% endif %}
+            </div>
+            <span class="settings-chevron">&rsaquo;</span>
+        </a>
+
+        <div class="settings-list">
+            <a href="/settings/subdomain" class="settings-row">
+                <span class="settings-row-label">Address</span>
+                <span class="settings-row-right">
+                    {% if user.username %}
+                    <span class="settings-row-value">{{ user.username }}.jottit.org</span>
+                    {% endif %}
+                    <span class="settings-chevron">&rsaquo;</span>
+                </span>
+            </a>
+            <a href="/settings/export" class="settings-row">
+                <span class="settings-row-label">Export</span>
+                <span class="settings-row-right">
+                    <span class="settings-chevron">&rsaquo;</span>
+                </span>
+            </a>
+            <div class="settings-row settings-row--last">
+                {% with class="settings-row-label signout-btn" %}{% include "_signout.html" %}{% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

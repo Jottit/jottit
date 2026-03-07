@@ -5,6 +5,8 @@ Markdown==3.10.2
 nh3==0.2.21
 psycopg[binary]==3.3.3
 psycopg_pool==3.3.0
+boto3==1.38.37
 gunicorn==25.1.0
+Pillow==11.2.1
 resend==2.7.0
 sentry-sdk[flask]

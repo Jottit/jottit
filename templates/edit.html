@@ -10,9 +10,8 @@
 <div class="editor" data-slug="{{ slug }}">
     <div class="editor-split">
         <div class="editor-pane">
-            <form id="editor-form" class="editor-form" method="post" action="{{ site_path(slug, 'edit') }}">
+            <form id="editor-form" class="editor-form" method="post" action="/{{ slug }}/edit">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                {% if page_slug %}<input type="hidden" name="page" value="{{ page_slug }}">{% endif %}
                 <input class="editor-title" type="text" name="title" placeholder="Title" value="{{ title }}" {% if not title %}autofocus{% endif %}>
                 <textarea class="editor-content" name="content" placeholder="Write something..." {% if title and not content %}autofocus{% endif %}>{{ content }}</textarea>
             </form>
@@ -22,16 +21,9 @@
         </div>
     </div>
     <footer class="editor-footer">
-        {% if page_slug %}
-        <label class="editor-draft">
-            <input type="checkbox" name="draft" form="editor-form" {% if draft %}checked{% endif %}>
-            Keep this a draft
-        </label>
-        {% else %}
         <span></span>
-        {% endif %}
         <div class="editor-actions">
-            <a href="{{ site_path(slug, page_slug) }}" class="btn btn--outline">Cancel</a>
+            <a href="{% if is_new %}/{% else %}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>
             <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
         </div>
     </footer>

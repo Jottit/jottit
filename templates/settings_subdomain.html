@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Address — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/settings" class="panel-back">&larr; Settings</a>
+    <h1 class="title">Address</h1>
+    <div class="panel">
+
+        {% for message in get_flashed_messages() %}
+        <p class="notice notice--success">{{ message }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="notice notice--error">{{ error }}</p>
+        {% endif %}
+
+        <form method="post" action="/settings/subdomain">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label class="label" for="username">Address</label>
+                <div class="settings-subdomain-row">
+                    <input class="input" type="text" id="username" name="username" value="{{ user.username or '' }}" placeholder="yourname">
+                    <span class="settings-subdomain-suffix">.jottit.org</span>
+                </div>
+                <p class="help-text">Changing your subdomain will break existing links.</p>
+            </div>
+
+            <button type="submit" class="btn btn-solid settings-save">Save changes</button>
+        </form>
+    </div>
+</div>
+<script src="/static/settings.js"></script>
+{% endblock %}
