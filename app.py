@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 import sentry_sdk
 from flask import Flask, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from db import init_db
 from routes import bp, limiter
@@ -13,6 +14,7 @@ if dsn:
     sentry_sdk.init(dsn=dsn, send_default_pii=False)
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.url_map.strict_slashes = False
 app.secret_key = os.environ.get("SECRET_KEY")
 if not app.secret_key:
