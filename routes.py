@@ -187,9 +187,12 @@ def subdomain_home(user):
     is_owner = session.get("user_id") == user["id"]
     owner_initials = None
     owner_avatar_url = None
+    profile_incomplete = False
     if is_owner:
         owner_initials = _compute_initials(user)
         owner_avatar_url = user.get("avatar")
+        if not user.get("avatar") and not user.get("bio"):
+            profile_incomplete = True
     return render_template(
         "subdomain_home.html",
         user=user,
@@ -198,6 +201,7 @@ def subdomain_home(user):
         is_owner=is_owner,
         owner_initials=owner_initials,
         owner_avatar_url=owner_avatar_url,
+        profile_incomplete=profile_incomplete,
         avatar_url=user.get("avatar"),
         bio=user.get("bio"),
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
@@ -972,11 +976,14 @@ def view_page(slug):
 
     owner_initials = None
     owner_avatar_url = None
+    profile_incomplete = False
     if is_owner:
         user = get_user(session["user_id"])
         if user:
             owner_initials = _compute_initials(user)
             owner_avatar_url = user.get("avatar")
+            if not user.get("avatar") and not user.get("bio"):
+                profile_incomplete = True
 
     return render_template(
         "page.html",
@@ -988,6 +995,7 @@ def view_page(slug):
         is_owner=is_owner,
         owner_initials=owner_initials,
         owner_avatar_url=owner_avatar_url,
+        profile_incomplete=profile_incomplete,
         avatar_url=avatar_url,
         bio=bio,
         updated_at=row["created_at"],

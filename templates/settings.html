@@ -27,6 +27,10 @@
                 <span class="settings-identity-name">{{ user.name or "Add your name" }}</span>
                 {% if user.bio %}
                 <span class="settings-identity-bio">{{ user.bio }}</span>
+                {% elif not user.avatar %}
+                <span class="settings-identity-hint">Add a photo and bio</span>
+                {% else %}
+                <span class="settings-identity-hint">Add a bio</span>
                 {% endif %}
             </div>
             <span class="settings-chevron">&rsaquo;</span>

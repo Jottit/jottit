@@ -11,7 +11,7 @@
         {% if owner_avatar_url %}
         <a href="{{ base_url }}/settings" title="Settings"><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"></a>
         {% else %}
-        <a href="{{ base_url }}/settings" class="admin-avatar" title="Settings">{{ owner_initials }}</a>
+        <a href="{{ base_url }}/settings" class="admin-avatar{% if profile_incomplete %} profile-incomplete{% endif %}" title="Settings">{{ owner_initials }}</a>
         {% endif %}
     </div>
 </div>
