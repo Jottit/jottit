@@ -10,7 +10,7 @@
     <meta property="og:url" content="{{ request.url }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Jottit">
-    <meta property="og:image" content="{% block og_image %}/static/og.png{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ request.host_url.rstrip('/') }}/static/og.png{% endblock %}">
     {% block og_extra %}{% endblock %}
     <link rel="icon" href="/static/favicon.ico">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
