@@ -21,9 +21,9 @@
 
 .page h1 {
     font-family: var(--site-font-heading);
-    font-size: 1.625rem;
+    font-size: 2.25rem;
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 1.15;
     letter-spacing: -0.015em;
     color: var(--site-color-heading);
     margin-bottom: 1.5rem;

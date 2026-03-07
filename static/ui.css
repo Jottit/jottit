@@ -401,6 +401,7 @@
 
 .profile-bio {
     color: var(--muted);
+    font-size: var(--font-size-sm);
 }
 
 /* Profile header variants — same centered structure, elements layer in */
@@ -427,7 +428,7 @@
 }
 
 .profile-header .profile-name {
-    font-size: 2rem;
+    font-size: 1.25rem;
     margin: 0;
 }
 
@@ -440,6 +441,13 @@
 
 .profile-header--name {
     padding-top: var(--space-12);
+}
+
+/* Individual page — smaller avatar */
+
+.profile-header--page .profile-avatar {
+    width: 56px;
+    height: 56px;
 }
 
 /* 2/4. Avatar present — add space between avatar and name */
