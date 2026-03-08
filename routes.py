@@ -245,6 +245,7 @@ def subdomain_home(user):
             "title": title or p["slug"],
             "description": get_description(p["content"], max_length=130),
             "updated_at": p["updated_at"],
+            "pinned": p["listing"] == "pinned",
         }
         if p["listing"] == "pinned":
             pinned.append(item)

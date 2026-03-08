@@ -39,7 +39,7 @@
         {% for page in pages %}
         <div class="page-listing-item">
             <a href="/{{ page.slug }}" class="page-listing-link">
-                <h2 class="page-listing-title">{{ page.title }}</h2>
+                <h2 class="page-listing-title">{% if page.pinned %}<svg class="pin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Pinned"><path d="M12 17v5"/><path d="M9 11l-4 4h14l-4-4V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg> {% endif %}{{ page.title }}</h2>
                 {% if page.description %}
                 <p class="page-listing-desc">{{ page.description }}</p>
                 {% endif %}

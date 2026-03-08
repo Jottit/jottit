@@ -135,6 +135,7 @@ a.wikilink-new {
 }
 
 .page-listing-title {
+    position: relative;
     font-family: var(--site-font-heading);
     font-size: 1.625rem;
     font-weight: 700;
@@ -146,6 +147,15 @@ a.wikilink-new {
 .page .page-listing-desc {
     color: var(--site-color-text);
     margin: 0 0 0.4rem;
+}
+
+.pin-icon {
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 0.4rem;
+    color: var(--site-color-muted);
 }
 
 .page-listing-date {

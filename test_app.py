@@ -1137,6 +1137,23 @@ def test_pinned_page_shown_first(client):
     assert body.index("lp4a") < body.index("lp4b")
 
 
+def test_pinned_page_shows_pin_icon(client):
+    user_id = _create_user_with_username(
+        client, "pinicon@example.com", "pinicon", "pip1"
+    )
+    save_page("pip2", "# Not Pinned\n\nContent", False)
+    page_meta2 = get_page_meta("pip2")
+    claim_page(page_meta2["id"], user_id)
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    host = "pinicon.jottit.localhost:8000"
+    client.post("/pip1/listing", data={"listing": "pinned"}, headers={"Host": host})
+    r = client.get("/", headers={"Host": host})
+    body = r.data.decode()
+    assert 'class="pin-icon"' in body
+    assert body.count('class="pin-icon"') == 1
+
+
 def test_non_owner_cannot_update_listing(client):
     _create_user_with_username(client, "list5@example.com", "listuser5", "lp5")
     host = "listuser5.jottit.localhost:8000"
