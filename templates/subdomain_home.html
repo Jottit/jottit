@@ -8,7 +8,7 @@
 <div class="admin-banner">
     <a href="{{ base_url }}" class="admin-banner-home">Jottit</a>
     <div class="admin-banner-actions">
-        <a href="{{ base_url }}/new" class="btn btn-publish btn--sm">Create page</a>
+        <a href="/new" class="btn btn-publish btn--sm">Create page</a>
         {% if owner_avatar_url %}
         <a href="{{ base_url }}/settings" title="Settings"><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"></a>
         {% else %}
@@ -18,13 +18,13 @@
 </div>
 {% endif %}
 {% if site_title %}
-<header class="profile-header h-card{% if avatar_url and bio %} profile-header--full{% elif avatar_url %} profile-header--avatar{% elif bio %} profile-header--bio{% else %} profile-header--name{% endif %}">
+<header class="profile-header h-card{% if avatar_url and bio_html %} profile-header--full{% elif avatar_url %} profile-header--avatar{% elif bio_html %} profile-header--bio{% else %} profile-header--name{% endif %}">
     {% if avatar_url %}
     <a href="/"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="profile-avatar u-photo"></a>
     {% endif %}
     <h1 class="profile-name"><a class="p-name u-url" href="/">{{ site_title }}</a></h1>
-    {% if bio %}
-    <p class="profile-bio p-note">{{ bio|render_bio|safe }}</p>
+    {% if bio_html %}
+    <p class="profile-bio p-note">{{ bio_html|safe }}</p>
     {% endif %}
 </header>
 {% endif %}

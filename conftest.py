@@ -44,7 +44,7 @@ def test_db():
 @pytest.fixture
 def client():
     flask_app.config["TESTING"] = True
-    flask_app.config["SESSION_COOKIE_DOMAIN"] = False
+    flask_app.config["SESSION_COOKIE_DOMAIN"] = ".localhost"
     flask_app.config["WTF_CSRF_ENABLED"] = False
     with flask_app.test_client() as client:
         yield client

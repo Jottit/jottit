@@ -25,9 +25,11 @@
     var form = document.querySelector('form[action="/settings/profile"]');
     if (!form) return;
     var csrf = form.querySelector('input[name="csrf_token"]');
-    var timer;
+    var dirty = false;
 
     function save() {
+        if (!dirty) return;
+        dirty = false;
         var name = form.querySelector('#name');
         var bio = form.querySelector('#bio');
         fetch('/settings/profile', {
@@ -44,13 +46,16 @@
     }
 
     form.addEventListener('input', function() {
-        clearTimeout(timer);
-        timer = setTimeout(save, 500);
+        dirty = true;
+    });
+
+    form.querySelectorAll('input, textarea').forEach(function(el) {
+        el.addEventListener('blur', save);
     });
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        clearTimeout(timer);
+        dirty = true;
         save();
     });
 })();

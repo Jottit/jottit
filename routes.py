@@ -32,9 +32,10 @@ from db import (
     get_export_pages_for_user,
     get_feed_entries,
     get_page,
+    find_page_owner_for_redirect,
     get_page_meta,
-    get_page_meta_for_user,
     get_pages_for_user,
+    get_slugs_for_user,
     get_public_pages,
     get_revision,
     get_revision_count,
@@ -65,6 +66,7 @@ from utils import (
     get_description,
     get_title,
     process_wikilinks,
+    render_bio,
     render_markdown,
     slugify,
     valid_username,
@@ -123,6 +125,17 @@ def _base_url(path=""):
 
 def _subdomain_url(username, path=""):
     return f"{request.scheme}://{username}.{BASE_DOMAIN}{path}"
+
+
+def _find_page(slug):
+    subdomain_user = g.subdomain_user
+    if subdomain_user:
+        return get_page_meta(slug, subdomain_user["id"])
+    if session.get("user_id"):
+        page_meta = get_page_meta(slug, session["user_id"])
+        if page_meta:
+            return page_meta
+    return get_page_meta(slug)
 
 
 @bp.before_request
@@ -219,6 +232,7 @@ def home():
 
 def subdomain_home(user):
     pages = get_pages_for_user(user["id"])
+    existing_slugs = {p["slug"] for p in pages}
     pinned = []
     listed = []
     for p in pages:
@@ -246,6 +260,8 @@ def subdomain_home(user):
         owner_avatar_url = user.get("avatar")
         if not user.get("avatar") and not user.get("bio"):
             profile_incomplete = True
+    bio = user.get("bio")
+    bio_html = render_bio(bio, existing_slugs) if bio else ""
     return render_template(
         "subdomain_home.html",
         user=user,
@@ -256,7 +272,7 @@ def subdomain_home(user):
         owner_avatar_url=owner_avatar_url,
         profile_incomplete=profile_incomplete,
         avatar_url=user.get("avatar"),
-        bio=user.get("bio"),
+        bio_html=bio_html,
         license_info=LICENSES.get(user.get("license") or ""),
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
     )
@@ -312,10 +328,53 @@ def pages_list():
     return render_template("pages.html", pages=page_list)
 
 
-@bp.route("/new")
+@bp.route("/new", methods=["GET", "POST"])
+@limiter.limit("30 per hour", methods=["POST"])
 def new_page():
-    slug = generate_slug()
-    return redirect(f"/{slug}/edit")
+    subdomain_user = g.subdomain_user
+
+    if request.method == "GET":
+        return render_template(
+            "edit.html",
+            slug=None,
+            title="",
+            content="",
+            draft=False,
+            is_new=True,
+            is_subdomain=subdomain_user is not None,
+        )
+
+    title = request.form.get("title", "").strip()
+    content = request.form.get("content", "").strip()
+    draft = "draft" in request.form
+
+    if title:
+        content = f"# {title}\n\n{content}"
+
+    # Generate slug: nice slug from title, or random fallback
+    owner_id = subdomain_user["id"] if subdomain_user else session.get("user_id")
+    reserved = RESERVED_SLUGS if not subdomain_user else set()
+    slug = None
+    if title:
+        nice_slug = slugify(title)
+        if nice_slug and nice_slug not in reserved:
+            if not owner_id or not get_page_meta(nice_slug, owner_id):
+                slug = nice_slug
+    if not slug:
+        slug = generate_slug()
+
+    save_page(slug, content, draft, subdomain_user["id"] if subdomain_user else None)
+
+    new_page_meta = get_page_meta(slug, subdomain_user["id"] if subdomain_user else None)
+    if new_page_meta:
+        created_pages = session.get("created_pages", [])
+        created_pages.append(new_page_meta["id"])
+        session["created_pages"] = created_pages
+
+        if session.get("user_id") and not subdomain_user:
+            claim_page(new_page_meta["id"], session["user_id"])
+
+    return redirect(f"/{slug}")
 
 
 def _is_creator(page_meta):
@@ -334,16 +393,18 @@ def _can_edit(page_meta):
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
 @limiter.limit("30 per hour", methods=["POST"])
 def edit_page(slug):
-    if slug in RESERVED_SLUGS:
-        abort(404)
-
     subdomain_user = g.subdomain_user
-    if subdomain_user:
-        page_meta = get_page_meta(slug)
-        if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
-            abort(404)
-    else:
-        page_meta = get_page_meta(slug)
+    if slug in RESERVED_SLUGS and not subdomain_user:
+        abort(404)
+    page_meta = _find_page(slug)
+
+    if not page_meta and not subdomain_user:
+        owner_user_id = find_page_owner_for_redirect(slug)
+        if owner_user_id:
+            user = get_user(owner_user_id)
+            if user and user.get("username"):
+                return redirect(_subdomain_url(user["username"], f"/{slug}/edit"))
+            return redirect(f"/{slug}")
 
     if not _can_edit(page_meta):
         return redirect(f"/{slug}")
@@ -372,28 +433,31 @@ def edit_page(slug):
         content = f"# {title}\n\n{content}"
 
     is_new = page_meta is None
-    save_page(slug, content, draft)
+    save_page(slug, content, draft, subdomain_user["id"] if subdomain_user else None)
 
     if is_new:
-        new_page_meta = get_page_meta(slug)
+        owner_id = subdomain_user["id"] if subdomain_user else None
+        new_page_meta = get_page_meta(slug, owner_id)
         if new_page_meta:
             created_pages = session.get("created_pages", [])
             created_pages.append(new_page_meta["id"])
             session["created_pages"] = created_pages
 
-            if session.get("user_id"):
+            if session.get("user_id") and not owner_id:
                 claim_page(new_page_meta["id"], session["user_id"])
-                # Generate a nice slug from the title
-                if title:
-                    nice_slug = slugify(title)
-                    if (
-                        nice_slug
-                        and nice_slug != slug
-                        and nice_slug not in RESERVED_SLUGS
-                        and not get_page_meta_for_user(nice_slug, session["user_id"])
-                    ):
-                        rename_page(new_page_meta["id"], nice_slug)
-                        slug = nice_slug
+
+            effective_user_id = owner_id or session.get("user_id")
+            if effective_user_id and title:
+                nice_slug = slugify(title)
+                reserved = RESERVED_SLUGS if not subdomain_user else set()
+                if (
+                    nice_slug
+                    and nice_slug != slug
+                    and nice_slug not in reserved
+                    and not get_page_meta(nice_slug, effective_user_id)
+                ):
+                    rename_page(new_page_meta["id"], nice_slug)
+                    slug = nice_slug
 
     return redirect(f"/{slug}")
 
@@ -475,7 +539,7 @@ def _finish_claim(slug, page_meta, user_id, username):
                 nice_slug
                 and nice_slug != slug
                 and nice_slug not in RESERVED_SLUGS
-                and not get_page_meta_for_user(nice_slug, user_id)
+                and not get_page_meta(nice_slug, user_id)
             ):
                 rename_page(page_meta["id"], nice_slug)
                 slug = nice_slug
@@ -765,7 +829,7 @@ def settings_avatar_delete():
 
 @bp.route("/<slug>/export")
 def export_page_route(slug):
-    page_meta = get_page_meta(slug)
+    page_meta = _find_page(slug)
     if not page_meta:
         abort(404)
     if not _can_edit(page_meta):
@@ -817,11 +881,7 @@ def export_all():
 
 @bp.route("/<slug>/history")
 def page_history(slug):
-    subdomain_user = g.subdomain_user
-    page_meta = get_page_meta(slug)
-    if subdomain_user:
-        if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
-            abort(404)
+    page_meta = _find_page(slug)
     if not page_meta:
         abort(404)
 
@@ -855,17 +915,13 @@ def page_history(slug):
         revisions=paginated,
         page=page,
         total_pages=total_pages,
-        is_subdomain=subdomain_user is not None,
+        is_subdomain=g.subdomain_user is not None,
     )
 
 
 @bp.route("/<slug>/history/<int:revision>")
 def view_revision(slug, revision):
-    subdomain_user = g.subdomain_user
-    page_meta = get_page_meta(slug)
-    if subdomain_user:
-        if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
-            abort(404)
+    page_meta = _find_page(slug)
     if not page_meta:
         abort(404)
 
@@ -880,7 +936,7 @@ def view_revision(slug, revision):
         slug=slug,
         revision=row["revision"],
         created_at=row["created_at"],
-        is_subdomain=subdomain_user is not None,
+        is_subdomain=g.subdomain_user is not None,
     )
 
 
@@ -905,7 +961,7 @@ def _build_feed_entries(page_id, slug):
 
 @bp.route("/<slug>/feed.xml")
 def rss_feed(slug):
-    page_meta = get_page_meta(slug)
+    page_meta = _find_page(slug)
     if not page_meta:
         abort(404)
 
@@ -948,7 +1004,7 @@ def rss_feed(slug):
 
 @bp.route("/<slug>/feed.json")
 def json_feed(slug):
-    page_meta = get_page_meta(slug)
+    page_meta = _find_page(slug)
     if not page_meta:
         abort(404)
 
@@ -981,7 +1037,7 @@ def json_feed(slug):
 
 @bp.route("/<slug>/delete", methods=["GET", "POST"])
 def delete_page_route(slug):
-    page_meta = get_page_meta(slug)
+    page_meta = _find_page(slug)
     if not page_meta:
         return redirect("/")
 
@@ -1008,7 +1064,7 @@ LISTING_OPTIONS = ("listed", "unlisted", "pinned")
 
 @bp.route("/<slug>/listing", methods=["POST"])
 def update_listing(slug):
-    page_meta = get_page_meta(slug)
+    page_meta = _find_page(slug)
     if not page_meta:
         abort(404)
 
@@ -1033,12 +1089,21 @@ def view_page(slug):
     subdomain_user = g.subdomain_user
 
     if subdomain_user:
-        page_meta = get_page_meta(slug)
-        if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
+        page_meta = get_page_meta(slug, subdomain_user["id"])
+        if not page_meta:
+            if session.get("user_id") == subdomain_user["id"]:
+                return redirect(f"/{slug}/edit")
             abort(404)
     else:
         page_meta = get_page_meta(slug)
-        if page_meta and page_meta["user_id"] is not None:
+        if not page_meta:
+            owner_user_id = find_page_owner_for_redirect(slug)
+            if owner_user_id:
+                user = get_user(owner_user_id)
+                if user and user.get("username"):
+                    return redirect(_subdomain_url(user["username"], f"/{slug}"))
+            abort(404)
+        if page_meta["user_id"] is not None:
             user = get_user(page_meta["user_id"])
             if user and user.get("username"):
                 return redirect(_subdomain_url(user["username"], f"/{slug}"))
@@ -1062,18 +1127,22 @@ def view_page(slug):
 
     page_title = get_title(row["content"])
     page_description = get_description(row["content"])
-    content = process_wikilinks(row["content"])
+    existing_slugs = None
+    if subdomain_user:
+        existing_slugs = get_slugs_for_user(subdomain_user["id"])
+    content = process_wikilinks(row["content"], existing_slugs)
     html = render_markdown(content)
     html = html.replace("<h1>", '<h1 class="p-name">', 1)
 
     site_title = None
     avatar_url = None
-    bio = None
+    bio_html = ""
     license_info = None
     if subdomain_user:
         site_title = subdomain_user.get("name") or subdomain_user.get("username")
         avatar_url = subdomain_user.get("avatar")
         bio = subdomain_user.get("bio")
+        bio_html = render_bio(bio, existing_slugs) if bio else ""
         license_info = LICENSES.get(subdomain_user.get("license") or "")
 
     owner_initials = None
@@ -1099,7 +1168,7 @@ def view_page(slug):
         owner_avatar_url=owner_avatar_url,
         profile_incomplete=profile_incomplete,
         avatar_url=avatar_url,
-        bio=bio,
+        bio_html=bio_html,
         updated_at=row["created_at"],
         page_title=page_title,
         page_description=page_description,

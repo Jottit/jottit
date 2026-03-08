@@ -65,7 +65,7 @@ def valid_username(s):
     return bool(re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", s))
 
 
-def process_wikilinks(content):
+def process_wikilinks(content, existing_slugs=None):
     def replace(match):
         name = match.group(1).strip()
         if not name:
@@ -74,19 +74,21 @@ def process_wikilinks(content):
         if not page_slug:
             return match.group(0)
         display = html_escape(name)
+        if existing_slugs is not None and page_slug not in existing_slugs:
+            return f'<a href="/{page_slug}" class="wikilink-new">{display}</a>'
         return f'<a href="/{page_slug}">{display}</a>'
 
     return re.sub(r"\[\[([^\[\]]+)\]\]", replace, content)
 
 
-def render_bio(text):
-    text = process_wikilinks(text)
+def render_bio(text, existing_slugs=None):
+    text = process_wikilinks(text, existing_slugs)
     text = re.sub(
         r"\[([^\]]+)\]\(([^\)]+)\)",
         lambda m: f'<a href="{html_escape(m.group(2))}">{html_escape(m.group(1))}</a>',
         text,
     )
-    return nh3.clean(text, tags={"a"}, attributes={"a": {"href"}}, link_rel=None)
+    return nh3.clean(text, tags={"a"}, attributes={"a": {"href", "class"}}, link_rel=None)
 
 
 def get_title(content):

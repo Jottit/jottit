@@ -100,9 +100,18 @@ def run_migrations():
             conn.commit()
 
 
-def save_page(slug, content, draft):
+def save_page(slug, content, draft, user_id=None):
     with get_db() as conn:
-        page = conn.execute("SELECT id FROM pages WHERE slug = %s", (slug,)).fetchone()
+        if user_id is not None:
+            page = conn.execute(
+                "SELECT id FROM pages WHERE slug = %s AND user_id = %s",
+                (slug, user_id),
+            ).fetchone()
+        else:
+            page = conn.execute(
+                "SELECT id FROM pages WHERE slug = %s AND user_id IS NULL",
+                (slug,),
+            ).fetchone()
 
         if page:
             conn.execute(
@@ -116,8 +125,8 @@ def save_page(slug, content, draft):
             )
         else:
             cursor = conn.execute(
-                "INSERT INTO pages (slug, draft) VALUES (%s, %s) RETURNING id",
-                (slug, draft),
+                "INSERT INTO pages (slug, draft, user_id) VALUES (%s, %s, %s) RETURNING id",
+                (slug, draft, user_id),
             )
             page_id = cursor.fetchone()["id"]
             conn.execute(
@@ -140,20 +149,29 @@ def get_page(page_id):
         ).fetchone()
 
 
-def get_page_meta(slug):
+def get_page_meta(slug, user_id=None):
     with get_db() as conn:
-        return conn.execute(
-            "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s",
+        if user_id is not None:
+            return conn.execute(
+                "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id = %s",
+                (slug, user_id),
+            ).fetchone()
+        else:
+            return conn.execute(
+                "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id IS NULL",
+                (slug,),
+            ).fetchone()
+
+
+def find_page_owner_for_redirect(slug):
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT user_id FROM pages WHERE slug = %s AND user_id IS NOT NULL LIMIT 2",
             (slug,),
-        ).fetchone()
-
-
-def get_page_meta_for_user(slug, user_id):
-    with get_db() as conn:
-        return conn.execute(
-            "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id = %s",
-            (slug, user_id),
-        ).fetchone()
+        ).fetchall()
+        if len(rows) == 1:
+            return rows[0]["user_id"]
+        return None
 
 
 def get_revisions(page_id):
@@ -295,6 +313,14 @@ def get_pages_for_user(user_id):
                ORDER BY p.updated_at DESC""",
             (user_id,),
         ).fetchall()
+
+
+def get_slugs_for_user(user_id):
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT slug FROM pages WHERE user_id = %s", (user_id,)
+        ).fetchall()
+        return {row["slug"] for row in rows}
 
 
 def update_page_listing(page_id, listing):

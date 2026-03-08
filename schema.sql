@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS pages (
     id SERIAL PRIMARY KEY,
-    slug TEXT NOT NULL UNIQUE,
+    slug TEXT NOT NULL,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     draft BOOLEAN NOT NULL DEFAULT FALSE,
     listing TEXT NOT NULL DEFAULT 'listed',
@@ -52,6 +52,8 @@ END $$;
 CREATE INDEX IF NOT EXISTS revisions_page_id_idx ON revisions (page_id);
 CREATE INDEX IF NOT EXISTS revisions_page_revision_idx ON revisions (page_id, revision DESC);
 CREATE INDEX IF NOT EXISTS pages_draft_idx ON pages (draft);
+CREATE UNIQUE INDEX IF NOT EXISTS pages_user_slug_unique ON pages (user_id, slug) WHERE user_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL;
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
@@ -60,7 +62,8 @@ DO $$ BEGIN
             ('001_drop_sites.sql'),
             ('002_add_avatar_bio.sql'),
             ('003_add_license.sql'),
-            ('004_add_listing.sql')
+            ('004_add_listing.sql'),
+            ('005_per_user_slugs.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

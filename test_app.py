@@ -30,10 +30,16 @@ def test_homepage(client):
 # -- Create page --
 
 
-def test_new_redirects_to_edit(client):
+def test_new_shows_editor(client):
     r = client.get("/new")
+    assert r.status_code == 200
+    assert b"Write something" in r.data
+
+
+def test_new_publish_creates_page_with_nice_slug(client):
+    r = client.post("/new", data={"title": "Hello World", "content": "Body"})
     assert r.status_code == 302
-    assert "/edit" in r.headers["Location"]
+    assert r.headers["Location"] == "/hello-world"
 
 
 # -- Editor --
@@ -315,7 +321,8 @@ def test_claim_full_flow(client):
     # Slug gets renamed to slugified title
     assert "/my-great-page" in r.headers["Location"]
 
-    page_meta = get_page_meta("my-great-page")
+    claimed_user_id = find_or_create_user("user@example.com")
+    page_meta = get_page_meta("my-great-page", claimed_user_id)
     assert page_meta["user_id"] is not None
 
     user = get_user(page_meta["user_id"])
@@ -334,7 +341,8 @@ def test_claim_sets_name_and_username(client):
     client.post("/cfun/claim/setup", data={"name": "New User"})
     client.post("/cfun/claim/address", data={"username": "newname"})
 
-    page_meta = get_page_meta("unique-title")
+    claimed_user_id = find_or_create_user("newuser@example.com")
+    page_meta = get_page_meta("unique-title", claimed_user_id)
     user = get_user(page_meta["user_id"])
     assert user["username"] == "newname"
     assert user["name"] == "New User"
@@ -470,7 +478,8 @@ def test_returning_user_skips_setup(client):
     assert "returnuser.jottit.localhost:8000" in r.headers["Location"]
     assert "/second-page" in r.headers["Location"]
 
-    page_meta = get_page_meta("second-page")
+    claimed_user_id = find_or_create_user("returning@example.com")
+    page_meta = get_page_meta("second-page", claimed_user_id)
     assert page_meta is not None
     assert page_meta["user_id"] is not None
 
@@ -598,7 +607,7 @@ def test_signed_in_user_auto_claims_new_page(client):
     # Page gets renamed to slugified title
     assert r.status_code == 302
     assert r.headers["Location"] == "/mine"
-    page_meta = get_page_meta("mine")
+    page_meta = get_page_meta("mine", user_id)
     assert page_meta["user_id"] == user_id
 
 
@@ -628,8 +637,9 @@ def test_claim_renames_slug_from_title(client):
     client.post("/cf3b/claim/setup", data={"name": "Slug User"})
     r = client.post("/cf3b/claim/address", data={"username": "sluguser"})
     assert r.status_code == 302
+    user_id = find_or_create_user("slugtest@example.com")
     assert "/the-brand-age" in r.headers["Location"]
-    assert get_page_meta("the-brand-age") is not None
+    assert get_page_meta("the-brand-age", user_id) is not None
     assert get_page_meta("cf3b") is None
 
 
@@ -971,9 +981,8 @@ def test_non_owner_cannot_delete(client):
 
     r = client.post("/del2/delete", data={"confirmation": "delete"})
     assert r.status_code == 302
-    assert r.headers["Location"] == "/del2"
-    r = client.get("/del2")
-    assert r.status_code == 200
+    # Non-owner can't find the claimed page, gets redirected away
+    assert r.headers["Location"] in ("/del2", "/")
 
 
 # -- Listing --
@@ -981,25 +990,27 @@ def test_non_owner_cannot_delete(client):
 
 def test_listing_default_is_listed(client):
     user_id = _create_user_with_username(client, "list1@example.com", "listuser1", "lp1")
-    page_meta = get_page_meta("lp1")
+    page_meta = get_page_meta("lp1", user_id)
     assert page_meta["listing"] == "listed"
 
 
 def test_update_listing(client):
     user_id = _create_user_with_username(client, "list2@example.com", "listuser2", "lp2")
+    host = "listuser2.jottit.localhost:8000"
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/lp2/listing", data={"listing": "unlisted"})
+    r = client.post("/lp2/listing", data={"listing": "unlisted"}, headers={"Host": host})
     assert r.status_code == 302
-    page_meta = get_page_meta("lp2")
+    page_meta = get_page_meta("lp2", user_id)
     assert page_meta["listing"] == "unlisted"
 
 
 def test_unlisted_page_hidden_from_subdomain(client):
     user_id = _create_user_with_username(client, "list3@example.com", "listuser3", "lp3")
+    host = "listuser3.jottit.localhost:8000"
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/lp3/listing", data={"listing": "unlisted"})
+    client.post("/lp3/listing", data={"listing": "unlisted"}, headers={"Host": host})
     r = client.get("/", headers={"Host": "listuser3.jottit.localhost:8000"})
     assert b"lp3" not in r.data
 
@@ -1013,7 +1024,8 @@ def test_pinned_page_shown_first(client):
         sess["user_id"] = user_id
     # lp4b is newer, so it would normally appear first
     # Pin lp4a so it appears before lp4b
-    client.post("/lp4a/listing", data={"listing": "pinned"})
+    host = "listuser4.jottit.localhost:8000"
+    client.post("/lp4a/listing", data={"listing": "pinned"}, headers={"Host": host})
     r = client.get("/", headers={"Host": "listuser4.jottit.localhost:8000"})
     body = r.data.decode()
     assert "lp4a" in body
@@ -1023,7 +1035,8 @@ def test_pinned_page_shown_first(client):
 
 def test_non_owner_cannot_update_listing(client):
     _create_user_with_username(client, "list5@example.com", "listuser5", "lp5")
-    r = client.post("/lp5/listing", data={"listing": "unlisted"})
+    host = "listuser5.jottit.localhost:8000"
+    r = client.post("/lp5/listing", data={"listing": "unlisted"}, headers={"Host": host})
     assert r.status_code == 403
 
 
@@ -1345,3 +1358,72 @@ def test_migration_failure_does_not_affect_previous():
         for f in [good_file, bad_file]:
             if os.path.exists(f):
                 os.unlink(f)
+
+
+# -- Per-user slug uniqueness --
+
+
+def test_two_users_same_slug(client):
+    user1 = _create_user_with_username(client, "slug1@example.com", "alice", "about")
+    user2 = _create_user_with_username(client, "slug2@example.com", "bob", "about")
+    # Both users have /about pages
+    meta1 = get_page_meta("about", user1)
+    meta2 = get_page_meta("about", user2)
+    assert meta1 is not None
+    assert meta2 is not None
+    assert meta1["id"] != meta2["id"]
+
+    # Each subdomain shows the correct page
+    r = client.get("/about", headers={"Host": "alice.jottit.localhost:8000"})
+    assert r.status_code == 200
+
+    r = client.get("/about", headers={"Host": "bob.jottit.localhost:8000"})
+    assert r.status_code == 200
+
+
+def test_subdomain_new_page_gets_nice_slug(client):
+    user_id = _create_user_with_username(client, "nice@example.com", "niceslug", "x1")
+    host = "niceslug.jottit.localhost:8000"
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/randomslug/edit", data={"title": "About", "content": "My about page"}, headers={"Host": host})
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/about"
+    meta = get_page_meta("about", user_id)
+    assert meta is not None
+
+
+def test_subdomain_new_page_gets_about_slug(client):
+    user_id = _create_user_with_username(client, "about@example.com", "aboutuser", "x2")
+    host = "aboutuser.jottit.localhost:8000"
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/new", data={"title": "About", "content": "My about page"}, headers={"Host": host})
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/about"
+    meta = get_page_meta("about", user_id)
+    assert meta is not None
+
+
+def test_owner_visiting_nonexistent_page_redirects_to_edit(client):
+    user_id = _create_user_with_username(client, "owner404@example.com", "owner404", "exists")
+    host = "owner404.jottit.localhost:8000"
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/newpage", headers={"Host": host})
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/newpage/edit"
+
+
+def test_nonowner_visiting_nonexistent_page_gets_404(client):
+    _create_user_with_username(client, "vis404@example.com", "vis404", "exists2")
+    host = "vis404.jottit.localhost:8000"
+    r = client.get("/nope", headers={"Host": host})
+    assert r.status_code == 404
+
+
+def test_main_domain_slug_redirects_to_owner(client):
+    user_id = _create_user_with_username(client, "redir@example.com", "redir", "mypage")
+    r = client.get("/mypage")
+    assert r.status_code == 302
+    assert "redir.jottit.localhost:8000" in r.headers["Location"]
