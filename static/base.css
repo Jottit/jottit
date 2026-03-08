@@ -470,6 +470,8 @@ a {
     color: var(--text);
 }
 
+.clickable { cursor: pointer; }
+
 .mb-2 { margin-bottom: var(--space-2); }
 .mb-4 { margin-bottom: var(--space-4); }
 .mb-5 { margin-bottom: var(--space-5); }

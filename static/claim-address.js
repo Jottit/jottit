@@ -5,11 +5,11 @@
     input.focus();
     function showNotice(msg) {
         notice.textContent = msg;
-        notice.style.display = '';
+        notice.hidden = false;
     }
     function hideNotice() {
         notice.textContent = '';
-        notice.style.display = 'none';
+        notice.hidden = true;
     }
     if (!notice.textContent.trim()) hideNotice();
     input.addEventListener('input', function() {

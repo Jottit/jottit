@@ -8,7 +8,7 @@
             avatarInput.click();
         });
         if (avatarPlaceholder) {
-            avatarPlaceholder.style.cursor = 'pointer';
+            avatarPlaceholder.classList.add('clickable');
             avatarPlaceholder.addEventListener('click', function() {
                 avatarInput.click();
             });

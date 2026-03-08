@@ -10,6 +10,7 @@ from flask import (
     Blueprint,
     Response,
     abort,
+    current_app,
     flash,
     g,
     redirect,
@@ -33,18 +34,19 @@ from db import (
     get_page,
     get_page_meta,
     get_pages_for_user,
+    get_public_pages,
     get_revision,
     get_revision_count,
     get_revisions_paginated,
     get_user,
     get_user_by_username,
     rename_page,
-    set_user_username,
     save_page,
+    set_user_username,
+    update_user_avatar,
     update_user_settings,
     verify_code,
 )
-from db import update_user_avatar
 from storage import (
     ALLOWED_IMAGE_TYPES,
     crop_square,
@@ -120,8 +122,6 @@ def resolve_subdomain():
 
 @bp.route("/uploads/<path:filename>")
 def uploaded_file(filename):
-    from flask import current_app
-
     return send_from_directory(
         os.path.join(current_app.instance_path, "uploads"), filename
     )
@@ -135,8 +135,6 @@ def robots():
 
 @bp.route("/sitemap.xml")
 def sitemap():
-    from db import get_public_pages
-
     pages = get_public_pages()
     parts = [
         '<?xml version="1.0" encoding="utf-8"?>',
@@ -200,13 +198,11 @@ def subdomain_home(user):
         if p["draft"]:
             continue
         title = get_title(p["content"]) if p["content"] else None
-        body = get_body(p["content"]) if p["content"] else ""
-        description = body[:130].rsplit(" ", 1)[0] + "..." if len(body) > 130 else body
         page_list.append(
             {
                 "slug": p["slug"],
                 "title": title or p["slug"],
-                "description": description,
+                "description": get_description(p["content"], max_length=130),
                 "updated_at": p["updated_at"],
             }
         )
@@ -368,8 +364,6 @@ def edit_page(slug):
                         rename_page(slug, nice_slug)
                         slug = nice_slug
 
-    if subdomain_user:
-        return redirect(f"/{slug}")
     return redirect(f"/{slug}")
 
 
@@ -852,7 +846,8 @@ def rss_feed(slug):
         abort(404)
 
     items, page_url = _build_feed_entries(slug)
-    page_title = get_title(get_page(slug)["content"]) if get_page(slug) else slug
+    row = get_page(slug)
+    page_title = get_title(row["content"]) if row else slug
 
     last_build_date = format_datetime(items[0]["created_at"]) if items else ""
 
@@ -894,7 +889,8 @@ def json_feed(slug):
         abort(404)
 
     items, page_url = _build_feed_entries(slug)
-    page_title = get_title(get_page(slug)["content"]) if get_page(slug) else slug
+    row = get_page(slug)
+    page_title = get_title(row["content"]) if row else slug
 
     feed = {
         "version": "https://jsonfeed.org/version/1.1",
@@ -929,21 +925,16 @@ def delete_page_route(slug):
     if not page_meta["user_id"] or page_meta["user_id"] != user_id:
         return redirect(f"/{slug}")
 
+    row = get_page(slug)
+    page_title = get_title(row["content"]) if row else None
+
     if request.method == "GET":
-        page_title = None
-        row = get_page(slug)
-        if row:
-            page_title = get_title(row["content"])
         return render_template(
             "delete_page.html", slug=slug, page_title=page_title or slug
         )
 
     confirmation = request.form.get("confirmation", "").strip()
     if confirmation != "delete":
-        page_title = None
-        row = get_page(slug)
-        if row:
-            page_title = get_title(row["content"])
         return render_template(
             "delete_page.html",
             slug=slug,

@@ -839,8 +839,8 @@ a.profile-header--page:hover {
 
 .claim-banner {
     display: block;
-    background: #07131c;
-    color: rgba(255, 255, 255, 0.8);
+    background: var(--btn-bg);
+    color: var(--btn-text);
     font-weight: 500;
     font-size: var(--font-size-base);
     text-align: center;
@@ -852,10 +852,6 @@ a.profile-header--page:hover {
 
 .claim-banner:hover {
     opacity: 0.9;
-}
-
-.claim-banner strong {
-    color: #fff;
 }
 
 /* Settings hub */

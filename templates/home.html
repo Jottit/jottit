@@ -15,7 +15,7 @@
     <main class="home-main">
         <h1 class="logo">Jottit</h1>
         <p class="tagline">The fastest way to publish on the web.</p>
-        <a href="/new" class="btn btn-solid btn-lg">Create a page</a>
+        <a href="/new" class="btn btn-solid btn-lg">{% if signed_in %}Create a page{% else %}Start writing{% endif %}</a>
     </main>
 
     {% include "_footer.html" %}
