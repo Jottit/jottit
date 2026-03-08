@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Your pages — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/" class="panel-back">&larr; Back</a>
+    <h1 class="title">My pages</h1>
+    <div class="panel panel--wide">
+        {% if pages %}
+        <ul class="sites-menu">
+            {% for page in pages %}
+            <li>
+                <a href="/{{ page.slug }}" class="sites-menu-link">
+                    <span class="sites-menu-name">{{ page.title }}{% if page.draft %} <span class="draft-pill">DRAFT</span>{% endif %}</span>
+                    <span class="sites-menu-url">jottit.org/{{ page.slug }}</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="subtitle">You haven't created any pages yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
