@@ -58,7 +58,7 @@
     text-decoration: underline;
 }
 
-.page a.wikilink-new {
+a.wikilink-new {
     text-decoration-style: dashed;
 }
 

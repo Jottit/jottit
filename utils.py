@@ -83,11 +83,18 @@ def process_wikilinks(content, existing_slugs=None):
 
 def render_bio(text, existing_slugs=None):
     text = process_wikilinks(text, existing_slugs)
-    text = re.sub(
-        r"\[([^\]]+)\]\(([^\)]+)\)",
-        lambda m: f'<a href="{html_escape(m.group(2))}">{html_escape(m.group(1))}</a>',
-        text,
-    )
+
+    def replace_md_link(m):
+        display = html_escape(m.group(1))
+        href = html_escape(m.group(2))
+        css = ""
+        if existing_slugs is not None and href.startswith("/"):
+            slug = href.lstrip("/")
+            if slug and slug not in existing_slugs:
+                css = ' class="wikilink-new"'
+        return f'<a href="{href}"{css}>{display}</a>'
+
+    text = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", replace_md_link, text)
     return nh3.clean(
         text, tags={"a"}, attributes={"a": {"href", "class"}}, link_rel=None
     )
