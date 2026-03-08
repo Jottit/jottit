@@ -137,8 +137,8 @@ def save_page(slug, content, draft, user_id=None):
             )
         else:
             cursor = conn.execute(
-                "INSERT INTO pages (slug, draft, user_id) VALUES (%s, %s, %s) RETURNING id",
-                (slug, draft, user_id),
+                "INSERT INTO pages (slug, original_slug, draft, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
+                (slug, slug, draft, user_id),
             )
             page_id = cursor.fetchone()["id"]
             conn.execute(
@@ -175,6 +175,19 @@ def find_page_owner_for_redirect(slug):
         if len(rows) == 1:
             return rows[0]["user_id"]
         return None
+
+
+def find_page_by_original_slug(original_slug, user_id=None):
+    with get_db() as conn:
+        if user_id is not None:
+            return conn.execute(
+                "SELECT id, slug, user_id FROM pages WHERE original_slug = %s AND user_id = %s",
+                (original_slug, user_id),
+            ).fetchone()
+        return conn.execute(
+            "SELECT id, slug, user_id FROM pages WHERE original_slug = %s LIMIT 1",
+            (original_slug,),
+        ).fetchone()
 
 
 def get_revisions(page_id):

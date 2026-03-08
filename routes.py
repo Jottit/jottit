@@ -33,6 +33,7 @@ from db import (
     get_feed_entries,
     get_feed_entries_for_user,
     get_page,
+    find_page_by_original_slug,
     find_page_owner_for_redirect,
     get_page_meta,
     get_pages_for_user,
@@ -1185,6 +1186,9 @@ def view_page(slug):
     if subdomain_user:
         page_meta = get_page_meta(slug, subdomain_user["id"])
         if not page_meta:
+            original = find_page_by_original_slug(slug, subdomain_user["id"])
+            if original:
+                return redirect(f"/{original['slug']}", 301)
             if session.get("user_id") == subdomain_user["id"]:
                 return redirect(f"/{slug}/edit")
             abort(404)
@@ -1196,6 +1200,16 @@ def view_page(slug):
                 user = get_user(owner_user_id)
                 if user and user.get("username"):
                     return redirect(_subdomain_url(user["username"], f"/{slug}"))
+            original = find_page_by_original_slug(slug)
+            if original:
+                if original["user_id"]:
+                    owner = get_user(original["user_id"])
+                    if owner and owner.get("username"):
+                        return redirect(
+                            _subdomain_url(owner["username"], f"/{original['slug']}"),
+                            301,
+                        )
+                return redirect(f"/{original['slug']}", 301)
             abort(404)
         if page_meta["user_id"] is not None:
             user = get_user(page_meta["user_id"])

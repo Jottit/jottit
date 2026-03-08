@@ -644,6 +644,55 @@ def test_claim_renames_slug_from_title(client):
     assert get_page_meta("cf3b") is None
 
 
+# -- Old slug redirects --
+
+
+def test_old_slug_redirects_after_claim_rename(client):
+    client.post("/xk9f/edit", data={"title": "My Great Post", "content": "Body"})
+    client.post("/xk9f/claim", data={"email": "redir@example.com"})
+    code = create_verification_code("redir@example.com", "claim")
+    client.post("/xk9f/claim/verify", data={"code": code, "email": "redir@example.com"})
+    client.post("/xk9f/claim/setup", data={"name": "Redir User"})
+    client.post("/xk9f/claim/address", data={"username": "rediruser"})
+    r = client.get("/xk9f")
+    assert r.status_code == 301
+    assert "/my-great-post" in r.headers["Location"]
+    assert "rediruser" in r.headers["Location"]
+
+
+def test_old_slug_redirects_on_subdomain(client):
+    user_id = find_or_create_user("subredir@example.com")
+    set_user_username(user_id, "subredir")
+    update_user_settings(user_id, "Sub Redir", "subredir")
+    save_page("old-slug", "# New Title\n\nContent", False, user_id)
+    page = get_page_meta("old-slug", user_id)
+    from db import rename_page
+
+    rename_page(page["id"], "new-title")
+    r = client.get(
+        "/old-slug",
+        headers={"Host": "subredir.jottit.localhost:8000"},
+    )
+    assert r.status_code == 301
+    assert "/new-title" in r.headers["Location"]
+
+
+def test_nonexistent_original_slug_still_404(client):
+    r = client.get("/totally-bogus")
+    assert r.status_code == 404
+
+
+def test_old_slug_redirects_unclaimed_page(client):
+    save_page("rand123", "# Nice Title\n\nBody", False)
+    page = get_page_meta("rand123")
+    from db import rename_page
+
+    rename_page(page["id"], "nice-title")
+    r = client.get("/rand123")
+    assert r.status_code == 301
+    assert "/nice-title" in r.headers["Location"]
+
+
 # -- User settings --
 
 

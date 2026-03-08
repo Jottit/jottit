@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS pages (
     id SERIAL PRIMARY KEY,
     slug TEXT NOT NULL,
+    original_slug TEXT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     draft BOOLEAN NOT NULL DEFAULT FALSE,
     listing TEXT NOT NULL DEFAULT 'listed',
@@ -52,6 +53,7 @@ END $$;
 CREATE INDEX IF NOT EXISTS revisions_page_id_idx ON revisions (page_id);
 CREATE INDEX IF NOT EXISTS revisions_page_revision_idx ON revisions (page_id, revision DESC);
 CREATE INDEX IF NOT EXISTS pages_draft_idx ON pages (draft);
+CREATE INDEX IF NOT EXISTS pages_original_slug ON pages (original_slug);
 CREATE UNIQUE INDEX IF NOT EXISTS pages_user_slug_unique ON pages (user_id, slug) WHERE user_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL;
 
@@ -63,7 +65,8 @@ DO $$ BEGIN
             ('002_add_avatar_bio.sql'),
             ('003_add_license.sql'),
             ('004_add_listing.sql'),
-            ('005_per_user_slugs.sql')
+            ('005_per_user_slugs.sql'),
+            ('007_add_original_slug.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;
