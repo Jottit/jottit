@@ -22,9 +22,24 @@ SET user_id = s.user_id
 FROM sites s
 WHERE p.site_id = s.id;
 
--- Rename index pages to use the site slug
+-- Rename index pages: generate slug from first heading in content, fallback to site slug
 UPDATE pages p
-SET slug = s.slug
+SET slug = COALESCE(
+    NULLIF(
+        TRIM(BOTH '-' FROM
+            REGEXP_REPLACE(
+                REGEXP_REPLACE(
+                    LOWER(TRIM(
+                        (SELECT (REGEXP_MATCH(r.content, '^#\s+([^\n\r]+)'))[1]
+                         FROM revisions r
+                         WHERE r.page_id = p.id
+                         ORDER BY r.revision DESC LIMIT 1)
+                    )),
+                    '[^a-z0-9\s-]', '', 'g'),
+                '\s+', '-', 'g')
+        ),
+        ''),
+    s.slug)
 FROM sites s
 WHERE p.site_id = s.id AND p.slug = '-';
 

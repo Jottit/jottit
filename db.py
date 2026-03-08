@@ -1,5 +1,6 @@
 import os
 import secrets
+import threading
 from contextlib import contextmanager
 
 from psycopg.rows import dict_row
@@ -8,20 +9,27 @@ from psycopg_pool import ConnectionPool
 DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
 
 _pool = None
+_pool_lock = threading.Lock()
 
 
 def _get_pool():
     global _pool
     if _pool is None:
-        _pool = ConnectionPool(
-            DATABASE,
-            min_size=2,
-            max_size=10,
-            open=True,
-            check=ConnectionPool.check_connection,
-            max_idle=300,
-            kwargs={"row_factory": dict_row, "autocommit": False, "connect_timeout": 5},
-        )
+        with _pool_lock:
+            if _pool is None:
+                _pool = ConnectionPool(
+                    DATABASE,
+                    min_size=2,
+                    max_size=10,
+                    open=True,
+                    check=ConnectionPool.check_connection,
+                    max_idle=300,
+                    kwargs={
+                        "row_factory": dict_row,
+                        "autocommit": False,
+                        "connect_timeout": 5,
+                    },
+                )
     return _pool
 
 
