@@ -3,7 +3,7 @@
 {% block title %}Edit — Jottit{% endblock %}
 
 {% block head %}
-<script src="/static/marked.min.js"></script>
+<script src="/static/marked.min.js?v={{ asset_v }}"></script>
 {% endblock %}
 
 {% block body %}
@@ -30,5 +30,5 @@
         </div>
     </footer>
 </div>
-<script src="/static/editor.js"></script>
+<script src="/static/editor.js?v={{ asset_v }}"></script>
 {% endblock %}

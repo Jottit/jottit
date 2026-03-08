@@ -55,6 +55,12 @@ def get_db():
 
 def init_db():
     with get_db() as conn:
+        row = conn.execute(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema = 'public' AND table_name = 'users')"
+        ).fetchone()
+        if list(row.values())[0]:
+            return
         with open("schema.sql") as f:
             conn.execute(f.read(), prepare=False)
         conn.commit()

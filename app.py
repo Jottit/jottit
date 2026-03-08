@@ -1,4 +1,5 @@
 import os
+import subprocess
 from datetime import datetime, timedelta, timezone
 
 import sentry_sdk
@@ -33,6 +34,14 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 CSRFProtect(app)
 limiter.init_app(app)
 app.register_blueprint(bp)
+
+try:
+    _git_sha = subprocess.check_output(
+        ["git", "rev-parse", "--short", "HEAD"], text=True
+    ).strip()
+except Exception:
+    _git_sha = "0"
+app.jinja_env.globals["asset_v"] = _git_sha
 
 
 @app.before_request

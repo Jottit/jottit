@@ -14,9 +14,9 @@
     {% block og_extra %}{% endblock %}
     <link rel="icon" href="/static/favicon.ico">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-    <link rel="stylesheet" href="/static/base.css">
-    <link rel="stylesheet" href="/static/theme.css">
-    <link rel="stylesheet" href="/static/ui.css">
+    <link rel="stylesheet" href="/static/base.css?v={{ asset_v }}">
+    <link rel="stylesheet" href="/static/theme.css?v={{ asset_v }}">
+    <link rel="stylesheet" href="/static/ui.css?v={{ asset_v }}">
     {% block head %}{% endblock %}
 </head>
 <body>
