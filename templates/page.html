@@ -51,11 +51,10 @@
     {% if show_actions %}
     <div class="page-actions">
         <div class="page-actions-meta">
-            <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">{% if draft %}<span class="draft-pill">DRAFT</span> · {% endif %}last edited {{ updated_at | relative_time }}</time>
+            <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">{% if draft %}<span class="draft-pill">DRAFT</span> · {% endif %}Last edited {{ updated_at | relative_time }}</time>
             {% if is_owner %}
             <form method="post" action="/{{ slug }}/listing" class="listing-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <span class="listing-sep">·</span>
                 <div class="listing-select-wrap">
                     <select name="listing" class="listing-select" data-slug="{{ slug }}">
                         <option value="listed"{% if listing == 'listed' %} selected{% endif %}>Listed</option>
