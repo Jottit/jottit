@@ -43,6 +43,7 @@ from db import (
     rename_page,
     save_page,
     set_user_username,
+    update_page_listing,
     update_user_avatar,
     update_user_settings,
     verify_code,
@@ -217,19 +218,23 @@ def home():
 
 def subdomain_home(user):
     pages = get_pages_for_user(user["id"])
-    page_list = []
+    pinned = []
+    listed = []
     for p in pages:
-        if p["draft"]:
+        if p["draft"] or p["listing"] == "unlisted":
             continue
         title = get_title(p["content"]) if p["content"] else None
-        page_list.append(
-            {
-                "slug": p["slug"],
-                "title": title or p["slug"],
-                "description": get_description(p["content"], max_length=130),
-                "updated_at": p["updated_at"],
-            }
-        )
+        item = {
+            "slug": p["slug"],
+            "title": title or p["slug"],
+            "description": get_description(p["content"], max_length=130),
+            "updated_at": p["updated_at"],
+        }
+        if p["listing"] == "pinned":
+            pinned.append(item)
+        else:
+            listed.append(item)
+    page_list = pinned + listed
     site_title = user.get("name") or user.get("username")
     is_owner = session.get("user_id") == user["id"]
     owner_initials = None
@@ -993,6 +998,31 @@ def delete_page_route(slug):
     return redirect(_base_url("/"))
 
 
+LISTING_OPTIONS = ("listed", "unlisted", "pinned")
+
+
+@bp.route("/<slug>/listing", methods=["POST"])
+def update_listing(slug):
+    page_meta = get_page_meta(slug)
+    if not page_meta:
+        abort(404)
+
+    user_id = session.get("user_id")
+    if not page_meta["user_id"] or page_meta["user_id"] != user_id:
+        abort(403)
+
+    listing = request.form.get("listing", "listed")
+    if listing not in LISTING_OPTIONS:
+        listing = "listed"
+
+    update_page_listing(slug, listing)
+
+    if request.headers.get("X-Requested-With") == "fetch":
+        return "", 204
+
+    return redirect(f"/{slug}")
+
+
 @bp.route("/<slug>")
 def view_page(slug):
     subdomain_user = g.subdomain_user
@@ -1073,4 +1103,5 @@ def view_page(slug):
         has_history=get_revision_count(slug) > 1,
         is_subdomain=subdomain_user is not None,
         license_info=license_info,
+        listing=page_meta["listing"],
     )

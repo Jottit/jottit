@@ -50,7 +50,22 @@
     </article>
     {% if show_actions %}
     <div class="page-actions">
-        <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">{% if draft %}<span class="draft-pill">DRAFT</span> · {% endif %}last edited {{ updated_at | relative_time }}</time>
+        <div class="page-actions-meta">
+            <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">{% if draft %}<span class="draft-pill">DRAFT</span> · {% endif %}last edited {{ updated_at | relative_time }}</time>
+            {% if is_owner %}
+            <form method="post" action="/{{ slug }}/listing" class="listing-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <span class="listing-sep">·</span>
+                <div class="listing-select-wrap">
+                    <select name="listing" class="listing-select" data-slug="{{ slug }}">
+                        <option value="listed"{% if listing == 'listed' %} selected{% endif %}>Listed</option>
+                        <option value="unlisted"{% if listing == 'unlisted' %} selected{% endif %}>Unlisted</option>
+                        <option value="pinned"{% if listing == 'pinned' %} selected{% endif %}>Pinned</option>
+                    </select>
+                </div>
+            </form>
+            {% endif %}
+        </div>
         <div class="page-actions-buttons">
             {% if is_owner %}<a href="/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
             {% if has_history %}<a href="/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>{% endif %}
@@ -60,4 +75,5 @@
     {% endif %}
     {% include "_page_footer.html" %}
 </main>
+{% if is_owner %}<script src="/static/listing.js?v={{ asset_v }}"></script>{% endif %}
 {% endblock %}

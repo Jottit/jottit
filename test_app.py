@@ -974,6 +974,57 @@ def test_non_owner_cannot_delete(client):
     assert r.status_code == 200
 
 
+# -- Listing --
+
+
+def test_listing_default_is_listed(client):
+    user_id = _create_user_with_username(client, "list1@example.com", "listuser1", "lp1")
+    page_meta = get_page_meta("lp1")
+    assert page_meta["listing"] == "listed"
+
+
+def test_update_listing(client):
+    user_id = _create_user_with_username(client, "list2@example.com", "listuser2", "lp2")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/lp2/listing", data={"listing": "unlisted"})
+    assert r.status_code == 302
+    page_meta = get_page_meta("lp2")
+    assert page_meta["listing"] == "unlisted"
+
+
+def test_unlisted_page_hidden_from_subdomain(client):
+    user_id = _create_user_with_username(client, "list3@example.com", "listuser3", "lp3")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/lp3/listing", data={"listing": "unlisted"})
+    r = client.get("/", headers={"Host": "listuser3.jottit.localhost:8000"})
+    assert b"lp3" not in r.data
+
+
+def test_pinned_page_shown_first(client):
+    user_id = _create_user_with_username(client, "list4@example.com", "listuser4", "lp4a")
+    save_page("lp4b", "# Second\n\nContent", False)
+    page_meta2 = get_page_meta("lp4b")
+    claim_page(page_meta2["id"], user_id)
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    # lp4b is newer, so it would normally appear first
+    # Pin lp4a so it appears before lp4b
+    client.post("/lp4a/listing", data={"listing": "pinned"})
+    r = client.get("/", headers={"Host": "listuser4.jottit.localhost:8000"})
+    body = r.data.decode()
+    assert "lp4a" in body
+    assert "lp4b" in body
+    assert body.index("lp4a") < body.index("lp4b")
+
+
+def test_non_owner_cannot_update_listing(client):
+    _create_user_with_username(client, "list5@example.com", "listuser5", "lp5")
+    r = client.post("/lp5/listing", data={"listing": "unlisted"})
+    assert r.status_code == 403
+
+
 # -- Export --
 
 

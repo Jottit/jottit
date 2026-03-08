@@ -94,7 +94,7 @@ def run_migrations():
                 sql = f.read()
             conn.execute(sql, prepare=False)
             conn.execute(
-                "INSERT INTO schema_migrations (filename) VALUES (%s)",
+                "INSERT INTO schema_migrations (filename) VALUES (%s) ON CONFLICT DO NOTHING",
                 (filename,),
             )
             conn.commit()
@@ -143,7 +143,7 @@ def get_page(slug):
 def get_page_meta(slug):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, slug, user_id, draft FROM pages WHERE slug = %s",
+            "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s",
             (slug,),
         ).fetchone()
 
@@ -285,13 +285,22 @@ def rename_page(old_slug, new_slug):
 def get_pages_for_user(user_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT p.slug, p.draft, p.updated_at,
+            """SELECT p.slug, p.draft, p.listing, p.updated_at,
                       (SELECT r.content FROM revisions r WHERE r.page_id = p.id ORDER BY r.revision DESC LIMIT 1) AS content
                FROM pages p
                WHERE p.user_id = %s
                ORDER BY p.updated_at DESC""",
             (user_id,),
         ).fetchall()
+
+
+def update_page_listing(slug, listing):
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE pages SET listing = %s WHERE slug = %s",
+            (listing, slug),
+        )
+        conn.commit()
 
 
 def update_user_settings(user_id, name, username, bio=None, license=None):

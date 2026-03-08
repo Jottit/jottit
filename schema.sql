@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS pages (
     slug TEXT NOT NULL UNIQUE,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     draft BOOLEAN NOT NULL DEFAULT FALSE,
+    listing TEXT NOT NULL DEFAULT 'listed',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -58,7 +59,8 @@ DO $$ BEGIN
         INSERT INTO schema_migrations (filename) VALUES
             ('001_drop_sites.sql'),
             ('002_add_avatar_bio.sql'),
-            ('003_add_license.sql')
+            ('003_add_license.sql'),
+            ('004_add_listing.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;
