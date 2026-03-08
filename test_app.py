@@ -1,19 +1,22 @@
 import io
 import json
+import os
 from unittest.mock import patch
 
 from db import (
     claim_page,
     create_verification_code,
     find_or_create_user,
+    get_db,
     get_page_meta,
     get_user,
+    run_migrations,
     save_page,
     set_user_username,
     update_user_avatar,
     update_user_settings,
 )
-from utils import describe_change, slugify
+from utils import describe_change, render_bio, slugify
 
 # -- Homepage --
 
@@ -1115,6 +1118,37 @@ def test_subdomain_home_shows_bio(client):
     assert b"p-note" in r.data
 
 
+def test_render_bio_plain_text():
+    assert render_bio("Just a writer") == "Just a writer"
+
+
+def test_render_bio_wikilink():
+    result = render_bio("See [[About]]")
+    assert '<a href="/about">About</a>' in result
+
+
+def test_render_bio_markdown_link():
+    result = render_bio("Check [About](/about)")
+    assert '<a href="/about">About</a>' in result
+
+
+def test_render_bio_external_link():
+    result = render_bio("[Google](https://google.com)")
+    assert '<a href="https://google.com">Google</a>' in result
+
+
+def test_render_bio_strips_html():
+    result = render_bio("<script>alert('xss')</script>")
+    assert "<script>" not in result
+
+
+def test_render_bio_strips_other_tags():
+    result = render_bio("<b>bold</b> and <em>italic</em>")
+    assert "<b>" not in result
+    assert "<em>" not in result
+    assert "bold" in result
+
+
 def test_subdomain_home_shows_avatar(client):
     user_id = _create_user_with_username(client, "avhome@example.com", "avhome", "ah1")
     update_user_avatar(user_id, "/uploads/test/avatar.jpg")
@@ -1150,3 +1184,75 @@ def test_subdomain_page_shows_profile_header(client):
     assert b"profile-header" in r.data
     assert b"Writer" in r.data
     assert b"u-photo" in r.data
+
+
+# -- Migrations --
+
+
+def test_migration_applies_and_tracks():
+    migrations_dir = os.path.join(os.path.dirname(__file__), "migrations")
+    test_file = os.path.join(migrations_dir, "999_test_migration.sql")
+    try:
+        with open(test_file, "w") as f:
+            f.write(
+                "CREATE TABLE IF NOT EXISTS migration_test_table (id SERIAL PRIMARY KEY);"
+            )
+
+        run_migrations()
+
+        with get_db() as conn:
+            row = conn.execute(
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'migration_test_table')"
+            ).fetchone()
+            assert list(row.values())[0] is True
+
+            row = conn.execute(
+                "SELECT filename FROM schema_migrations WHERE filename = '999_test_migration.sql'"
+            ).fetchone()
+            assert row is not None
+
+        # Run again — should be a no-op
+        run_migrations()
+
+        with get_db() as conn:
+            count = conn.execute(
+                "SELECT COUNT(*) AS cnt FROM schema_migrations WHERE filename = '999_test_migration.sql'"
+            ).fetchone()
+            assert count["cnt"] == 1
+    finally:
+        os.unlink(test_file)
+
+
+def test_migration_failure_does_not_affect_previous():
+    migrations_dir = os.path.join(os.path.dirname(__file__), "migrations")
+    good_file = os.path.join(migrations_dir, "998_good.sql")
+    bad_file = os.path.join(migrations_dir, "999_bad.sql")
+    try:
+        with open(good_file, "w") as f:
+            f.write(
+                "CREATE TABLE IF NOT EXISTS migration_good_table (id SERIAL PRIMARY KEY);"
+            )
+        with open(bad_file, "w") as f:
+            f.write("INVALID SQL STATEMENT;")
+
+        try:
+            run_migrations()
+        except Exception:
+            pass
+
+        with get_db() as conn:
+            # Good migration should have been applied
+            row = conn.execute(
+                "SELECT filename FROM schema_migrations WHERE filename = '998_good.sql'"
+            ).fetchone()
+            assert row is not None
+
+            # Bad migration should not be tracked
+            row = conn.execute(
+                "SELECT filename FROM schema_migrations WHERE filename = '999_bad.sql'"
+            ).fetchone()
+            assert row is None
+    finally:
+        for f in [good_file, bad_file]:
+            if os.path.exists(f):
+                os.unlink(f)

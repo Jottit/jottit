@@ -6,8 +6,9 @@ from flask import Flask, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from db import init_db
+from db import init_db, run_migrations
 from routes import bp, limiter
+from utils import render_bio
 
 dsn = os.environ.get("SENTRY_DSN")
 if dsn:
@@ -57,6 +58,13 @@ def set_security_headers(response):
         )
     response.headers["Content-Security-Policy"] = _CSP
     return response
+
+
+@app.template_filter("render_bio")
+def render_bio_filter(value):
+    if not value:
+        return ""
+    return render_bio(value)
 
 
 @app.template_filter("isoformat")
@@ -110,6 +118,7 @@ def internal_error(e):
 
 with app.app_context():
     init_db()
+    run_migrations()
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)

@@ -60,6 +60,40 @@ def init_db():
         conn.commit()
 
 
+def run_migrations():
+    migrations_dir = os.path.join(os.path.dirname(__file__), "migrations")
+    if not os.path.isdir(migrations_dir):
+        return
+
+    with get_db() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                filename TEXT PRIMARY KEY,
+                applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
+        conn.commit()
+
+        applied = {
+            row["filename"]
+            for row in conn.execute("SELECT filename FROM schema_migrations").fetchall()
+        }
+
+        files = sorted(f for f in os.listdir(migrations_dir) if f.endswith(".sql"))
+        for filename in files:
+            if filename in applied:
+                continue
+            path = os.path.join(migrations_dir, filename)
+            with open(path) as f:
+                sql = f.read()
+            conn.execute(sql, prepare=False)
+            conn.execute(
+                "INSERT INTO schema_migrations (filename) VALUES (%s)",
+                (filename,),
+            )
+            conn.commit()
+
+
 def save_page(slug, content, draft):
     with get_db() as conn:
         page = conn.execute("SELECT id FROM pages WHERE slug = %s", (slug,)).fetchone()

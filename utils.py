@@ -79,6 +79,16 @@ def process_wikilinks(content):
     return re.sub(r"\[\[([^\[\]]+)\]\]", replace, content)
 
 
+def render_bio(text):
+    text = process_wikilinks(text)
+    text = re.sub(
+        r"\[([^\]]+)\]\(([^\)]+)\)",
+        lambda m: f'<a href="{html_escape(m.group(2))}">{html_escape(m.group(1))}</a>',
+        text,
+    )
+    return nh3.clean(text, tags={"a"}, attributes={"a": {"href"}}, link_rel=None)
+
+
 def get_title(content):
     if not content or not content.startswith("# "):
         return None

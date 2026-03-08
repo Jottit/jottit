@@ -431,6 +431,10 @@
     font-size: var(--font-size-sm);
 }
 
+.profile-bio a {
+    text-decoration: underline;
+}
+
 /* Profile header variants — same centered structure, elements layer in */
 
 .profile-header--name,

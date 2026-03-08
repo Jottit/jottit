@@ -37,7 +37,26 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     UNIQUE (email, purpose)
 );
 
-CREATE INDEX IF NOT EXISTS pages_user_id_idx ON pages (user_id);
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    filename TEXT PRIMARY KEY,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'pages' AND column_name = 'user_id') THEN
+        CREATE INDEX IF NOT EXISTS pages_user_id_idx ON pages (user_id);
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS revisions_page_id_idx ON revisions (page_id);
 CREATE INDEX IF NOT EXISTS revisions_page_revision_idx ON revisions (page_id, revision DESC);
 CREATE INDEX IF NOT EXISTS pages_draft_idx ON pages (draft);
+
+-- On fresh DBs (no sites table), seed historical migrations as already applied
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'sites') THEN
+        INSERT INTO schema_migrations (filename) VALUES
+            ('001_drop_sites.sql'),
+            ('002_add_avatar_bio.sql')
+        ON CONFLICT DO NOTHING;
+    END IF;
+END $$;

@@ -29,6 +29,8 @@ def test_db():
             conn.execute(f.read())
         conn.commit()
 
+    db_module.run_migrations()
+
     yield
 
     db_module.reset_pool()
