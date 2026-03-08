@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Almost there — Jottit{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block body %}
+<div class="shell shell-centered">
+    <h1 class="title">What's your name?</h1>
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+    <form class="auth-form" method="post" action="/{{ slug }}/claim/setup">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="auth-input" type="text" name="name" value="{{ name or '' }}" required autofocus>
+        <button class="btn btn-solid" type="submit">Next</button>
+    </form>
+    <script src="/static/autofocus.js"></script>
+</div>
+{% endblock %}
