@@ -100,18 +100,21 @@ def run_migrations():
             conn.commit()
 
 
+def _find_page_by_slug(conn, slug, user_id=None):
+    if user_id is not None:
+        return conn.execute(
+            "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id = %s",
+            (slug, user_id),
+        ).fetchone()
+    return conn.execute(
+        "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id IS NULL",
+        (slug,),
+    ).fetchone()
+
+
 def save_page(slug, content, draft, user_id=None):
     with get_db() as conn:
-        if user_id is not None:
-            page = conn.execute(
-                "SELECT id FROM pages WHERE slug = %s AND user_id = %s",
-                (slug, user_id),
-            ).fetchone()
-        else:
-            page = conn.execute(
-                "SELECT id FROM pages WHERE slug = %s AND user_id IS NULL",
-                (slug,),
-            ).fetchone()
+        page = _find_page_by_slug(conn, slug, user_id)
 
         if page:
             conn.execute(
@@ -151,16 +154,7 @@ def get_page(page_id):
 
 def get_page_meta(slug, user_id=None):
     with get_db() as conn:
-        if user_id is not None:
-            return conn.execute(
-                "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id = %s",
-                (slug, user_id),
-            ).fetchone()
-        else:
-            return conn.execute(
-                "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id IS NULL",
-                (slug,),
-            ).fetchone()
+        return _find_page_by_slug(conn, slug, user_id)
 
 
 def find_page_owner_for_redirect(slug):

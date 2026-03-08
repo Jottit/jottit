@@ -351,8 +351,8 @@ def new_page():
     if title:
         content = f"# {title}\n\n{content}"
 
-    # Generate slug: nice slug from title, or random fallback
-    owner_id = subdomain_user["id"] if subdomain_user else session.get("user_id")
+    subdomain_user_id = subdomain_user["id"] if subdomain_user else None
+    owner_id = subdomain_user_id or session.get("user_id")
     reserved = RESERVED_SLUGS if not subdomain_user else set()
     slug = None
     if title:
@@ -363,20 +363,22 @@ def new_page():
     if not slug:
         slug = generate_slug()
 
-    save_page(slug, content, draft, subdomain_user["id"] if subdomain_user else None)
-
-    new_page_meta = get_page_meta(
-        slug, subdomain_user["id"] if subdomain_user else None
-    )
-    if new_page_meta:
-        created_pages = session.get("created_pages", [])
-        created_pages.append(new_page_meta["id"])
-        session["created_pages"] = created_pages
-
-        if session.get("user_id") and not subdomain_user:
-            claim_page(new_page_meta["id"], session["user_id"])
+    save_page(slug, content, draft, subdomain_user_id)
+    _track_new_page(slug, subdomain_user_id)
 
     return redirect(f"/{slug}")
+
+
+def _track_new_page(slug, subdomain_user_id):
+    new_page_meta = get_page_meta(slug, subdomain_user_id)
+    if not new_page_meta:
+        return
+    created_pages = session.get("created_pages", [])
+    created_pages.append(new_page_meta["id"])
+    session["created_pages"] = created_pages
+    if session.get("user_id") and not subdomain_user_id:
+        claim_page(new_page_meta["id"], session["user_id"])
+    return new_page_meta
 
 
 def _is_creator(page_meta):
@@ -435,20 +437,13 @@ def edit_page(slug):
         content = f"# {title}\n\n{content}"
 
     is_new = page_meta is None
-    save_page(slug, content, draft, subdomain_user["id"] if subdomain_user else None)
+    subdomain_user_id = subdomain_user["id"] if subdomain_user else None
+    save_page(slug, content, draft, subdomain_user_id)
 
     if is_new:
-        owner_id = subdomain_user["id"] if subdomain_user else None
-        new_page_meta = get_page_meta(slug, owner_id)
+        new_page_meta = _track_new_page(slug, subdomain_user_id)
         if new_page_meta:
-            created_pages = session.get("created_pages", [])
-            created_pages.append(new_page_meta["id"])
-            session["created_pages"] = created_pages
-
-            if session.get("user_id") and not owner_id:
-                claim_page(new_page_meta["id"], session["user_id"])
-
-            effective_user_id = owner_id or session.get("user_id")
+            effective_user_id = subdomain_user_id or session.get("user_id")
             if effective_user_id and title:
                 nice_slug = slugify(title)
                 reserved = RESERVED_SLUGS if not subdomain_user else set()
