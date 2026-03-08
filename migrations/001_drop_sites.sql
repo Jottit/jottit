@@ -28,8 +28,12 @@ SET slug = s.slug
 FROM sites s
 WHERE p.site_id = s.id AND p.slug = '-';
 
--- For non-index pages, we can drop them (plan says no sub-pages)
-DELETE FROM pages WHERE slug = '-' OR slug LIKE '%';
+-- Delete non-index sub-pages (they had slugs other than '-', which were not renamed above)
+-- After the UPDATE above, index pages now have slug = site.slug, so we identify
+-- sub-pages as those whose slug doesn't match their site's slug
+DELETE FROM pages p
+USING sites s
+WHERE p.site_id = s.id AND p.slug != s.slug;
 
 -- Drop old columns and tables
 ALTER TABLE pages DROP COLUMN IF EXISTS site_id;

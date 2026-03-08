@@ -23,10 +23,10 @@
         </div>
     </div>
     <footer class="editor-footer">
-        <a href="https://commonmark.org/help/" target="_blank" class="editor-markdown-link">Markdown</a>
+        <a href="https://commonmark.org/help/" target="_blank" class="editor-markdown-link" tabindex="-1">Markdown</a>
         <div class="editor-actions">
-            <a href="{% if is_new %}/{% else %}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>
             <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
+            <a href="{% if is_new %}/{% else %}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>
         </div>
     </footer>
 </div>
