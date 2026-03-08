@@ -36,12 +36,19 @@ limiter.init_app(app)
 app.register_blueprint(bp)
 
 try:
-    _git_sha = subprocess.check_output(
+    _asset_v = subprocess.check_output(
         ["git", "rev-parse", "--short", "HEAD"], text=True
     ).strip()
 except Exception:
-    _git_sha = "0"
-app.jinja_env.globals["asset_v"] = _git_sha
+    _asset_v = "0"
+app.jinja_env.globals["asset_v"] = _asset_v
+
+
+@app.context_processor
+def inject_asset_v():
+    if app.debug:
+        return {"asset_v": str(int(datetime.now().timestamp()))}
+    return {}
 
 
 @app.before_request

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}License — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/settings" class="panel-back">&larr; Settings</a>
+    <h1 class="title">License</h1>
+    <div class="panel">
+        <form method="post" action="/settings/license">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label class="label" for="license">License for your pages</label>
+                <div class="field-select">
+                    <select id="license" name="license">
+                        <option value="">No license</option>
+                        {% for key, info in licenses.items() %}
+                        <option value="{{ key }}"{{ ' selected' if user.license == key }}>{{ info.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="/static/settings-license.js?v={{ asset_v }}"></script>
+{% endblock %}

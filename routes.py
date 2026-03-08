@@ -74,6 +74,30 @@ bp = Blueprint("routes", __name__)
 
 BASE_DOMAIN = os.environ.get("BASE_DOMAIN", "jottit.localhost:8000")
 
+LICENSES = {
+    "all-rights-reserved": {"name": "\u00a9 All Rights Reserved", "url": None},
+    "cc-by-4.0": {
+        "name": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+    },
+    "cc-by-sa-4.0": {
+        "name": "CC BY-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    },
+    "cc-by-nc-4.0": {
+        "name": "CC BY-NC 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc/4.0/",
+    },
+    "cc-by-nc-sa-4.0": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    },
+    "cc0": {
+        "name": "CC0 (Public Domain)",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    },
+}
+
 
 def _get_subdomain():
     host = request.host
@@ -227,6 +251,7 @@ def subdomain_home(user):
         profile_incomplete=profile_incomplete,
         avatar_url=user.get("avatar"),
         bio=user.get("bio"),
+        license_info=LICENSES.get(user.get("license") or ""),
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
     )
 
@@ -520,7 +545,7 @@ def claim_address(slug):
     user_id = session["user_id"]
     name = session["claim_name"]
     set_user_username(user_id, username)
-    update_user_settings(user_id, name=name, username=username, bio="")
+    update_user_settings(user_id, name=name, username=username, bio="", license=None)
     return _finish_claim(slug, page_meta, user_id, username)
 
 
@@ -588,7 +613,9 @@ def user_settings():
         return redirect("/signin")
 
     back_url = _subdomain_url(user["username"]) if user.get("username") else "/"
-    return render_template("settings.html", user=user, back_url=back_url)
+    return render_template(
+        "settings.html", user=user, back_url=back_url, licenses=LICENSES
+    )
 
 
 @bp.route("/settings/profile", methods=["GET", "POST"])
@@ -609,12 +636,35 @@ def settings_profile():
         name = request.form.get("name", "").strip()
         bio = request.form.get("bio", "").strip()
 
-    update_user_settings(user_id, name, user.get("username") or "", bio)
+    update_user_settings(
+        user_id, name, user.get("username") or "", bio, user.get("license")
+    )
 
     if is_ajax:
         return {"ok": True}
     flash("Profile saved")
     return redirect("/settings/profile")
+
+
+@bp.route("/settings/license", methods=["GET", "POST"])
+def settings_license():
+    user_id, user = _require_user()
+    if not user:
+        return redirect("/signin")
+
+    if request.method == "GET":
+        return render_template("settings_license.html", user=user, licenses=LICENSES)
+
+    license = request.form.get("license", "").strip()
+    if license and license not in LICENSES:
+        license = ""
+    update_user_settings(
+        user_id, user.get("name"), user.get("username") or "", user.get("bio"), license
+    )
+    if request.headers.get("X-Requested-With") == "fetch":
+        return {"ok": True}
+    flash("License saved")
+    return redirect("/settings/license")
 
 
 @bp.route("/settings/subdomain", methods=["GET", "POST"])
@@ -645,7 +695,11 @@ def settings_subdomain():
         )
 
     update_user_settings(
-        user_id, user.get("name") or "", username, user.get("bio") or ""
+        user_id,
+        user.get("name") or "",
+        username,
+        user.get("bio") or "",
+        user.get("license"),
     )
     flash("Subdomain saved")
     return redirect("/settings/subdomain")
@@ -943,6 +997,8 @@ def delete_page_route(slug):
         )
 
     delete_page(slug)
+    if g.subdomain_user:
+        return redirect(_subdomain_url(g.subdomain_user["username"]))
     return redirect(_base_url("/"))
 
 
@@ -987,10 +1043,12 @@ def view_page(slug):
     site_title = None
     avatar_url = None
     bio = None
+    license_info = None
     if subdomain_user:
         site_title = subdomain_user.get("name") or subdomain_user.get("username")
         avatar_url = subdomain_user.get("avatar")
         bio = subdomain_user.get("bio")
+        license_info = LICENSES.get(subdomain_user.get("license") or "")
 
     owner_initials = None
     owner_avatar_url = None
@@ -1023,4 +1081,5 @@ def view_page(slug):
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
         has_history=get_revision_count(slug) > 1,
         is_subdomain=subdomain_user is not None,
+        license_info=license_info,
     )

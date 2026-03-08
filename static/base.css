@@ -167,6 +167,7 @@ table {
 
         color-scheme: dark;
     }
+
 }
 
 
@@ -343,7 +344,7 @@ a {
     font-size: var(--font-size-md);
     border: 1px solid var(--input-border);
     border-radius: 4px;
-    background: var(--bg-surface);
+    background-color: var(--bg-surface);
     color: var(--text);
 }
 
@@ -358,6 +359,44 @@ a {
 
 .input--noresize {
     resize: none;
+}
+
+select {
+    width: 100%;
+    padding: var(--space-2);
+    padding-right: var(--space-8);
+    font-size: var(--font-size-md);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    color: var(--text);
+    background-color: var(--bg-surface);
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--text);
+}
+
+.field-select {
+    position: relative;
+}
+
+.field-select select {
+    width: 100%;
+}
+
+.field-select::after {
+    content: "\25BE";
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-secondary);
+    font-size: var(--font-size-md);
 }
 
 /* Lists */

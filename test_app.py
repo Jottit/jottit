@@ -1059,6 +1059,55 @@ def test_settings_profile_saves_bio(client):
     assert user["bio"] == "Hello world"
 
 
+def test_settings_license_page(client):
+    user_id = find_or_create_user("license@example.com")
+    set_user_username(user_id, "licuser")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/settings/license")
+    assert r.status_code == 200
+    assert b"License" in r.data
+    assert b"CC BY 4.0" in r.data
+
+
+def test_settings_license_saves(client):
+    user_id = find_or_create_user("license2@example.com")
+    set_user_username(user_id, "licuser2")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/settings/license", data={"license": "cc-by-4.0"})
+    assert r.status_code == 302
+
+    user = get_user(user_id)
+    assert user["license"] == "cc-by-4.0"
+
+
+def test_settings_license_rejects_invalid(client):
+    user_id = find_or_create_user("license3@example.com")
+    set_user_username(user_id, "licuser3")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    client.post("/settings/license", data={"license": "invalid-license"})
+    user = get_user(user_id)
+    assert user["license"] is None
+
+
+def test_license_shows_in_page_footer(client):
+    user_id = _create_user_with_username(
+        client, "licfoot@example.com", "licfoot", "lf1"
+    )
+    update_user_settings(user_id, "Lic Footer", "licfoot", license="cc-by-sa-4.0")
+
+    host = "licfoot.jottit.localhost:8000"
+    r = client.get("/lf1", headers={"Host": host})
+    assert r.status_code == 200
+    assert b"CC BY-SA 4.0" in r.data
+    assert b"creativecommons.org" in r.data
+
+
 @patch("routes.upload_image", return_value="/uploads/1/avatar.jpg")
 @patch("routes.crop_square")
 def test_avatar_upload(mock_crop, mock_upload, client):

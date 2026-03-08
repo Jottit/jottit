@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE,
     name TEXT,
     bio TEXT,
+    license TEXT,
     avatar TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -56,7 +57,8 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'sites') THEN
         INSERT INTO schema_migrations (filename) VALUES
             ('001_drop_sites.sql'),
-            ('002_add_avatar_bio.sql')
+            ('002_add_avatar_bio.sql'),
+            ('003_add_license.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

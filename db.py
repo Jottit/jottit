@@ -200,7 +200,7 @@ def get_revision(slug, revision):
 def get_user(user_id):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, email, username, name, bio, avatar FROM users WHERE id = %s",
+            "SELECT id, email, username, name, bio, avatar, license FROM users WHERE id = %s",
             (user_id,),
         ).fetchone()
 
@@ -208,7 +208,7 @@ def get_user(user_id):
 def get_user_by_username(username):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, email, username, name, bio, avatar FROM users WHERE username = %s",
+            "SELECT id, email, username, name, bio, avatar, license FROM users WHERE username = %s",
             (username,),
         ).fetchone()
 
@@ -294,11 +294,11 @@ def get_pages_for_user(user_id):
         ).fetchall()
 
 
-def update_user_settings(user_id, name, username, bio=None):
+def update_user_settings(user_id, name, username, bio=None, license=None):
     with get_db() as conn:
         conn.execute(
-            "UPDATE users SET name = %s, username = %s, bio = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-            (name or None, username or None, bio or None, user_id),
+            "UPDATE users SET name = %s, username = %s, bio = %s, license = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (name or None, username or None, bio or None, license or None, user_id),
         )
         conn.commit()
 
