@@ -31,6 +31,7 @@ from db import (
     get_export_pages,
     get_export_pages_for_user,
     get_feed_entries,
+    get_feed_entries_for_user,
     get_page,
     find_page_owner_for_redirect,
     get_page_meta,
@@ -934,6 +935,101 @@ def view_revision(slug, revision):
         revision=row["revision"],
         created_at=row["created_at"],
         is_subdomain=g.subdomain_user is not None,
+    )
+
+
+def _build_site_feed_entries(user_id):
+    entries = get_feed_entries_for_user(user_id)
+    base_url = request.url_root.rstrip("/")
+    items = []
+    for entry in entries:
+        body = get_body(entry["content"])
+        page_url = f"{base_url}/{entry['slug']}"
+        items.append(
+            {
+                "title": get_title(entry["content"]) or entry["slug"],
+                "url": page_url,
+                "body": body,
+                "body_html": render_markdown(process_wikilinks(body)),
+                "created_at": entry["created_at"],
+            }
+        )
+    return items
+
+
+@bp.route("/feed.xml")
+def site_rss_feed():
+    user = g.subdomain_user
+    if not user:
+        abort(404)
+
+    site_title = user.get("name") or user.get("username")
+    items = _build_site_feed_entries(user["id"])
+    base_url = request.url_root.rstrip("/")
+
+    last_build_date = format_datetime(items[0]["created_at"]) if items else ""
+
+    items_xml = []
+    for item in items:
+        cdata_body = item["body_html"].replace("]]>", "]]]]><![CDATA[>")
+        items_xml.append(
+            "    <item>\n"
+            f"      <title>{xml_escape(item['title'])}</title>\n"
+            f"      <link>{xml_escape(item['url'])}</link>\n"
+            f"      <pubDate>{format_datetime(item['created_at'])}</pubDate>\n"
+            f"      <description><![CDATA[{cdata_body}]]></description>\n"
+            f"      <source:markdown>{xml_escape(item['body'])}</source:markdown>\n"
+            f'      <guid isPermaLink="true">{xml_escape(item["url"])}</guid>\n'
+            "    </item>"
+        )
+
+    parts = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<rss version="2.0" xmlns:source="http://source.scripting.com/">',
+        "  <channel>",
+        f"    <title>{xml_escape(site_title)}</title>",
+        f"    <link>{xml_escape(base_url)}</link>",
+        "    <description></description>",
+        f"    <lastBuildDate>{last_build_date}</lastBuildDate>",
+    ]
+    parts.extend(items_xml)
+    parts.append("  </channel>")
+    parts.append("</rss>")
+    xml = "\n".join(parts)
+
+    return Response(xml, content_type="application/rss+xml; charset=utf-8")
+
+
+@bp.route("/feed.json")
+def site_json_feed():
+    user = g.subdomain_user
+    if not user:
+        abort(404)
+
+    site_title = user.get("name") or user.get("username")
+    items = _build_site_feed_entries(user["id"])
+    base_url = request.url_root.rstrip("/")
+
+    feed = {
+        "version": "https://jsonfeed.org/version/1.1",
+        "title": site_title,
+        "home_page_url": base_url,
+        "feed_url": f"{base_url}/feed.json",
+        "items": [
+            {
+                "id": item["url"],
+                "url": item["url"],
+                "title": item["title"],
+                "content_html": item["body_html"],
+                "date_published": item["created_at"].isoformat(),
+                "_source_markdown": item["body"],
+            }
+            for item in items
+        ],
+    }
+
+    return Response(
+        json.dumps(feed), content_type="application/feed+json; charset=utf-8"
     )
 
 

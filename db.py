@@ -405,6 +405,7 @@ def get_feed_entries_for_user(user_id):
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
                    WHERE p.user_id = %s AND p.draft = FALSE
+                   AND p.listing IN ('listed', 'pinned')
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY created_at DESC

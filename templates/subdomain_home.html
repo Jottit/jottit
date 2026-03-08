@@ -3,6 +3,11 @@
 
 {% block title %}{{ site_title }}{% endblock %}
 
+{% block head %}
+<link rel="alternate" type="application/rss+xml" href="/feed.xml" title="{{ site_title }}">
+<link rel="alternate" type="application/feed+json" href="/feed.json" title="{{ site_title }}">
+{% endblock %}
+
 {% block body %}
 {% if is_owner %}
 <div class="admin-banner">

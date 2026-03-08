@@ -13,6 +13,7 @@ from db import (
     run_migrations,
     save_page,
     set_user_username,
+    update_page_listing,
     update_user_avatar,
     update_user_settings,
 )
@@ -933,6 +934,99 @@ def test_page_has_feed_discovery_links(client):
     assert b"/disc1/feed.xml" in r.data
     assert b'type="application/feed+json"' in r.data
     assert b"/disc1/feed.json" in r.data
+
+
+# -- Site-level feeds --
+
+
+def test_site_rss_feed(client):
+    user_id = _create_user_with_username(
+        client, "rsssite@example.com", "rsssite", "rp1"
+    )
+    save_page("rp2", "# Second Post\n\n**bold**", False)
+    page_meta = get_page_meta("rp2")
+    claim_page(page_meta["id"], user_id)
+
+    host = "rsssite.jottit.localhost:8000"
+    r = client.get("/feed.xml", headers={"Host": host})
+    assert r.status_code == 200
+    assert r.content_type == "application/rss+xml; charset=utf-8"
+    assert b'<rss version="2.0"' in r.data
+    assert b"<source:markdown>" in r.data
+    assert b"**bold**" in r.data
+    assert b"<title>Second Post</title>" in r.data
+    assert b"<title>Test</title>" in r.data
+
+
+def test_site_json_feed(client):
+    user_id = _create_user_with_username(
+        client, "jsonsite@example.com", "jsonsite", "jp1"
+    )
+    save_page("jp2", "# Page Two\n\nsome text", False)
+    page_meta = get_page_meta("jp2")
+    claim_page(page_meta["id"], user_id)
+
+    host = "jsonsite.jottit.localhost:8000"
+    r = client.get("/feed.json", headers={"Host": host})
+    assert r.status_code == 200
+    assert r.content_type == "application/feed+json; charset=utf-8"
+    feed = json.loads(r.data)
+    assert feed["version"] == "https://jsonfeed.org/version/1.1"
+    assert len(feed["items"]) == 2
+    titles = {item["title"] for item in feed["items"]}
+    assert "Page Two" in titles
+    assert "Test" in titles
+    assert feed["items"][0]["_source_markdown"]
+
+
+def test_site_feed_discovery_links(client):
+    _create_user_with_username(client, "discsite@example.com", "discsite", "dp1")
+    host = "discsite.jottit.localhost:8000"
+    r = client.get("/", headers={"Host": host})
+    assert b'type="application/rss+xml"' in r.data
+    assert b"/feed.xml" in r.data
+    assert b'type="application/feed+json"' in r.data
+    assert b"/feed.json" in r.data
+
+
+def test_site_feed_excludes_unlisted(client):
+    user_id = _create_user_with_username(
+        client, "feedlist@example.com", "feedlist", "flp1"
+    )
+    save_page("flp2", "# Unlisted\n\nHidden", False)
+    page_meta = get_page_meta("flp2")
+    claim_page(page_meta["id"], user_id)
+    update_page_listing(page_meta["id"], "unlisted")
+
+    host = "feedlist.jottit.localhost:8000"
+    r = client.get("/feed.xml", headers={"Host": host})
+    assert b"<title>Test</title>" in r.data
+    assert b"Unlisted" not in r.data
+
+    r = client.get("/feed.json", headers={"Host": host})
+    feed = json.loads(r.data)
+    assert len(feed["items"]) == 1
+    assert feed["items"][0]["title"] == "Test"
+
+
+def test_site_feed_includes_pinned(client):
+    user_id = _create_user_with_username(
+        client, "feedpin@example.com", "feedpin", "fpp1"
+    )
+    update_page_listing(get_page_meta("fpp1", user_id)["id"], "pinned")
+
+    host = "feedpin.jottit.localhost:8000"
+    r = client.get("/feed.json", headers={"Host": host})
+    feed = json.loads(r.data)
+    assert len(feed["items"]) == 1
+    assert feed["items"][0]["title"] == "Test"
+
+
+def test_site_feed_404_on_main_domain(client):
+    r = client.get("/feed.xml")
+    assert r.status_code == 404
+    r = client.get("/feed.json")
+    assert r.status_code == 404
 
 
 # -- Draft visibility --
