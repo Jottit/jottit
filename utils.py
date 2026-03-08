@@ -88,7 +88,9 @@ def render_bio(text, existing_slugs=None):
         lambda m: f'<a href="{html_escape(m.group(2))}">{html_escape(m.group(1))}</a>',
         text,
     )
-    return nh3.clean(text, tags={"a"}, attributes={"a": {"href", "class"}}, link_rel=None)
+    return nh3.clean(
+        text, tags={"a"}, attributes={"a": {"href", "class"}}, link_rel=None
+    )
 
 
 def get_title(content):

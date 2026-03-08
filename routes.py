@@ -365,7 +365,9 @@ def new_page():
 
     save_page(slug, content, draft, subdomain_user["id"] if subdomain_user else None)
 
-    new_page_meta = get_page_meta(slug, subdomain_user["id"] if subdomain_user else None)
+    new_page_meta = get_page_meta(
+        slug, subdomain_user["id"] if subdomain_user else None
+    )
     if new_page_meta:
         created_pages = session.get("created_pages", [])
         created_pages.append(new_page_meta["id"])

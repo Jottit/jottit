@@ -989,24 +989,32 @@ def test_non_owner_cannot_delete(client):
 
 
 def test_listing_default_is_listed(client):
-    user_id = _create_user_with_username(client, "list1@example.com", "listuser1", "lp1")
+    user_id = _create_user_with_username(
+        client, "list1@example.com", "listuser1", "lp1"
+    )
     page_meta = get_page_meta("lp1", user_id)
     assert page_meta["listing"] == "listed"
 
 
 def test_update_listing(client):
-    user_id = _create_user_with_username(client, "list2@example.com", "listuser2", "lp2")
+    user_id = _create_user_with_username(
+        client, "list2@example.com", "listuser2", "lp2"
+    )
     host = "listuser2.jottit.localhost:8000"
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/lp2/listing", data={"listing": "unlisted"}, headers={"Host": host})
+    r = client.post(
+        "/lp2/listing", data={"listing": "unlisted"}, headers={"Host": host}
+    )
     assert r.status_code == 302
     page_meta = get_page_meta("lp2", user_id)
     assert page_meta["listing"] == "unlisted"
 
 
 def test_unlisted_page_hidden_from_subdomain(client):
-    user_id = _create_user_with_username(client, "list3@example.com", "listuser3", "lp3")
+    user_id = _create_user_with_username(
+        client, "list3@example.com", "listuser3", "lp3"
+    )
     host = "listuser3.jottit.localhost:8000"
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
@@ -1016,7 +1024,9 @@ def test_unlisted_page_hidden_from_subdomain(client):
 
 
 def test_pinned_page_shown_first(client):
-    user_id = _create_user_with_username(client, "list4@example.com", "listuser4", "lp4a")
+    user_id = _create_user_with_username(
+        client, "list4@example.com", "listuser4", "lp4a"
+    )
     save_page("lp4b", "# Second\n\nContent", False)
     page_meta2 = get_page_meta("lp4b")
     claim_page(page_meta2["id"], user_id)
@@ -1036,7 +1046,9 @@ def test_pinned_page_shown_first(client):
 def test_non_owner_cannot_update_listing(client):
     _create_user_with_username(client, "list5@example.com", "listuser5", "lp5")
     host = "listuser5.jottit.localhost:8000"
-    r = client.post("/lp5/listing", data={"listing": "unlisted"}, headers={"Host": host})
+    r = client.post(
+        "/lp5/listing", data={"listing": "unlisted"}, headers={"Host": host}
+    )
     assert r.status_code == 403
 
 
@@ -1386,7 +1398,11 @@ def test_subdomain_new_page_gets_nice_slug(client):
     host = "niceslug.jottit.localhost:8000"
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/randomslug/edit", data={"title": "About", "content": "My about page"}, headers={"Host": host})
+    r = client.post(
+        "/randomslug/edit",
+        data={"title": "About", "content": "My about page"},
+        headers={"Host": host},
+    )
     assert r.status_code == 302
     assert r.headers["Location"] == "/about"
     meta = get_page_meta("about", user_id)
@@ -1398,7 +1414,11 @@ def test_subdomain_new_page_gets_about_slug(client):
     host = "aboutuser.jottit.localhost:8000"
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/new", data={"title": "About", "content": "My about page"}, headers={"Host": host})
+    r = client.post(
+        "/new",
+        data={"title": "About", "content": "My about page"},
+        headers={"Host": host},
+    )
     assert r.status_code == 302
     assert r.headers["Location"] == "/about"
     meta = get_page_meta("about", user_id)
@@ -1406,7 +1426,9 @@ def test_subdomain_new_page_gets_about_slug(client):
 
 
 def test_owner_visiting_nonexistent_page_redirects_to_edit(client):
-    user_id = _create_user_with_username(client, "owner404@example.com", "owner404", "exists")
+    user_id = _create_user_with_username(
+        client, "owner404@example.com", "owner404", "exists"
+    )
     host = "owner404.jottit.localhost:8000"
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
@@ -1423,7 +1445,7 @@ def test_nonowner_visiting_nonexistent_page_gets_404(client):
 
 
 def test_main_domain_slug_redirects_to_owner(client):
-    user_id = _create_user_with_username(client, "redir@example.com", "redir", "mypage")
+    _create_user_with_username(client, "redir@example.com", "redir", "mypage")
     r = client.get("/mypage")
     assert r.status_code == 302
     assert "redir.jottit.localhost:8000" in r.headers["Location"]
