@@ -139,7 +139,7 @@ table {
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not(.theme-light) {
         --bg: #1a2028;
         --bg-surface: #262c34;
         --text: #e0e0e0;

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block html_attrs %} class="theme-light"{% endblock %}
 
 {% block title %}{% if page_title %}{{ page_title }} - {% endif %}{% if site_title %}{{ site_title }}{% else %}Jottit{% endif %}{% endblock %}
 {% block meta_description %}{% if page_description %}{{ page_description }}{% else %}A page on Jottit.{% endif %}{% endblock %}

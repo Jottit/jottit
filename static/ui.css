@@ -543,6 +543,10 @@ a.profile-header--page:hover {
     text-decoration: none;
 }
 
+.admin-banner .btn-publish {
+    color: #fff;
+}
+
 .admin-banner a:hover,
 .admin-banner .link-btn:hover {
     color: var(--text);
