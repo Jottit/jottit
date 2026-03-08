@@ -1483,6 +1483,77 @@ def test_migration_failure_does_not_affect_previous():
                 os.unlink(f)
 
 
+def _load_backfill_migration():
+    import importlib.util
+
+    path = os.path.join(
+        os.path.dirname(__file__), "migrations", "006_backfill_usernames.py"
+    )
+    spec = importlib.util.spec_from_file_location("backfill_usernames", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_backfill_usernames_from_email():
+    m = _load_backfill_migration()
+
+    user_id = find_or_create_user("alice@example.com")
+    with get_db() as conn:
+        conn.execute("UPDATE users SET username = NULL WHERE id = %s", (user_id,))
+        conn.commit()
+
+    with get_db() as conn:
+        m.migrate(conn)
+        conn.commit()
+
+    user = get_user(user_id)
+    assert user["username"] == "alice"
+
+
+def test_backfill_usernames_with_suffix_if_taken():
+    m = _load_backfill_migration()
+
+    user1 = find_or_create_user("bob@example.com")
+    set_user_username(user1, "bob")
+
+    user2 = find_or_create_user("bob@other.com")
+    with get_db() as conn:
+        conn.execute("UPDATE users SET username = NULL WHERE id = %s", (user2,))
+        conn.commit()
+
+    with get_db() as conn:
+        m.migrate(conn)
+        conn.commit()
+
+    user = get_user(user2)
+    assert user["username"] is not None
+    assert user["username"].startswith("bob-")
+    assert user["username"] != "bob"
+
+
+def test_backfill_usernames_makes_page_accessible(client):
+    m = _load_backfill_migration()
+
+    user_id = find_or_create_user("legacy@example.com")
+    save_page("mypage", "# Hello\n\nWorld", False)
+    page_meta = get_page_meta("mypage")
+    claim_page(page_meta["id"], user_id)
+
+    with get_db() as conn:
+        conn.execute("UPDATE users SET username = NULL WHERE id = %s", (user_id,))
+        conn.commit()
+
+    with get_db() as conn:
+        m.migrate(conn)
+        conn.commit()
+
+    user = get_user(user_id)
+    host = f"{user['username']}.jottit.localhost:8000"
+    r = client.get("/mypage", headers={"Host": host})
+    assert r.status_code == 200
+
+
 # -- Per-user slug uniqueness --
 
 

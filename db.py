@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import secrets
 import threading
@@ -85,14 +86,22 @@ def run_migrations():
             for row in conn.execute("SELECT filename FROM schema_migrations").fetchall()
         }
 
-        files = sorted(f for f in os.listdir(migrations_dir) if f.endswith(".sql"))
+        files = sorted(
+            f for f in os.listdir(migrations_dir) if f.endswith((".sql", ".py"))
+        )
         for filename in files:
             if filename in applied:
                 continue
             path = os.path.join(migrations_dir, filename)
-            with open(path) as f:
-                sql = f.read()
-            conn.execute(sql, prepare=False)
+            if filename.endswith(".sql"):
+                with open(path) as f:
+                    sql = f.read()
+                conn.execute(sql, prepare=False)
+            else:
+                spec = importlib.util.spec_from_file_location(filename, path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                mod.migrate(conn)
             conn.execute(
                 "INSERT INTO schema_migrations (filename) VALUES (%s) ON CONFLICT DO NOTHING",
                 (filename,),
