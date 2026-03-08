@@ -604,15 +604,17 @@ def test_signed_in_user_auto_claims_new_page(client):
 
 def test_auto_claim_no_rename_on_slug_conflict(client):
     user_id = find_or_create_user("conflict@example.com")
-    # Create an existing page with the slug "taken"
+    # Create an existing page with the slug "taken" owned by the same user
     save_page("taken", "# Taken\n\nExisting", False)
+    page_meta = get_page_meta("taken")
+    claim_page(page_meta["id"], user_id)
 
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
     r = client.post("/auto2/edit", data={"title": "Taken", "content": "New"})
     assert r.status_code == 302
-    # Keeps original slug since "taken" is already used
+    # Keeps original slug since user already has a "taken" page
     assert r.headers["Location"] == "/auto2"
 
 

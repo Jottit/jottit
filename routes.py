@@ -33,6 +33,7 @@ from db import (
     get_feed_entries,
     get_page,
     get_page_meta,
+    get_page_meta_for_user,
     get_pages_for_user,
     get_public_pages,
     get_revision,
@@ -348,7 +349,7 @@ def edit_page(slug):
         return redirect(f"/{slug}")
 
     if request.method == "GET":
-        row = get_page(slug) if page_meta else None
+        row = get_page(page_meta["id"]) if page_meta else None
         content = row["content"] if row else ""
         draft = row["draft"] if row else False
         title = get_title(content) or ""
@@ -389,9 +390,9 @@ def edit_page(slug):
                         nice_slug
                         and nice_slug != slug
                         and nice_slug not in RESERVED_SLUGS
-                        and not get_page_meta(nice_slug)
+                        and not get_page_meta_for_user(nice_slug, session["user_id"])
                     ):
-                        rename_page(slug, nice_slug)
+                        rename_page(new_page_meta["id"], nice_slug)
                         slug = nice_slug
 
     return redirect(f"/{slug}")
@@ -465,7 +466,7 @@ def claim_verify(slug):
 def _finish_claim(slug, page_meta, user_id, username):
     claim_page(page_meta["id"], user_id)
 
-    row = get_page(slug)
+    row = get_page(page_meta["id"])
     if row:
         title = get_title(row["content"])
         if title:
@@ -474,9 +475,9 @@ def _finish_claim(slug, page_meta, user_id, username):
                 nice_slug
                 and nice_slug != slug
                 and nice_slug not in RESERVED_SLUGS
-                and not get_page_meta(nice_slug)
+                and not get_page_meta_for_user(nice_slug, user_id)
             ):
-                rename_page(slug, nice_slug)
+                rename_page(page_meta["id"], nice_slug)
                 slug = nice_slug
 
     session.pop("claim_email", None)
@@ -770,7 +771,7 @@ def export_page_route(slug):
     if not _can_edit(page_meta):
         return redirect(f"/{slug}")
 
-    pages = get_export_pages(slug)
+    pages = get_export_pages(page_meta["id"])
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for p in pages:
@@ -817,12 +818,14 @@ def export_all():
 @bp.route("/<slug>/history")
 def page_history(slug):
     subdomain_user = g.subdomain_user
+    page_meta = get_page_meta(slug)
     if subdomain_user:
-        page_meta = get_page_meta(slug)
         if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
             abort(404)
+    if not page_meta:
+        abort(404)
 
-    total = get_revision_count(slug)
+    total = get_revision_count(page_meta["id"])
     if total == 0:
         abort(404)
 
@@ -831,7 +834,7 @@ def page_history(slug):
     total_pages = (total + per_page - 1) // per_page
     page = max(1, min(page, total_pages))
 
-    revisions = get_revisions_paginated(slug, page, per_page)
+    revisions = get_revisions_paginated(page_meta["id"], page, per_page)
 
     paginated = []
     for rev in revisions:
@@ -859,12 +862,14 @@ def page_history(slug):
 @bp.route("/<slug>/history/<int:revision>")
 def view_revision(slug, revision):
     subdomain_user = g.subdomain_user
+    page_meta = get_page_meta(slug)
     if subdomain_user:
-        page_meta = get_page_meta(slug)
         if not page_meta or page_meta["user_id"] != subdomain_user["id"]:
             abort(404)
+    if not page_meta:
+        abort(404)
 
-    row = get_revision(slug, revision)
+    row = get_revision(page_meta["id"], revision)
     if not row:
         abort(404)
 
@@ -879,8 +884,8 @@ def view_revision(slug, revision):
     )
 
 
-def _build_feed_entries(slug):
-    entries = get_feed_entries(slug)
+def _build_feed_entries(page_id, slug):
+    entries = get_feed_entries(page_id)
     base_url = request.url_root.rstrip("/")
     page_url = f"{base_url}/{slug}"
     items = []
@@ -904,8 +909,8 @@ def rss_feed(slug):
     if not page_meta:
         abort(404)
 
-    items, page_url = _build_feed_entries(slug)
-    row = get_page(slug)
+    items, page_url = _build_feed_entries(page_meta["id"], slug)
+    row = get_page(page_meta["id"])
     page_title = get_title(row["content"]) if row else slug
 
     last_build_date = format_datetime(items[0]["created_at"]) if items else ""
@@ -947,8 +952,8 @@ def json_feed(slug):
     if not page_meta:
         abort(404)
 
-    items, page_url = _build_feed_entries(slug)
-    row = get_page(slug)
+    items, page_url = _build_feed_entries(page_meta["id"], slug)
+    row = get_page(page_meta["id"])
     page_title = get_title(row["content"]) if row else slug
 
     feed = {
@@ -984,7 +989,7 @@ def delete_page_route(slug):
     if not page_meta["user_id"] or page_meta["user_id"] != user_id:
         return redirect(f"/{slug}")
 
-    row = get_page(slug)
+    row = get_page(page_meta["id"])
     page_title = get_title(row["content"]) if row else None
 
     if request.method == "GET":
@@ -992,7 +997,7 @@ def delete_page_route(slug):
             "delete_page.html", slug=slug, page_title=page_title or slug
         )
 
-    delete_page(slug)
+    delete_page(page_meta["id"])
     if g.subdomain_user:
         return redirect(_subdomain_url(g.subdomain_user["username"]))
     return redirect(_base_url("/"))
@@ -1015,7 +1020,7 @@ def update_listing(slug):
     if listing not in LISTING_OPTIONS:
         listing = "listed"
 
-    update_page_listing(slug, listing)
+    update_page_listing(page_meta["id"], listing)
 
     if request.headers.get("X-Requested-With") == "fetch":
         return "", 204
@@ -1041,7 +1046,7 @@ def view_page(slug):
     if not page_meta:
         abort(404)
 
-    row = get_page(slug)
+    row = get_page(page_meta["id"])
     if not row:
         abort(404)
 
@@ -1100,7 +1105,7 @@ def view_page(slug):
         page_description=page_description,
         site_title=site_title,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
-        has_history=get_revision_count(slug) > 1,
+        has_history=get_revision_count(page_meta["id"]) > 1,
         is_subdomain=subdomain_user is not None,
         license_info=license_info,
         listing=page_meta["listing"],

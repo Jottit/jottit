@@ -128,15 +128,15 @@ def save_page(slug, content, draft):
         conn.commit()
 
 
-def get_page(slug):
+def get_page(page_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.content, p.draft, r.created_at
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
-               WHERE p.slug = %s
+               WHERE p.id = %s
                ORDER BY r.revision DESC LIMIT 1""",
-            (slug,),
+            (page_id,),
         ).fetchone()
 
 
@@ -148,18 +148,25 @@ def get_page_meta(slug):
         ).fetchone()
 
 
-def get_revisions(slug):
+def get_page_meta_for_user(slug, user_id):
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id = %s",
+            (slug, user_id),
+        ).fetchone()
+
+
+def get_revisions(page_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.revision, r.created_at, r.content FROM revisions r
-               JOIN pages p ON r.page_id = p.id
-               WHERE p.slug = %s
+               WHERE r.page_id = %s
                ORDER BY r.revision ASC""",
-            (slug,),
+            (page_id,),
         ).fetchall()
 
 
-def get_revisions_paginated(slug, page=1, per_page=6):
+def get_revisions_paginated(page_id, page=1, per_page=6):
     offset = (page - 1) * per_page
     with get_db() as conn:
         return conn.execute(
@@ -168,32 +175,28 @@ def get_revisions_paginated(slug, page=1, per_page=6):
                       LAG(LENGTH(r.content) - LENGTH(REPLACE(r.content, ' ', '')) + 1)
                           OVER (ORDER BY r.revision ASC) AS prev_word_count
                FROM revisions r
-               JOIN pages p ON r.page_id = p.id
-               WHERE p.slug = %s
+               WHERE r.page_id = %s
                ORDER BY r.revision DESC
                LIMIT %s OFFSET %s""",
-            (slug, per_page, offset),
+            (page_id, per_page, offset),
         ).fetchall()
 
 
-def get_revision_count(slug):
+def get_revision_count(page_id):
     with get_db() as conn:
         row = conn.execute(
-            """SELECT COUNT(*) AS cnt FROM revisions r
-               JOIN pages p ON r.page_id = p.id
-               WHERE p.slug = %s""",
-            (slug,),
+            "SELECT COUNT(*) AS cnt FROM revisions WHERE page_id = %s",
+            (page_id,),
         ).fetchone()
         return row["cnt"]
 
 
-def get_revision(slug, revision):
+def get_revision(page_id, revision):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.content, r.created_at, r.revision FROM revisions r
-               JOIN pages p ON r.page_id = p.id
-               WHERE p.slug = %s AND r.revision = %s""",
-            (slug, revision),
+               WHERE r.page_id = %s AND r.revision = %s""",
+            (page_id, revision),
         ).fetchone()
 
 
@@ -272,11 +275,11 @@ def verify_code(email, code, purpose):
         return row is not None
 
 
-def rename_page(old_slug, new_slug):
+def rename_page(page_id, new_slug):
     with get_db() as conn:
         result = conn.execute(
-            "UPDATE pages SET slug = %s, updated_at = CURRENT_TIMESTAMP WHERE slug = %s",
-            (new_slug, old_slug),
+            "UPDATE pages SET slug = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (new_slug, page_id),
         )
         conn.commit()
         return result.rowcount > 0
@@ -294,11 +297,11 @@ def get_pages_for_user(user_id):
         ).fetchall()
 
 
-def update_page_listing(slug, listing):
+def update_page_listing(page_id, listing):
     with get_db() as conn:
         conn.execute(
-            "UPDATE pages SET listing = %s WHERE slug = %s",
-            (listing, slug),
+            "UPDATE pages SET listing = %s WHERE id = %s",
+            (listing, page_id),
         )
         conn.commit()
 
@@ -329,15 +332,15 @@ def check_username_available(username):
         return row is None
 
 
-def get_export_pages(slug):
+def get_export_pages(page_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT p.slug, r.content, r.created_at
                FROM pages p
                JOIN revisions r ON r.page_id = p.id
-               WHERE p.slug = %s AND p.draft = FALSE
+               WHERE p.id = %s AND p.draft = FALSE
                AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)""",
-            (slug,),
+            (page_id,),
         ).fetchall()
 
 
@@ -359,15 +362,15 @@ def get_export_pages_for_user(user_id):
         ).fetchall()
 
 
-def get_feed_entries(slug):
+def get_feed_entries(page_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT p.slug, r.content, r.created_at
                FROM pages p
                JOIN revisions r ON r.page_id = p.id
-               WHERE p.slug = %s AND p.draft = FALSE
+               WHERE p.id = %s AND p.draft = FALSE
                AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)""",
-            (slug,),
+            (page_id,),
         ).fetchall()
 
 
@@ -401,9 +404,9 @@ def get_public_pages():
         ).fetchall()
 
 
-def delete_page(slug):
+def delete_page(page_id):
     with get_db() as conn:
-        conn.execute("DELETE FROM pages WHERE slug = %s", (slug,))
+        conn.execute("DELETE FROM pages WHERE id = %s", (page_id,))
         conn.commit()
 
 
