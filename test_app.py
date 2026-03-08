@@ -974,19 +974,6 @@ def test_non_owner_cannot_delete(client):
     assert r.status_code == 200
 
 
-def test_delete_wrong_confirmation(client):
-    user_id = find_or_create_user("del3@example.com")
-    save_page("del3", "# T\n\nX", False)
-    page_meta = get_page_meta("del3")
-    claim_page(page_meta["id"], user_id)
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.post("/del3/delete", data={"confirmation": "wrong"})
-    assert r.status_code == 200
-    assert b"Please type" in r.data
-    assert get_page_meta("del3") is not None
-
-
 # -- Export --
 
 

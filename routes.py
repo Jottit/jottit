@@ -987,15 +987,6 @@ def delete_page_route(slug):
             "delete_page.html", slug=slug, page_title=page_title or slug
         )
 
-    confirmation = request.form.get("confirmation", "").strip()
-    if confirmation != "delete":
-        return render_template(
-            "delete_page.html",
-            slug=slug,
-            page_title=page_title or slug,
-            error='Please type "delete" to confirm.',
-        )
-
     delete_page(slug)
     if g.subdomain_user:
         return redirect(_subdomain_url(g.subdomain_user["username"]))

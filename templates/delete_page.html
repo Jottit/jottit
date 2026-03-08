@@ -7,19 +7,12 @@
     <a href="/{{ slug }}" class="panel-back">&larr; Back</a>
     <h1 class="title">Delete page</h1>
     <div class="panel">
-        {% if error %}
-        <p class="notice notice--error">{{ error }}</p>
-        {% endif %}
-
         <p class="danger-confirm-text">This will permanently delete <strong>{{ page_title }}</strong>. This cannot be undone.</p>
 
         <form method="post" action="/{{ slug }}/delete">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="field">
-                <label class="label" for="confirmation">Type "delete" to confirm</label>
-                <input class="input" type="text" id="confirmation" name="confirmation" autocomplete="off" autofocus>
-            </div>
             <button type="submit" class="btn btn-danger">Delete this page</button>
+            <a href="/{{ slug }}" class="btn btn--outline">Cancel</a>
         </form>
     </div>
 </div>
