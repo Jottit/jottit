@@ -27,15 +27,15 @@
 {% endif %}
 {% if site_title %}
 <header class="page-profile-header">
-<a href="/" class="profile-header profile-header--page h-card{% if avatar_url and bio %} profile-header--full{% elif avatar_url %} profile-header--avatar{% elif bio %} profile-header--bio{% else %} profile-header--name{% endif %}">
+<div class="profile-header profile-header--page h-card{% if avatar_url and bio %} profile-header--full{% elif avatar_url %} profile-header--avatar{% elif bio %} profile-header--bio{% else %} profile-header--name{% endif %}">
     {% if avatar_url %}
-    <img src="{{ avatar_url }}" alt="{{ site_title }}" class="profile-avatar u-photo">
+    <a href="/"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="profile-avatar u-photo"></a>
     {% endif %}
-    <h1 class="profile-name"><span class="p-name u-url">{{ site_title }}</span></h1>
+    <h1 class="profile-name"><a class="p-name u-url" href="/">{{ site_title }}</a></h1>
     {% if bio %}
     <p class="profile-bio p-note">{{ bio|render_bio|safe }}</p>
     {% endif %}
-</a>
+</div>
 </header>
 {% endif %}
 {% if unclaimed %}

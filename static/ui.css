@@ -474,18 +474,11 @@
     padding-top: var(--space-12);
 }
 
-/* Individual page — link header to home */
+/* Individual page — header */
 
-a.profile-header--page {
+.profile-header--page {
     display: block;
-    text-decoration: none;
-    color: inherit;
-    transition: opacity 0.15s;
     padding-top: 40px;
-}
-
-a.profile-header--page:hover {
-    opacity: 0.7;
 }
 
 /* Individual page — top spacing */
