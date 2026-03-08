@@ -405,7 +405,6 @@
 .profile-header {
     max-width: var(--site-max-width);
     margin: 0 auto;
-    border-bottom: 1px solid var(--border);
 }
 
 .profile-avatar {
@@ -482,6 +481,20 @@
 .profile-header--page {
     display: block;
     padding-top: 40px;
+}
+
+/* Individual page — three-dot separator */
+
+.page-separator {
+    max-width: var(--site-max-width);
+    margin: var(--space-6) auto;
+    padding: 0 var(--space-6);
+}
+
+.page-separator::after {
+    content: "";
+    display: block;
+    border-top: 1px solid var(--input-border);
 }
 
 /* Individual page — top spacing */
@@ -701,6 +714,14 @@
     align-items: center;
     justify-content: space-between;
     border-top: 1px solid var(--border);
+}
+
+@media (max-width: 639px) {
+    .page-actions {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+    }
 }
 
 .page-timestamp {

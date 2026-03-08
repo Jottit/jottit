@@ -38,6 +38,9 @@
 </div>
 </header>
 {% endif %}
+{% if site_title %}
+<div class="page-separator"></div>
+{% endif %}
 {% if unclaimed %}
 <a href="/{{ slug }}/claim" class="claim-banner">
     Claim this page to make it yours &rarr;
