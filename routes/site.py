@@ -231,12 +231,14 @@ def claim_verify(slug):
     if not page_meta or page_meta["user_id"] is not None:
         return redirect(f"/{slug}")
 
-    email = request.form.get("email") or session.get("claim_email")
+    email = (
+        (request.form.get("email") or session.get("claim_email") or "").strip().lower()
+    )
     if not email:
         return redirect(f"/{slug}/claim")
 
     session_email = session.get("claim_email")
-    form_email = request.form.get("email")
+    form_email = (request.form.get("email") or "").strip().lower()
     if session_email and form_email and form_email != session_email:
         return redirect(f"/{slug}/claim")
 

@@ -41,7 +41,9 @@ def signin():
 @bp.route("/signin/verify", methods=["GET", "POST"])
 @limiter.limit("5 per 10 minutes", methods=["POST"])
 def signin_verify():
-    email = request.form.get("email") or session.get("signin_email")
+    email = (
+        (request.form.get("email") or session.get("signin_email") or "").strip().lower()
+    )
     if not email:
         return redirect("/signin")
 
