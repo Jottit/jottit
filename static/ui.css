@@ -501,23 +501,43 @@
     padding-top: var(--space-12);
 }
 
-/* Individual page — header */
+/* Individual page — compact byline breadcrumb */
 
-.profile-header--page {
+.page-byline {
+    max-width: var(--site-max-width);
+    margin: 0 auto;
+    padding: var(--space-10) var(--space-5) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+@media (min-width: 640px) {
+    .page-byline {
+        padding: var(--space-10) var(--space-10) 0;
+    }
+}
+
+.page-byline-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
     display: block;
-    text-align: center;
-    padding-top: 40px;
 }
 
-.profile-header--page .profile-avatar {
-    margin: 0 auto var(--space-3);
+.page-byline-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--site-color-muted);
+    text-decoration: none;
 }
 
-.profile-header--page .profile-name {
-    text-align: center;
+.page-byline-name:hover {
+    color: var(--site-color-text);
 }
 
-/* Individual page — three-dot separator */
+/* Home page separator */
 
 .page-separator {
     max-width: var(--site-max-width);
@@ -529,20 +549,6 @@
     content: "";
     display: block;
     border-top: 1px solid var(--input-border);
-}
-
-/* Individual page — top spacing */
-
-.page-profile-header {
-    margin-top: var(--space-10);
-}
-
-/* Individual page — smaller avatar */
-
-.profile-header--page .profile-avatar {
-    width: 56px;
-    min-width: 56px;
-    height: 56px;
 }
 
 

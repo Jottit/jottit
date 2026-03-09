@@ -28,17 +28,12 @@
 </div>
 {% endif %}
 {% if site_title %}
-<header class="page-profile-header">
-<div class="profile-header profile-header--page h-card{% if avatar_url and bio_html %} profile-header--full{% elif avatar_url %} profile-header--avatar{% elif bio_html %} profile-header--bio{% else %} profile-header--name{% endif %}">
+<header class="page-byline h-card">
     {% if avatar_url %}
-    <a href="/"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="profile-avatar u-photo"></a>
+    <a href="/"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="page-byline-avatar u-photo"></a>
     {% endif %}
-    <h1 class="profile-name"><a class="p-name u-url" href="/">{{ site_title }}</a></h1>
-</div>
+    <a class="page-byline-name p-name u-url" href="/">{{ site_title }}</a>
 </header>
-{% endif %}
-{% if site_title %}
-<div class="page-separator"></div>
 {% endif %}
 {% if unclaimed %}
 <a href="/{{ slug }}/claim" class="claim-banner">
@@ -47,8 +42,9 @@
 {% endif %}
 <main class="page-main">
     <article class="page h-entry">
-        <time class="page-listing-date dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>
-        <div class="e-content">{{ content | safe }}</div>
+        {% if content_title %}<div class="e-content-title">{{ content_title | safe }}</div>{% endif %}
+        <time class="page-meta dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>
+        <div class="e-content">{{ content_body | safe }}</div>
         <a class="u-url" href="/{{ slug }}" hidden></a>
     </article>
     {% if show_actions %}

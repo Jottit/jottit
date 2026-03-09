@@ -219,6 +219,14 @@ def view_page(slug):
     html = render_markdown(content)
     html = html.replace("<h1>", '<h1 class="p-name">', 1)
 
+    content_title = ""
+    content_body = html
+    h1_end = html.find("</h1>")
+    if html.lstrip().startswith("<h1") and h1_end != -1:
+        split_pos = h1_end + len("</h1>")
+        content_title = html[:split_pos]
+        content_body = html[split_pos:].lstrip()
+
     site_title = None
     avatar_url = None
     bio_html = ""
@@ -243,7 +251,8 @@ def view_page(slug):
 
     return render_template(
         "page.html",
-        content=html,
+        content_title=content_title,
+        content_body=content_body,
         draft=row["draft"],
         slug=slug,
         show_actions=show_actions,

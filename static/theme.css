@@ -29,6 +29,20 @@
     margin-bottom: 1.5rem;
 }
 
+.e-content-title h1 {
+    margin-bottom: var(--space-3);
+}
+
+.page-meta {
+    display: block;
+    font-size: var(--font-size-xs);
+    font-family: var(--site-font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--site-color-muted);
+    margin-bottom: 1.5rem;
+}
+
 .page h2 {
     font-family: var(--site-font-heading);
     font-size: 1.625rem;
