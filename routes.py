@@ -67,6 +67,7 @@ from utils import (
     get_body,
     get_description,
     get_title,
+    reading_time,
     process_wikilinks,
     render_bio,
     render_markdown,
@@ -245,6 +246,7 @@ def subdomain_home(user):
             "slug": p["slug"],
             "title": title or "",
             "description": get_description(p["content"], max_length=350),
+            "reading_time": reading_time(p["content"]),
             "updated_at": p["updated_at"],
             "pinned": p["listing"] == "pinned",
         }

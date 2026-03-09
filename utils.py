@@ -126,6 +126,13 @@ def get_description(content, max_length=200):
     return text[:max_length].rsplit(" ", 1)[0] + "..."
 
 
+def reading_time(content):
+    if not content:
+        return 0
+    words = len(content.split())
+    return max(1, round(words / 250))
+
+
 def describe_change(prev, curr):
     old_title = get_title(prev)
     new_title = get_title(curr)
