@@ -581,6 +581,8 @@
 
 .admin-banner .btn-publish {
     color: #fff;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
 }
 
 .admin-banner a:hover,
