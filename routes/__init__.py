@@ -4,7 +4,8 @@ from flask import Blueprint, abort, g, redirect, request, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from db import get_page_meta, get_user, get_user_by_username
+from db import create_verification_code, get_page_meta, get_user, get_user_by_username
+from mail import send_verification_email
 
 limiter = Limiter(get_remote_address, storage_uri="memory://")
 
@@ -85,6 +86,12 @@ def can_edit(page_meta):
     if page_meta["user_id"] is not None:
         return session.get("user_id") == page_meta["user_id"]
     return is_creator(page_meta)
+
+
+def send_verification(email, purpose):
+    code = create_verification_code(email, purpose)
+    send_verification_email(email, code)
+    session[f"{purpose}_email"] = email
 
 
 def require_user():

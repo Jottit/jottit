@@ -4,13 +4,11 @@ from flask import flash, redirect, render_template, request, session
 
 from db import (
     check_username_available,
-    create_verification_code,
     find_or_create_user,
     update_user_avatar,
     update_user_settings,
     verify_code,
 )
-from mail import send_verification_email
 from storage import (
     ALLOWED_IMAGE_TYPES,
     crop_square,
@@ -19,7 +17,7 @@ from storage import (
     validate_image,
 )
 from utils import RESERVED_USERNAMES, valid_email, valid_username
-from routes import bp, limiter, LICENSES, require_user, subdomain_url
+from routes import bp, limiter, LICENSES, require_user, send_verification, subdomain_url
 
 
 @bp.route("/signin", methods=["GET", "POST"])
@@ -36,9 +34,7 @@ def signin():
             "signin.html", error="Please enter a valid email address."
         )
 
-    code = create_verification_code(email, "signin")
-    send_verification_email(email, code)
-    session["signin_email"] = email
+    send_verification(email, "signin")
     return redirect("/signin/verify")
 
 

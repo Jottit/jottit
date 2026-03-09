@@ -6,7 +6,6 @@ from flask import Response, abort, g, redirect, render_template, request, sessio
 from db import (
     check_username_available,
     claim_page,
-    create_verification_code,
     delete_page,
     find_or_create_user,
     find_page_owner_for_redirect,
@@ -23,7 +22,6 @@ from db import (
     update_user_settings,
     verify_code,
 )
-from mail import send_verification_email
 from utils import (
     RESERVED_SLUGS,
     RESERVED_USERNAMES,
@@ -38,11 +36,12 @@ from routes import (
     bp,
     limiter,
     LISTING_OPTIONS,
+    base_url,
     can_edit,
     find_page,
     is_creator,
+    send_verification,
     subdomain_url,
-    base_url,
 )
 
 
@@ -221,9 +220,7 @@ def claim_page_route(slug):
             "claim.html", slug=slug, error="Please enter a valid email address."
         )
 
-    code = create_verification_code(email, "claim")
-    send_verification_email(email, code)
-    session["claim_email"] = email
+    send_verification(email, "claim")
     return redirect(f"/{slug}/claim/verify")
 
 
