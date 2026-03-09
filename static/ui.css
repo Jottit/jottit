@@ -583,6 +583,7 @@
     color: #fff;
     padding-top: 5px;
     padding-bottom: 5px;
+    font-size: var(--font-size-base);
 }
 
 .admin-banner a:hover,
