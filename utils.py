@@ -62,6 +62,10 @@ def slugify(name):
     return s.strip("-")
 
 
+def valid_email(s):
+    return bool(re.match(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$", s))
+
+
 def valid_username(s):
     return bool(re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", s))
 

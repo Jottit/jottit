@@ -1,24 +1,28 @@
-{% extends "base.html" %}
-
-{% block body %}
+{% extends "base.html" %} {% block body %}
 <div class="home">
-    {% if signed_in %}
-    {% if owner_avatar_url %}
-    <a href="/settings" class="signin-link"><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"></a>
-    {% else %}
-    <a href="/settings" class="signin-link admin-avatar">{{ owner_initials }}</a>
-    {% endif %}
-    {% else %}
-    <span class="signin-link">Already have an account? <a href="/signin">Sign in</a></span>
-    {% endif %}
+  {% if signed_in %} {% if owner_avatar_url %}
+  <a href="/settings" class="signin-link"
+    ><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"
+  /></a>
+  {% else %}
+  <a href="/settings" class="signin-link admin-avatar">{{ owner_initials }}</a>
+  {% endif %} {% else %}
+  <span class="signin-link"
+    >Already have an account? <a href="/signin">Sign in</a></span
+  >
+  {% endif %}
 
-    <main class="home-main">
-        <h1 class="logo">Jottit</h1>
-        <p class="tagline">The fastest way to publish on the web.</p>
-        <a href="/new" class="btn btn-solid btn-lg">{% if signed_in %}Create a page{% else %}Start writing{% endif %}</a>
-        {% if not signed_in %}<p class="home-hint">no sign-up required</p>{% endif %}
-    </main>
+  <main class="home-main">
+    <h1 class="logo">Jottit</h1>
+    <p class="tagline">The fastest way to publish on the web</p>
+    <a href="/new" class="btn btn-solid btn-lg"
+      >{% if signed_in %}Create a page{% else %}Start writing{% endif %}</a
+    >
+    {% if not signed_in %}
+    <p class="home-hint">no sign-up required</p>
+    {% endif %}
+  </main>
 
-    {% include "_footer.html" %}
+  {% include "_footer.html" %}
 </div>
 {% endblock %}

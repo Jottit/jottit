@@ -18,7 +18,7 @@ from storage import (
     upload_image,
     validate_image,
 )
-from utils import RESERVED_USERNAMES, valid_username
+from utils import RESERVED_USERNAMES, valid_email, valid_username
 from routes import bp, limiter, LICENSES, require_user, subdomain_url
 
 
@@ -31,6 +31,10 @@ def signin():
     email = request.form.get("email", "").strip().lower()
     if not email:
         return render_template("signin.html", error="Email is required.")
+    if not valid_email(email):
+        return render_template(
+            "signin.html", error="Please enter a valid email address."
+        )
 
     code = create_verification_code(email, "signin")
     send_verification_email(email, code)

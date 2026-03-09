@@ -31,6 +31,7 @@ from utils import (
     get_body,
     get_title,
     slugify,
+    valid_email,
     valid_username,
 )
 from routes import (
@@ -215,6 +216,10 @@ def claim_page_route(slug):
     email = request.form.get("email", "").strip().lower()
     if not email:
         return render_template("claim.html", slug=slug, error="Email is required.")
+    if not valid_email(email):
+        return render_template(
+            "claim.html", slug=slug, error="Please enter a valid email address."
+        )
 
     code = create_verification_code(email, "claim")
     send_verification_email(email, code)
