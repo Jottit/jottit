@@ -297,6 +297,7 @@ a {
     max-width: 500px;
 }
 
+
 .panel--wide {
     max-width: 700px;
 }
@@ -458,6 +459,23 @@ select:focus {
 .danger-confirm-text {
     font-size: var(--font-size-md);
     margin-bottom: var(--space-5);
+}
+
+@media (max-width: 640px) {
+    .panel--compact {
+        padding: var(--space-8);
+    }
+}
+
+.delete-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.delete-form .btn {
+    width: 100%;
+    text-align: center;
 }
 
 .muted-link {
