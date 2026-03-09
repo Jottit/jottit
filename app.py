@@ -1,6 +1,6 @@
 import hashlib
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import sentry_sdk
 from flask import Flask, render_template, request, session
@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from db import init_db, run_migrations
 from routes import bp, limiter
-from utils import render_bio
+from utils import relative_time, render_bio
 
 dsn = os.environ.get("SENTRY_DSN")
 if dsn:
@@ -18,22 +18,27 @@ if dsn:
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.url_map.strict_slashes = False
+
 app.secret_key = os.environ.get("SECRET_KEY")
 if not app.secret_key:
     if os.environ.get("FLASK_DEBUG") == "1":
         app.secret_key = "dev-secret-key"
     else:
         raise RuntimeError("SECRET_KEY environment variable is required")
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_DEBUG") != "1"
-app.config["SESSION_COOKIE_DOMAIN"] = os.environ.get(
-    "SESSION_COOKIE_DOMAIN", ".jottit.localhost"
+
+app.config.update(
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("FLASK_DEBUG") != "1",
+    SESSION_COOKIE_DOMAIN=os.environ.get("SESSION_COOKIE_DOMAIN", ".jottit.localhost"),
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
 )
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
 CSRFProtect(app)
 limiter.init_app(app)
 app.register_blueprint(bp)
+
+
+# --- Asset versioning ---
 
 
 def _compute_asset_v():
@@ -46,8 +51,7 @@ def _compute_asset_v():
     return h.hexdigest()[:8]
 
 
-_asset_v = _compute_asset_v()
-app.jinja_env.globals["asset_v"] = _asset_v
+app.jinja_env.globals["asset_v"] = _compute_asset_v()
 
 
 @app.context_processor
@@ -55,6 +59,9 @@ def inject_asset_v():
     if app.debug:
         return {"asset_v": _compute_asset_v()}
     return {}
+
+
+# --- Middleware ---
 
 
 @app.before_request
@@ -82,11 +89,10 @@ def set_security_headers(response):
     return response
 
 
-@app.template_filter("render_bio")
-def render_bio_filter(value):
-    if not value:
-        return ""
-    return render_bio(value)
+# --- Template filters ---
+
+app.template_filter("render_bio")(lambda v: render_bio(v) if v else "")
+app.template_filter("relative_time")(relative_time)
 
 
 @app.template_filter("isoformat")
@@ -98,34 +104,7 @@ def isoformat_filter(value):
     return value.isoformat()
 
 
-@app.template_filter("relative_time")
-def relative_time_filter(value):
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        value = datetime.fromisoformat(value)
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=timezone.utc)
-    now = datetime.now(timezone.utc)
-    diff = now - value
-    seconds = int(diff.total_seconds())
-
-    if seconds < 60:
-        return "just now"
-    minutes = seconds // 60
-    if minutes < 60:
-        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
-    hours = minutes // 60
-    if hours < 24:
-        return f"{hours} hour{'s' if hours != 1 else ''} ago"
-    days = hours // 24
-    if days < 30:
-        return f"{days} day{'s' if days != 1 else ''} ago"
-    months = days // 30
-    if months < 12:
-        return f"{months} month{'s' if months != 1 else ''} ago"
-    years = days // 365
-    return f"{years} year{'s' if years != 1 else ''} ago"
+# --- Error handlers ---
 
 
 @app.errorhandler(404)
@@ -137,6 +116,8 @@ def page_not_found(e):
 def internal_error(e):
     return render_template("500.html"), 500
 
+
+# --- Init ---
 
 with app.app_context():
     init_db()
