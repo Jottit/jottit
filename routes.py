@@ -1062,7 +1062,7 @@ def rss_feed(slug):
 
     items, page_url = _build_feed_entries(page_meta["id"], slug)
     row = get_page(page_meta["id"])
-    page_title = get_title(row["content"]) if row else slug
+    page_title = (get_title(row["content"]) if row else None) or slug
 
     last_build_date = format_datetime(items[0]["created_at"]) if items else ""
 
@@ -1105,7 +1105,7 @@ def json_feed(slug):
 
     items, page_url = _build_feed_entries(page_meta["id"], slug)
     row = get_page(page_meta["id"])
-    page_title = get_title(row["content"]) if row else slug
+    page_title = (get_title(row["content"]) if row else None) or slug
 
     feed = {
         "version": "https://jsonfeed.org/version/1.1",
