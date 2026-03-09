@@ -7,8 +7,10 @@
 {% block og_description %}{% if page_description %}{{ page_description }}{% else %}A page on Jottit.{% endif %}{% endblock %}
 
 {% block head %}
-<link rel="alternate" type="application/rss+xml" href="/{{ slug }}/feed.xml" title="{{ site_title or page_title or 'Jottit' }}">
-<link rel="alternate" type="application/feed+json" href="/{{ slug }}/feed.json" title="{{ site_title or page_title or 'Jottit' }}">
+{% if is_subdomain %}
+<link rel="alternate" type="application/rss+xml" href="/feed.xml" title="{{ site_title or page_title or 'Jottit' }}">
+<link rel="alternate" type="application/feed+json" href="/feed.json" title="{{ site_title or page_title or 'Jottit' }}">
+{% endif %}
 {% endblock %}
 
 {% block body %}

@@ -243,7 +243,7 @@ def subdomain_home(user):
         title = get_title(p["content"]) if p["content"] else None
         item = {
             "slug": p["slug"],
-            "title": title or p["slug"],
+            "title": title or "",
             "description": get_description(p["content"], max_length=130),
             "updated_at": p["updated_at"],
             "pinned": p["listing"] == "pinned",
@@ -324,7 +324,7 @@ def pages_list():
         page_list.append(
             {
                 "slug": p["slug"],
-                "title": title or p["slug"],
+                "title": title or "",
                 "draft": p["draft"],
             }
         )
@@ -949,7 +949,7 @@ def _build_site_feed_entries(user_id):
         page_url = f"{base_url}/{entry['slug']}"
         items.append(
             {
-                "title": get_title(entry["content"]) or entry["slug"],
+                "title": get_title(entry["content"]) or "",
                 "url": page_url,
                 "body": body,
                 "body_html": render_markdown(process_wikilinks(body)),
@@ -1044,7 +1044,7 @@ def _build_feed_entries(page_id, slug):
         body = get_body(entry["content"])
         items.append(
             {
-                "title": get_title(entry["content"]) or slug,
+                "title": get_title(entry["content"]) or "",
                 "url": page_url,
                 "body": body,
                 "body_html": render_markdown(process_wikilinks(body)),
@@ -1057,7 +1057,7 @@ def _build_feed_entries(page_id, slug):
 @bp.route("/<slug>/feed.xml")
 def rss_feed(slug):
     page_meta = _find_page(slug)
-    if not page_meta:
+    if not page_meta or page_meta["user_id"] is None:
         abort(404)
 
     items, page_url = _build_feed_entries(page_meta["id"], slug)
@@ -1100,7 +1100,7 @@ def rss_feed(slug):
 @bp.route("/<slug>/feed.json")
 def json_feed(slug):
     page_meta = _find_page(slug)
-    if not page_meta:
+    if not page_meta or page_meta["user_id"] is None:
         abort(404)
 
     items, page_url = _build_feed_entries(page_meta["id"], slug)
