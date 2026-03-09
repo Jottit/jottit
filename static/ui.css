@@ -750,8 +750,8 @@
 
 @media (max-width: 639px) {
     .page-actions {
-        flex-direction: column;
-        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
         gap: var(--space-3);
     }
 }
