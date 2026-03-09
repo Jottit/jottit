@@ -1,11 +1,11 @@
 {% extends "base.html" %} {% block body %}
 <div class="home">
   {% if signed_in %} {% if owner_avatar_url %}
-  <a href="/settings" class="signin-link"
-    ><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"
+  <a href="{{ profile_url }}" class="signin-link"
+    ><img src="{{ owner_avatar_url }}" alt="" class="admin-avatar-img"
   /></a>
   {% else %}
-  <a href="/settings" class="signin-link admin-avatar">{{ owner_initials }}</a>
+  <a href="{{ profile_url }}" class="signin-link admin-avatar">{{ owner_initials }}</a>
   {% endif %} {% else %}
   <span class="signin-link"
     >Already have an account? <a href="/signin">Sign in</a></span
