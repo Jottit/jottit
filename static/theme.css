@@ -145,7 +145,6 @@ a.wikilink-new {
     font-weight: 700;
     line-height: 1.25;
     color: var(--site-color-heading);
-    text-align: center;
     margin: 0 0 0.4rem;
 }
 
@@ -174,7 +173,6 @@ a.wikilink-new {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--site-color-muted);
-    text-align: center;
     margin-bottom: var(--space-2);
 }
 

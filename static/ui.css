@@ -440,24 +440,38 @@
 /* Profile header variants — same centered structure, elements layer in */
 
 .profile-header--name,
-.profile-header--avatar,
-.profile-header--bio,
-.profile-header--full {
+.profile-header--bio {
     text-align: center;
-    padding: var(--space-12) var(--space-5) var(--space-5);
+    padding: var(--space-12) var(--space-5) var(--space-10);
+}
+
+.profile-header--avatar,
+.profile-header--full {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-12) var(--space-5) var(--space-10);
 }
 
 @media (min-width: 640px) {
     .profile-header--name,
+    .profile-header--bio {
+        padding: var(--space-12) var(--space-10) var(--space-10);
+    }
     .profile-header--avatar,
-    .profile-header--bio,
     .profile-header--full {
-        padding: var(--space-12) var(--space-10) var(--space-5);
+        padding: var(--space-12) var(--space-10) var(--space-10);
     }
 }
 
 .profile-header .profile-avatar {
     margin: 0 auto;
+}
+
+.profile-header--avatar .profile-avatar,
+.profile-header--full .profile-avatar {
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .profile-header .profile-name {
@@ -468,6 +482,16 @@
 .profile-header .profile-bio {
     margin: var(--space-3) auto 0;
     max-width: var(--bio-max-width);
+}
+
+.profile-header--avatar .profile-bio,
+.profile-header--full .profile-bio {
+    margin: var(--space-1) 0 0;
+}
+
+.profile-header--avatar .profile-name,
+.profile-header--full .profile-name {
+    text-align: left;
 }
 
 /* 1. Name only — less top padding since there's less to show */
@@ -510,12 +534,6 @@
     height: 56px;
 }
 
-/* 2/4. Avatar present — add space between avatar and name */
-
-.profile-header--avatar .profile-name,
-.profile-header--full .profile-name {
-    margin-top: var(--space-3);
-}
 
 /* Site header */
 
