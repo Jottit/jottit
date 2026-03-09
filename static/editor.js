@@ -38,10 +38,11 @@ function clearDraft() {
 }
 
 function saveCursor() {
+    var el = document.activeElement === titleInput ? titleInput : contentInput;
     localStorage.setItem(cursorKey, JSON.stringify({
-        field: document.activeElement === titleInput ? 'title' : 'content',
-        start: (document.activeElement === titleInput ? titleInput : contentInput).selectionStart,
-        end: (document.activeElement === titleInput ? titleInput : contentInput).selectionEnd
+        field: el === titleInput ? 'title' : 'content',
+        start: el.selectionStart,
+        end: el.selectionEnd
     }));
 }
 
@@ -67,20 +68,17 @@ if (saved) {
     } catch (e) {}
 }
 
-titleInput.addEventListener('input', function() {
+function onInput() {
     updatePreview();
     saveDraft();
     saveCursor();
+}
+
+[titleInput, contentInput].forEach(function(el) {
+    el.addEventListener('input', onInput);
+    el.addEventListener('keyup', saveCursor);
+    el.addEventListener('click', saveCursor);
 });
-contentInput.addEventListener('input', function() {
-    updatePreview();
-    saveDraft();
-    saveCursor();
-});
-titleInput.addEventListener('keyup', saveCursor);
-titleInput.addEventListener('click', saveCursor);
-contentInput.addEventListener('keyup', saveCursor);
-contentInput.addEventListener('click', saveCursor);
 
 var previewPane = document.querySelector('.editor-preview');
 function syncPreviewScroll() {
