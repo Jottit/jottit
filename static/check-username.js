@@ -6,17 +6,20 @@
 
     var script = document.querySelector('script[data-current]');
     var current = script ? script.getAttribute('data-current') : '';
+    var submit = input.closest('form').querySelector('[type=submit]');
     var timer;
 
     function showNotice(msg) {
         notice.textContent = msg;
         notice.style.color = 'var(--error)';
         notice.hidden = false;
+        if (submit) submit.disabled = true;
     }
     function hideNotice() {
         notice.textContent = '';
         notice.style.color = '';
         notice.hidden = true;
+        if (submit) submit.disabled = false;
     }
     if (!notice.textContent.trim()) hideNotice();
 
