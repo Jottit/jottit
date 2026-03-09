@@ -1,3 +1,5 @@
+import re
+
 from flask import flash, redirect, render_template, request, session
 
 from db import (
@@ -212,7 +214,7 @@ def settings_avatar_delete():
             key = url.removeprefix("/uploads/")
         else:
             key = "/".join(url.split("/")[3:])
-        if key:
+        if key and re.match(r"^\d+/avatar\.\w+$", key):
             delete_image(key)
         update_user_avatar(user_id, None)
     return redirect("/settings/profile")
