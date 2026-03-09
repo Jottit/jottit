@@ -12,7 +12,8 @@
     <meta property="og:site_name" content="Jottit">
     <meta property="og:image" content="{% block og_image %}{{ request.host_url.rstrip('/') }}/static/og.png{% endblock %}">
     {% block og_extra %}{% endblock %}
-    <link rel="icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <link rel="stylesheet" href="/static/base.css?v={{ asset_v }}">
     <link rel="stylesheet" href="/static/theme.css?v={{ asset_v }}">
