@@ -423,9 +423,11 @@ def site_rss_feed():
         abort(404)
 
     site_title = user.get("name") or user.get("username")
-    avatar_url = user.get("avatar")
     items = _build_site_feed_entries(user["id"])
     base_url = request.url_root.rstrip("/")
+    avatar_url = user.get("avatar")
+    if avatar_url and avatar_url.startswith("/"):
+        avatar_url = base_url + avatar_url
 
     last_build_date = format_datetime(items[0]["created_at"]) if items else ""
 
@@ -459,9 +461,11 @@ def site_json_feed():
         abort(404)
 
     site_title = user.get("name") or user.get("username")
-    avatar_url = user.get("avatar")
     items = _build_site_feed_entries(user["id"])
     base_url = request.url_root.rstrip("/")
+    avatar_url = user.get("avatar")
+    if avatar_url and avatar_url.startswith("/"):
+        avatar_url = base_url + avatar_url
 
     feed = {
         "version": "https://jsonfeed.org/version/1.1",
