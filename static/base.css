@@ -230,6 +230,11 @@ a {
     font-size: var(--font-size-md);
 }
 
+.btn--primary {
+    background: var(--text);
+    color: var(--bg);
+}
+
 .btn-publish {
     background: var(--brand-2);
     color: #fff;
