@@ -4,6 +4,7 @@ import secrets
 import threading
 from contextlib import contextmanager
 
+from psycopg import errors as pg_errors
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -136,17 +137,29 @@ def save_page(slug, content, draft, user_id=None):
                 (draft, page["id"]),
             )
         else:
-            cursor = conn.execute(
-                "INSERT INTO pages (slug, original_slug, draft, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
-                (slug, slug, draft, user_id),
-            )
-            page_id = cursor.fetchone()["id"]
+            try:
+                cursor = conn.execute(
+                    "INSERT INTO pages (slug, original_slug, draft, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (slug, slug, draft, user_id),
+                )
+                page_id = cursor.fetchone()["id"]
+            except pg_errors.UniqueViolation:
+                conn.rollback()
+                from utils import generate_slug
+
+                slug = generate_slug()
+                cursor = conn.execute(
+                    "INSERT INTO pages (slug, original_slug, draft, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (slug, slug, draft, user_id),
+                )
+                page_id = cursor.fetchone()["id"]
             conn.execute(
                 "INSERT INTO revisions (page_id, revision, content) VALUES (%s, 1, %s)",
                 (page_id, content),
             )
 
         conn.commit()
+    return slug
 
 
 def get_page(page_id):

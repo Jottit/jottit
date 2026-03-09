@@ -116,7 +116,7 @@ def new_page():
     if not slug:
         slug = generate_slug()
 
-    save_page(slug, content, draft, subdomain_user_id)
+    slug = save_page(slug, content, draft, subdomain_user_id)
     _track_new_page(slug, subdomain_user_id)
 
     return redirect(f"/{slug}")
@@ -178,7 +178,7 @@ def edit_page(slug):
 
     is_new = page_meta is None
     subdomain_user_id = subdomain_user["id"] if subdomain_user else None
-    save_page(slug, content, draft, subdomain_user_id)
+    slug = save_page(slug, content, draft, subdomain_user_id)
 
     if is_new:
         new_page_meta = _track_new_page(slug, subdomain_user_id)
