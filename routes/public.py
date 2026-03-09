@@ -423,6 +423,7 @@ def site_rss_feed():
         abort(404)
 
     site_title = user.get("name") or user.get("username")
+    avatar_url = user.get("avatar")
     items = _build_site_feed_entries(user["id"])
     base_url = request.url_root.rstrip("/")
 
@@ -437,6 +438,12 @@ def site_rss_feed():
         "    <description></description>",
         f"    <lastBuildDate>{last_build_date}</lastBuildDate>",
     ]
+    if avatar_url:
+        parts.append("    <image>")
+        parts.append(f"      <url>{xml_escape(avatar_url)}</url>")
+        parts.append(f"      <title>{xml_escape(site_title)}</title>")
+        parts.append(f"      <link>{xml_escape(base_url)}</link>")
+        parts.append("    </image>")
     parts.extend(_render_rss_items(items))
     parts.append("  </channel>")
     parts.append("</rss>")
@@ -452,6 +459,7 @@ def site_json_feed():
         abort(404)
 
     site_title = user.get("name") or user.get("username")
+    avatar_url = user.get("avatar")
     items = _build_site_feed_entries(user["id"])
     base_url = request.url_root.rstrip("/")
 
@@ -460,18 +468,20 @@ def site_json_feed():
         "title": site_title,
         "home_page_url": base_url,
         "feed_url": f"{base_url}/feed.json",
-        "items": [
-            {
-                "id": item["url"],
-                "url": item["url"],
-                "title": item["title"],
-                "content_html": item["body_html"],
-                "date_published": item["created_at"].isoformat(),
-                "_source_markdown": item["body"],
-            }
-            for item in items
-        ],
     }
+    if avatar_url:
+        feed["icon"] = avatar_url
+    feed["items"] = [
+        {
+            "id": item["url"],
+            "url": item["url"],
+            "title": item["title"],
+            "content_html": item["body_html"],
+            "date_published": item["created_at"].isoformat(),
+            "_source_markdown": item["body"],
+        }
+        for item in items
+    ]
 
     return Response(
         json.dumps(feed), content_type="application/feed+json; charset=utf-8"
