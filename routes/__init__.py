@@ -98,7 +98,7 @@ def require_user():
     user_id = session.get("user_id")
     if not user_id:
         return None, None
-    user = get_user(user_id)
+    user = getattr(g, "current_user", None) or get_user(user_id)
     if not user:
         return None, None
     return user_id, user
@@ -107,8 +107,15 @@ def require_user():
 @bp.before_request
 def validate_session():
     user_id = session.get("user_id")
-    if user_id and not get_user(user_id):
-        session.pop("user_id", None)
+    if user_id:
+        user = get_user(user_id)
+        if user:
+            g.current_user = user
+        else:
+            session.pop("user_id", None)
+            g.current_user = None
+    else:
+        g.current_user = None
 
 
 @bp.before_request

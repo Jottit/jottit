@@ -19,6 +19,7 @@ from db import (
     get_feed_entries,
     get_feed_entries_for_user,
     get_page,
+    get_page_full,
     get_page_meta,
     get_pages_for_user,
     get_public_pages,
@@ -72,7 +73,7 @@ def home():
     if signed_in:
         user_id = session["user_id"]
         pages = get_pages_for_user(user_id)
-        user = get_user(user_id)
+        user = g.current_user
         if user:
             owner_avatar_url = user.get("avatar")
             owner_initials = compute_initials(user)
@@ -196,7 +197,7 @@ def view_page(slug):
     if not page_meta:
         abort(404)
 
-    row = get_page(page_meta["id"])
+    row = get_page_full(page_meta["id"])
     if not row:
         abort(404)
 
@@ -242,7 +243,7 @@ def view_page(slug):
     owner_avatar_url = None
     profile_incomplete = False
     if is_owner:
-        user = get_user(session["user_id"])
+        user = g.current_user
         if user:
             owner_initials = compute_initials(user)
             owner_avatar_url = user.get("avatar")
@@ -268,7 +269,7 @@ def view_page(slug):
         page_description=page_description,
         site_title=site_title,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
-        has_history=get_revision_count(page_meta["id"]) > 1,
+        has_history=row["revision_count"] > 1,
         is_subdomain=subdomain_user is not None,
         license_info=license_info,
         listing=page_meta["listing"],

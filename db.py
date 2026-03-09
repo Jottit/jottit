@@ -174,6 +174,19 @@ def get_page(page_id):
         ).fetchone()
 
 
+def get_page_full(page_id):
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT r.content, p.draft, r.created_at,
+                      (SELECT COUNT(*) FROM revisions r2 WHERE r2.page_id = p.id) AS revision_count
+               FROM revisions r
+               JOIN pages p ON r.page_id = p.id
+               WHERE p.id = %s
+               ORDER BY r.revision DESC LIMIT 1""",
+            (page_id,),
+        ).fetchone()
+
+
 def get_page_meta(slug, user_id=None):
     with get_db() as conn:
         return _find_page_by_slug(conn, slug, user_id)
