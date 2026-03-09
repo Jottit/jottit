@@ -335,10 +335,11 @@ def rename_page(page_id, new_slug):
 def get_pages_for_user(user_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT p.slug, p.draft, p.listing, p.updated_at,
-                      (SELECT r.content FROM revisions r WHERE r.page_id = p.id ORDER BY r.revision DESC LIMIT 1) AS content
+            """SELECT p.slug, p.draft, p.listing, p.updated_at, r.content
                FROM pages p
+               JOIN revisions r ON r.page_id = p.id
                WHERE p.user_id = %s
+               AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)
                ORDER BY p.updated_at DESC""",
             (user_id,),
         ).fetchall()
