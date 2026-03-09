@@ -117,8 +117,12 @@ a.wikilink-new {
 /* Subdomain page listing */
 
 .page-listing-item {
-    padding: 0 0 1.5rem;
+    padding: var(--space-8) 0;
     border-bottom: 1px solid var(--border);
+}
+
+.page-listing-item:first-child {
+    padding-top: 0;
 }
 
 .page-listing-item:last-child {
@@ -144,6 +148,10 @@ a.wikilink-new {
     margin: 0 0 0.4rem;
 }
 
+.page h2.page-listing-title {
+    margin-top: 0;
+}
+
 .page .page-listing-desc {
     color: var(--site-color-text);
     margin: 0 0 0.4rem;
@@ -159,8 +167,14 @@ a.wikilink-new {
 }
 
 .page-listing-date {
-    font-size: var(--font-size-sm);
+    display: block;
+    font-size: var(--font-size-xs);
+    font-family: var(--site-font-heading);
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--site-color-muted);
+    margin-bottom: var(--space-2);
 }
 
 .page-footer {
