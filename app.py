@@ -1,5 +1,5 @@
+import hashlib
 import os
-import subprocess
 from datetime import datetime, timedelta, timezone
 
 import sentry_sdk
@@ -35,19 +35,25 @@ CSRFProtect(app)
 limiter.init_app(app)
 app.register_blueprint(bp)
 
-try:
-    _asset_v = subprocess.check_output(
-        ["git", "rev-parse", "--short", "HEAD"], text=True
-    ).strip()
-except Exception:
-    _asset_v = "0"
+
+def _compute_asset_v():
+    h = hashlib.md5()
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    for f in sorted(os.listdir(static_dir)):
+        path = os.path.join(static_dir, f)
+        if os.path.isfile(path):
+            h.update(open(path, "rb").read())
+    return h.hexdigest()[:8]
+
+
+_asset_v = _compute_asset_v()
 app.jinja_env.globals["asset_v"] = _asset_v
 
 
 @app.context_processor
 def inject_asset_v():
     if app.debug:
-        return {"asset_v": str(int(datetime.now().timestamp()))}
+        return {"asset_v": _compute_asset_v()}
     return {}
 
 

@@ -21,8 +21,19 @@
 
     digits.forEach(function(input, i) {
         input.addEventListener('input', function() {
+            var val = input.value.replace(/\D/g, '');
+            if (val.length > 1) {
+                for (var j = 0; j < digits.length; j++) {
+                    digits[j].value = val[j] || '';
+                }
+                var next = Math.min(val.length, digits.length - 1);
+                digits[next].focus();
+                syncHidden();
+                return;
+            }
+            input.value = val;
             syncHidden();
-            if (input.value && i < digits.length - 1) {
+            if (val && i < digits.length - 1) {
                 digits[i + 1].focus();
             }
         });
