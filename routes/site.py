@@ -23,6 +23,7 @@ from db import (
     verify_code,
 )
 from utils import (
+    MAX_CONTENT_LENGTH,
     RESERVED_SLUGS,
     RESERVED_USERNAMES,
     generate_slug,
@@ -98,7 +99,7 @@ def new_page():
         )
 
     title = request.form.get("title", "").strip()
-    content = request.form.get("content", "").strip()
+    content = request.form.get("content", "").strip()[:MAX_CONTENT_LENGTH]
     draft = "draft" in request.form
 
     if title:
@@ -170,7 +171,7 @@ def edit_page(slug):
         )
 
     title = request.form.get("title", "").strip()
-    content = request.form.get("content", "").strip()
+    content = request.form.get("content", "").strip()[:MAX_CONTENT_LENGTH]
     draft = "draft" in request.form
 
     if title:

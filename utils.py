@@ -41,6 +41,8 @@ RESERVED_USERNAMES = {
     "assets",
 }
 
+MAX_CONTENT_LENGTH = 200_000  # ~200KB, roughly 40k words
+
 _SANITIZE_ATTRIBUTES = {**nh3.ALLOWED_ATTRIBUTES, "*": {"class"}}
 
 
