@@ -304,7 +304,7 @@ def claim_setup(slug):
     if request.method == "GET":
         return render_template("claim_setup.html", slug=slug)
 
-    name = request.form.get("name", "").strip()
+    name = request.form.get("name", "").strip()[:100]
     if not name:
         return render_template("claim_setup.html", slug=slug, error="Name is required.")
 

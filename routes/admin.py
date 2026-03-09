@@ -97,11 +97,11 @@ def settings_profile():
     is_ajax = request.content_type and "application/json" in request.content_type
     if is_ajax:
         data = request.get_json(silent=True) or {}
-        name = data.get("name", "").strip()
-        bio = data.get("bio", "").strip()
+        name = data.get("name", "").strip()[:100]
+        bio = data.get("bio", "").strip()[:500]
     else:
-        name = request.form.get("name", "").strip()
-        bio = request.form.get("bio", "").strip()
+        name = request.form.get("name", "").strip()[:100]
+        bio = request.form.get("bio", "").strip()[:500]
 
     update_user_settings(
         user_id, name, user.get("username") or "", bio, user.get("license")
