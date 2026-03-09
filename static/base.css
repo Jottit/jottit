@@ -201,6 +201,11 @@ a {
     opacity: 0.9;
 }
 
+.btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .btn-solid {
     background: var(--btn-bg);
     color: var(--btn-text);
