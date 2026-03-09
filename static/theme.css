@@ -8,7 +8,7 @@
 
 @media (min-width: 640px) {
     .page-main {
-        padding: var(--space-10) var(--space-10);
+        padding: var(--space-5) var(--space-10);
     }
 }
 
