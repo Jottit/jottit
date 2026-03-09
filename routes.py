@@ -632,7 +632,7 @@ def signin():
     code = create_verification_code(email, "signin")
     send_verification_email(email, code)
     session["signin_email"] = email
-    return render_template("verify.html", email=email, action="/signin/verify")
+    return redirect("/signin/verify")
 
 
 @bp.route("/signin/verify", methods=["GET", "POST"])
