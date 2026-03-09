@@ -10,10 +10,12 @@
 
     function showNotice(msg) {
         notice.textContent = msg;
+        notice.style.color = 'var(--error)';
         notice.hidden = false;
     }
     function hideNotice() {
         notice.textContent = '';
+        notice.style.color = '';
         notice.hidden = true;
     }
     if (!notice.textContent.trim()) hideNotice();
