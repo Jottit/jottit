@@ -541,6 +541,7 @@
 
 .profile-header--page .profile-avatar {
     width: 56px;
+    min-width: 56px;
     height: 56px;
 }
 
