@@ -34,9 +34,6 @@
     <a href="/"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="profile-avatar u-photo"></a>
     {% endif %}
     <h1 class="profile-name"><a class="p-name u-url" href="/">{{ site_title }}</a></h1>
-    {% if bio_html %}
-    <p class="profile-bio p-note">{{ bio_html|safe }}</p>
-    {% endif %}
 </div>
 </header>
 {% endif %}
@@ -50,13 +47,14 @@
 {% endif %}
 <main class="page-main">
     <article class="page h-entry">
+        <time class="page-listing-date dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>
         <div class="e-content">{{ content | safe }}</div>
         <a class="u-url" href="/{{ slug }}" hidden></a>
     </article>
     {% if show_actions %}
     <div class="page-actions">
         <div class="page-actions-meta">
-            <time class="dt-published page-timestamp" datetime="{{ updated_at | isoformat }}">{% if draft %}<span class="draft-pill">DRAFT</span> · {% endif %}Last edited {{ updated_at | relative_time }}</time>
+            {% if draft %}<span class="draft-pill">DRAFT</span>{% endif %}
             {% if is_owner %}
             <form method="post" action="/{{ slug }}/listing" class="listing-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

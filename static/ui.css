@@ -504,7 +504,16 @@
 
 .profile-header--page {
     display: block;
+    text-align: center;
     padding-top: 40px;
+}
+
+.profile-header--page .profile-avatar {
+    margin: 0 auto var(--space-3);
+}
+
+.profile-header--page .profile-name {
+    text-align: center;
 }
 
 /* Individual page — three-dot separator */

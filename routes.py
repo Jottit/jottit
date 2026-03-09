@@ -1288,4 +1288,5 @@ def view_page(slug):
         is_subdomain=subdomain_user is not None,
         license_info=license_info,
         listing=page_meta["listing"],
+        reading_time=reading_time(row["content"]),
     )
