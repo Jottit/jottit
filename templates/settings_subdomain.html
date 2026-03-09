@@ -23,6 +23,7 @@
                     <input class="input" type="text" id="username" name="username" value="{{ user.username or '' }}" placeholder="yourname">
                     <span class="settings-subdomain-suffix">.jottit.org</span>
                 </div>
+                <p class="subdomain-notice help-text" hidden></p>
                 <p class="help-text">Changing your subdomain will break existing links.</p>
             </div>
 
@@ -31,4 +32,5 @@
     </div>
 </div>
 <script src="/static/settings.js?v={{ asset_v }}"></script>
+<script src="/static/check-username.js?v={{ asset_v }}" data-current="{{ user.username or '' }}"></script>
 {% endblock %}

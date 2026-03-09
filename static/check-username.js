@@ -1,8 +1,13 @@
 (function() {
     var input = document.querySelector('[name=username]');
-    var notice = document.querySelector('.auth-subdomain-notice');
+    var notice = document.querySelector('.auth-subdomain-notice') ||
+                 document.querySelector('.subdomain-notice');
+    if (!input || !notice) return;
+
+    var script = document.querySelector('script[data-current]');
+    var current = script ? script.getAttribute('data-current') : '';
     var timer;
-    input.focus();
+
     function showNotice(msg) {
         notice.textContent = msg;
         notice.hidden = false;
@@ -12,10 +17,11 @@
         notice.hidden = true;
     }
     if (!notice.textContent.trim()) hideNotice();
+
     input.addEventListener('input', function() {
         clearTimeout(timer);
         var val = input.value.trim().toLowerCase();
-        if (!val) { hideNotice(); return; }
+        if (!val || val === current) { hideNotice(); return; }
         timer = setTimeout(function() {
             fetch('/api/check-username?username=' + encodeURIComponent(val))
                 .then(function(r) { return r.json(); })
