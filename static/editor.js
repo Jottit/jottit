@@ -81,8 +81,25 @@ titleInput.addEventListener('keyup', saveCursor);
 titleInput.addEventListener('click', saveCursor);
 contentInput.addEventListener('keyup', saveCursor);
 contentInput.addEventListener('click', saveCursor);
+
+var previewPane = document.querySelector('.editor-preview');
+function syncPreviewScroll() {
+    if (!previewPane) return;
+    var max = contentInput.scrollHeight - contentInput.clientHeight;
+    var pct = max > 0 ? contentInput.scrollTop / max : 0;
+    var previewMax = previewPane.scrollHeight - previewPane.clientHeight;
+    previewPane.scrollTop = pct * previewMax;
+}
+
+contentInput.addEventListener('scroll', syncPreviewScroll);
+
 updatePreview();
+if (previewPane) previewPane.style.scrollBehavior = 'smooth';
 restoreCursor();
+syncPreviewScroll();
+setTimeout(function() {
+    if (previewPane) previewPane.style.scrollBehavior = '';
+}, 500);
 
 var form = document.querySelector('.editor-form');
 if (form) {
