@@ -111,6 +111,9 @@ table {
     --space-10: 40px;
     --space-12: 56px;
 
+    /* Panel */
+    --panel-padding: var(--space-12);
+
     /* Border radius */
     --radius-sm: 6px;
     --radius-lg: 16px;
@@ -292,11 +295,16 @@ a {
     background: var(--bg-surface);
     box-shadow: var(--panel-shadow);
     border-radius: var(--radius-pill);
-    padding: var(--space-12);
+    padding: var(--panel-padding);
     width: 100%;
     max-width: 500px;
 }
 
+
+.panel--compact {
+    max-width: 450px;
+    padding: var(--space-10);
+}
 
 .panel--wide {
     max-width: 700px;
@@ -458,24 +466,31 @@ select:focus {
 
 .danger-confirm-text {
     font-size: var(--font-size-md);
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-8);
+    text-align: center;
 }
 
 @media (max-width: 640px) {
-    .panel--compact {
-        padding: var(--space-8);
+    :root {
+        --panel-padding: var(--space-8);
     }
 }
 
 .delete-form {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     gap: var(--space-3);
 }
 
-.delete-form .btn {
-    width: 100%;
-    text-align: center;
+@media (max-width: 640px) {
+    .delete-form {
+        flex-direction: column;
+    }
+
+    .delete-form .btn {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 .muted-link {
