@@ -53,6 +53,8 @@ function restoreCursor() {
         var el = pos.field === 'title' ? titleInput : contentInput;
         el.focus();
         el.setSelectionRange(pos.start, pos.end);
+        el.blur();
+        el.focus();
     } catch (e) {}
 }
 
