@@ -51,9 +51,9 @@
     <div class="page-actions">
         <div class="page-actions-buttons">
             {% if draft %}<span class="draft-pill">DRAFT</span>{% endif %}
-            {% if is_owner %}<a href="/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
-            {% if has_history %}<a href="/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>{% endif %}
             <a href="/{{ slug }}/edit" class="btn btn--outline btn--sm">Edit</a>
+            {% if has_history %}<a href="/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>{% endif %}
+            {% if is_owner %}<a href="/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
         </div>
         {% if is_owner %}
         <form method="post" action="/{{ slug }}/listing" class="listing-form">
