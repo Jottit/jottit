@@ -249,7 +249,7 @@ def view_page(slug):
             if not user.get("avatar") and not user.get("bio"):
                 profile_incomplete = True
 
-    return render_template(
+    resp = render_template(
         "page.html",
         content_title=content_title,
         content_body=content_body,
@@ -274,6 +274,10 @@ def view_page(slug):
         listing=page_meta["listing"],
         reading_time=reading_time(row["content"]),
     )
+    response = current_app.make_response(resp)
+    if not is_owner and not show_actions and not row["draft"]:
+        response.headers["Cache-Control"] = "public, max-age=60"
+    return response
 
 
 @bp.route("/<slug>/history")

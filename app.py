@@ -86,6 +86,15 @@ def set_security_headers(response):
             "max-age=63072000; includeSubDomains"
         )
     response.headers["Content-Security-Policy"] = _CSP
+
+    if "Cache-Control" not in response.headers:
+        if request.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif request.path.endswith(("/feed.xml", "/feed.json")):
+            response.headers["Cache-Control"] = "public, max-age=300"
+        elif request.path == "/sitemap.xml":
+            response.headers["Cache-Control"] = "public, max-age=3600"
+
     return response
 
 

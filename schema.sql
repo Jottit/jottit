@@ -56,6 +56,7 @@ CREATE INDEX IF NOT EXISTS pages_draft_idx ON pages (draft);
 CREATE INDEX IF NOT EXISTS pages_original_slug ON pages (original_slug);
 CREATE UNIQUE INDEX IF NOT EXISTS pages_user_slug_unique ON pages (user_id, slug) WHERE user_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL;
+CREATE INDEX IF NOT EXISTS pages_draft_updated_idx ON pages (draft, updated_at DESC);
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
