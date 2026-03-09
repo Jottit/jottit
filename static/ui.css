@@ -784,36 +784,36 @@
 .listing-select-wrap {
     position: relative;
     display: inline-block;
-    margin-left: var(--space-3);
 }
 
-.listing-select-wrap::before {
+.listing-select-wrap::after {
     content: "\25BE";
     position: absolute;
-    left: 2px;
+    right: 10px;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(calc(-50% - 2px));
     pointer-events: none;
-    color: var(--site-color-muted);
-    font-size: var(--font-size-sm);
+    color: var(--btn-outline-text);
+    font-size: 1.5rem;
 }
 
 .listing-select {
     font-size: var(--font-size-sm);
-    color: var(--site-color-muted);
+    font-family: inherit;
+    color: var(--btn-outline-text);
     background: none;
-    border: none;
-    padding: var(--space-1) 0;
-    padding-left: 14px;
+    border: 1px solid var(--btn-outline-border);
+    border-radius: 999px;
+    padding: var(--space-1) 1.5rem var(--space-1) 1rem;
+    font-weight: 500;
+    line-height: 1.5;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
 }
 
 .listing-select:hover {
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 3px;
+    opacity: 0.7;
 }
 
 .listing-select:focus {

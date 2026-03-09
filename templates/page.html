@@ -53,26 +53,24 @@
     </article>
     {% if show_actions %}
     <div class="page-actions">
-        <div class="page-actions-meta">
-            {% if draft %}<span class="draft-pill">DRAFT</span>{% endif %}
-            {% if is_owner %}
-            <form method="post" action="/{{ slug }}/listing" class="listing-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="listing-select-wrap">
-                    <select name="listing" class="listing-select" data-slug="{{ slug }}">
-                        <option value="listed"{% if listing == 'listed' %} selected{% endif %}>Listed</option>
-                        <option value="unlisted"{% if listing == 'unlisted' %} selected{% endif %}>Unlisted</option>
-                        <option value="pinned"{% if listing == 'pinned' %} selected{% endif %}>Pinned</option>
-                    </select>
-                </div>
-            </form>
-            {% endif %}
-        </div>
         <div class="page-actions-buttons">
+            {% if draft %}<span class="draft-pill">DRAFT</span>{% endif %}
             {% if is_owner %}<a href="/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
             {% if has_history %}<a href="/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>{% endif %}
             <a href="/{{ slug }}/edit" class="btn btn--outline btn--sm">Edit</a>
         </div>
+        {% if is_owner %}
+        <form method="post" action="/{{ slug }}/listing" class="listing-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="listing-select-wrap">
+                <select name="listing" class="listing-select" data-slug="{{ slug }}">
+                    <option value="listed"{% if listing == 'listed' %} selected{% endif %}>Listed</option>
+                    <option value="unlisted"{% if listing == 'unlisted' %} selected{% endif %}>Unlisted</option>
+                    <option value="pinned"{% if listing == 'pinned' %} selected{% endif %}>Pinned</option>
+                </select>
+            </div>
+        </form>
+        {% endif %}
     </div>
     {% endif %}
     {% include "_page_footer.html" %}
