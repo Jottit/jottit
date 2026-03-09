@@ -244,7 +244,7 @@ def subdomain_home(user):
         item = {
             "slug": p["slug"],
             "title": title or "",
-            "description": get_description(p["content"], max_length=130),
+            "description": get_description(p["content"], max_length=350),
             "updated_at": p["updated_at"],
             "pinned": p["listing"] == "pinned",
         }
