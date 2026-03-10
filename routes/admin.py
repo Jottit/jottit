@@ -6,6 +6,7 @@ from db import (
     check_username_available,
     delete_user,
     find_or_create_user,
+    get_user,
     update_user_avatar,
     update_user_settings,
     user_exists,
@@ -67,6 +68,9 @@ def signin_verify():
     user_id = find_or_create_user(email)
     session.pop("signin_email", None)
     session["user_id"] = user_id
+    user = get_user(user_id)
+    if user and user.get("username"):
+        return redirect(subdomain_url(user["username"]))
     return redirect("/")
 
 
