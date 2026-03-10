@@ -8,6 +8,7 @@ from db import (
     find_or_create_user,
     update_user_avatar,
     update_user_settings,
+    user_exists,
     verify_code,
 )
 from storage import (
@@ -22,7 +23,7 @@ from routes import bp, limiter, LICENSES, require_user, send_verification, subdo
 
 
 @bp.route("/signin", methods=["GET", "POST"])
-@limiter.limit("5 per hour", methods=["POST"])
+@limiter.limit("5 per 5 minutes", methods=["POST"])
 def signin():
     if request.method == "GET":
         return render_template("signin.html")
@@ -34,6 +35,9 @@ def signin():
         return render_template(
             "signin.html", error="Please enter a valid email address."
         )
+
+    if not user_exists(email):
+        return render_template("signin.html", not_found=True)
 
     send_verification(email, "signin")
     return redirect("/signin/verify")
@@ -134,7 +138,7 @@ def settings_license():
 
 
 @bp.route("/settings/subdomain", methods=["GET", "POST"])
-@limiter.limit("10 per minute", methods=["POST"])
+@limiter.limit("5 per 5 minutes", methods=["POST"])
 def settings_subdomain():
     user_id, user = require_user()
     if not user:
@@ -182,7 +186,7 @@ def settings_export():
 
 
 @bp.route("/settings/avatar", methods=["POST"])
-@limiter.limit("10 per minute")
+@limiter.limit("5 per 5 minutes")
 def settings_avatar():
     user_id, user = require_user()
     if not user:
@@ -208,7 +212,7 @@ def settings_avatar():
 
 
 @bp.route("/settings/delete", methods=["GET", "POST"])
-@limiter.limit("5 per hour", methods=["POST"])
+@limiter.limit("5 per 5 minutes", methods=["POST"])
 def settings_delete():
     user_id, user = require_user()
     if not user:
@@ -229,7 +233,7 @@ def settings_delete():
 
 
 @bp.route("/settings/avatar/delete", methods=["POST"])
-@limiter.limit("10 per minute")
+@limiter.limit("5 per 5 minutes")
 def settings_avatar_delete():
     user_id, user = require_user()
     if not user:

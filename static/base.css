@@ -344,6 +344,10 @@ a {
     margin-bottom: var(--space-3);
 }
 
+.error a {
+    text-decoration: underline;
+}
+
 /* Forms */
 
 .field {

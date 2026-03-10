@@ -4,10 +4,16 @@
 
 {% block body %}
 <div class="shell shell-centered">
+    {% if not_found %}
+    <h1 class="title">Email not found</h1>
+    <p class="subtitle mb-6">Don't have an account? Create a page first,<br>then claim it with your email.</p>
+    <a href="/new" class="btn btn--primary">Create a page</a>
+    <a href="/signin" class="muted-link">Try another email</a>
+    {% else %}
     <h1 class="title">Sign in</h1>
     <p class="subtitle">Enter your email to sign in.</p>
     {% if error %}
-    <p class="error">{{ error }}</p>
+    <p class="error">{{ error|safe }}</p>
     {% endif %}
     <form class="auth-form" method="post" action="/signin">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -15,5 +21,6 @@
         <input class="auth-input" type="email" name="email" id="email" required autofocus>
         <button class="btn btn-solid" type="submit">Send code</button>
     </form>
+    {% endif %}
 </div>
 {% endblock %}

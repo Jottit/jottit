@@ -276,6 +276,12 @@ def get_user_by_username(username):
         ).fetchone()
 
 
+def user_exists(email):
+    with get_db() as conn:
+        row = conn.execute("SELECT 1 FROM users WHERE email = %s", (email,)).fetchone()
+        return row is not None
+
+
 def find_or_create_user(email):
     with get_db() as conn:
         row = conn.execute("SELECT id FROM users WHERE email = %s", (email,)).fetchone()

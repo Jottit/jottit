@@ -136,7 +136,7 @@ def _track_new_page(slug, subdomain_user_id):
 
 
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
-@limiter.limit("30 per hour", methods=["POST"])
+@limiter.limit("30 per 5 minutes", methods=["POST"])
 def edit_page(slug):
     subdomain_user = g.subdomain_user
     if slug in RESERVED_SLUGS and not subdomain_user:
@@ -201,7 +201,7 @@ def edit_page(slug):
 
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])
-@limiter.limit("5 per hour", methods=["POST"])
+@limiter.limit("5 per 5 minutes", methods=["POST"])
 def claim_page_route(slug):
     page_meta = get_page_meta(slug)
     if not page_meta or page_meta["user_id"] is not None:
@@ -362,7 +362,7 @@ def claim_address(slug):
 
 
 @bp.route("/<slug>/delete", methods=["GET", "POST"])
-@limiter.limit("10 per hour", methods=["POST"])
+@limiter.limit("5 per 5 minutes", methods=["POST"])
 def delete_page_route(slug):
     page_meta = find_page(slug)
     if not page_meta:

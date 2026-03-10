@@ -202,6 +202,7 @@ def test_claim_rejects_email_substitution(client):
 
 # Sign-in stores the email in the session
 def test_signin_stores_email_in_session(client):
+    find_or_create_user("signin@example.com")
     client.post("/signin", data={"email": "signin@example.com"})
     with client.session_transaction() as sess:
         assert sess.get("signin_email") == "signin@example.com"
@@ -361,8 +362,19 @@ def test_signin_page(client):
     assert b"email" in r.data
 
 
+# Sign-in with unknown email is rejected
+def test_signin_rejects_unknown_email(client):
+    r = client.post("/signin", data={"email": "nobody@example.com"})
+    assert r.status_code == 200
+    assert b"recognize that email" in r.data
+    assert b"Create a page" in r.data
+    assert b"Try another email" in r.data
+
+
 # Full sign-in: submit email, verify code, session contains user_id
 def test_signin_full_flow(client):
+    find_or_create_user("user@example.com")
+
     r = client.post("/signin", data={"email": "user@example.com"})
     assert r.status_code == 302
     assert "/signin/verify" in r.headers["Location"]
@@ -383,6 +395,8 @@ def test_signin_full_flow(client):
 
 # Invalid sign-in code shows an error
 def test_signin_invalid_code(client):
+    find_or_create_user("user@example.com")
+
     client.post("/signin", data={"email": "user@example.com"})
     r = client.post(
         "/signin/verify", data={"code": "999999", "email": "user@example.com"}
