@@ -29,6 +29,7 @@ if not app.secret_key:
 app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.environ.get("FLASK_DEBUG") != "1",
+    SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_DOMAIN=os.environ.get("SESSION_COOKIE_DOMAIN", ".jottit.localhost"),
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
 )

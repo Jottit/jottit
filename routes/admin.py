@@ -134,6 +134,7 @@ def settings_license():
 
 
 @bp.route("/settings/subdomain", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"])
 def settings_subdomain():
     user_id, user = require_user()
     if not user:
@@ -181,6 +182,7 @@ def settings_export():
 
 
 @bp.route("/settings/avatar", methods=["POST"])
+@limiter.limit("10 per minute")
 def settings_avatar():
     user_id, user = require_user()
     if not user:
@@ -206,6 +208,7 @@ def settings_avatar():
 
 
 @bp.route("/settings/delete", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
 def settings_delete():
     user_id, user = require_user()
     if not user:
@@ -226,6 +229,7 @@ def settings_delete():
 
 
 @bp.route("/settings/avatar/delete", methods=["POST"])
+@limiter.limit("10 per minute")
 def settings_avatar_delete():
     user_id, user = require_user()
     if not user:

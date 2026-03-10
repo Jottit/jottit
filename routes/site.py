@@ -362,6 +362,7 @@ def claim_address(slug):
 
 
 @bp.route("/<slug>/delete", methods=["GET", "POST"])
+@limiter.limit("10 per hour", methods=["POST"])
 def delete_page_route(slug):
     page_meta = find_page(slug)
     if not page_meta:
@@ -386,6 +387,7 @@ def delete_page_route(slug):
 
 
 @bp.route("/<slug>/listing", methods=["POST"])
+@limiter.limit("30 per minute", methods=["POST"])
 def update_listing(slug):
     page_meta = find_page(slug)
     if not page_meta:
