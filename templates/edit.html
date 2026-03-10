@@ -18,7 +18,7 @@
                 <textarea class="editor-content" id="content" name="content" placeholder="Write something...&#10;&#10;**bold**  *italic*  [link](url)  ## heading" {% if title and not content %}autofocus{% endif %}>{{ content }}</textarea>
             </form>
         </div>
-        <div class="editor-preview">
+        <div class="editor-preview" inert>
             <article class="page" id="preview"></article>
         </div>
     </div>
