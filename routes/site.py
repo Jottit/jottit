@@ -289,7 +289,7 @@ def _finish_claim(slug, page_meta, user_id, username):
     session.pop("claim_email", None)
     session.pop("claim_verified", None)
     session.pop("claim_name", None)
-    return redirect(subdomain_url(username, f"/{slug}"))
+    return redirect(subdomain_url(username))
 
 
 @bp.route("/<slug>/claim/setup", methods=["GET", "POST"])
