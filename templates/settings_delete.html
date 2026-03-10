@@ -10,7 +10,7 @@
         <p class="danger-confirm-text">This will permanently delete your account and unlink all your pages. This cannot be undone.</p>
 
         {% if error %}
-        <p class="notice notice--error">{{ error }}</p>
+        <p class="error">{{ error }}</p>
         {% endif %}
 
         <form method="post" action="/settings/delete" class="delete-form">
