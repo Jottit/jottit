@@ -755,7 +755,6 @@
 /* Page actions (owner only) */
 
 .page-actions {
-    padding-top: var(--space-5);
     display: flex;
     align-items: center;
     justify-content: space-between;
