@@ -4,8 +4,6 @@
 
 Jottit is a radically simple web publishing tool. You go to jottit.org, write something in markdown, and get a beautiful page with a shareable URL. That's it.
 
-The original Jottit was co-created by Simon Carstensen and Aaron Swartz in 2007, funded by Paul Graham ($75k, YC first batch 2005). It was a wiki-style tool where you could instantly create and edit web pages. The 2026 version is a spiritual successor — simpler than the original, with dramatically better typography and design.
-
 Jottit is a page, not a blog platform. Jottit is open source.
 
 ## Design Philosophy
@@ -27,9 +25,9 @@ Jottit is a page, not a blog platform. Jottit is open source.
 ## Stack
 
 - Flask + Jinja2 (server-side rendered)
-- Vanilla JS (editor only — no JS on published pages)
+- Vanilla JS (admin only — no JS on published pages)
 - Vanilla CSS
-- PostgreSQL (production), SQLite (development)
+- PostgreSQL
 
 ## Product Spec (v1)
 
@@ -73,38 +71,25 @@ Jottit
 - Unclaimed pages are editable by anyone with the URL
 
 ### Visibility
-- Two states: **public** (anyone can view, passcode to edit) and **private** (passcode to view and edit)
-- Simple toggle, not a settings page
+- States: **listed** (on profile), **unlisted** (accessible but hidden from profile), **pinned** (top of profile), **draft** (only visible to owner)
+- Simple toggles in settings
 
 ### Revision History
-- Invisible complexity — just a git log under the hood
+- Database-backed revisions
 - Simple "last edited" timestamp that links to revision history
 - Diff view between versions
 
-### What's explicitly excluded from v1
-- Subdomains (subdomains → sites → pages → navigation → settings → accounts → CMS)
-- Multiple pages per site
-- Site title / site description
-- Images (text only — images mean hosting, storage, uploads, CDN)
+### What's explicitly excluded
 - Design/theme settings (the design IS the design)
 - Wiki editing mode
 - Custom domains
-- Accounts / sign-up
-
-### Future considerations (only if people ask for them)
-- Subdomains and multiple pages (turns Jottit into a minimal site, not just a page)
-- Site title + subdomain + menu = a very minimal site
-- Sign-in link (top right, tiny and quiet)
-- Settings page (subdomain change, public/private toggle, recovery email)
-- Navigation (if pages are added: simple list of page titles at the bottom, no sidebar)
-- Images
 
 ## Architecture
 
 - No JavaScript on public pages
 - Markdown rendering to clean HTML
 - Static output where possible
-- Git-backed storage for revision history
+- Database-backed revision history
 - Clean, minimal URL structure: `jottit.org/[slug]`
 
 ## Commands
@@ -118,7 +103,7 @@ Jottit
 - Python: simple, readable, no clever abstractions
 - HTML: semantic, minimal classes
 - CSS: reuse existing classes and variables before adding new ones. Check what's already defined in stylesheets first. Never use inline styles — always use classes. Never use hardcoded color values — always use design tokens (CSS custom properties).
-- JS: vanilla only, no build step, no frameworks. Editor page only — no JS on published pages.
+- JS: vanilla only, no build step, no frameworks. Admin only — no JS on published pages.
 - Keep files small and focused
 - Prefer explicit over clever
 - Don't swallow errors — let exceptions propagate in development
@@ -147,8 +132,8 @@ Features from the original and their status:
 |---|---|
 | Homepage textarea | **Replaced** — "Create a page" button instead |
 | Split preview editor | **Keep** — simplest honest solution for markdown |
-| Subdomains (yourname.jottit.com) | **Skip for v1** |
-| Multiple pages with sidebar | **Skip for v1** |
+| Subdomains (yourname.jottit.com) | **Keep** — username.jottit.org |
+| Multiple pages per user | **Keep** — listed, unlisted, pinned |
 | Wiki editing mode (anyone can edit) | **Drop** — spam, moderation complexity |
 | Private/Public/Open modes | **Simplify** to Private/Public only |
 | Revision history with diffs | **Keep** — hidden complexity |
