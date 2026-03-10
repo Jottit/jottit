@@ -76,6 +76,11 @@
     text-decoration: none;
 }
 
+.signin-link,
+.signin-link a {
+    font-size: var(--font-size-sm);
+}
+
 .public-header a:hover,
 .public-header .link-btn:hover {
     opacity: 0.7;

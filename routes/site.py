@@ -109,10 +109,10 @@ def new_page():
     owner_id = subdomain_user_id or session.get("user_id")
     reserved = RESERVED_SLUGS if not subdomain_user else set()
     slug = None
-    if title:
+    if owner_id and title:
         nice_slug = slugify(title)
         if nice_slug and nice_slug not in reserved:
-            if not owner_id or not get_page_meta(nice_slug, owner_id):
+            if not get_page_meta(nice_slug, owner_id):
                 slug = nice_slug
     if not slug:
         slug = generate_slug()
