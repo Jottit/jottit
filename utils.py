@@ -52,7 +52,7 @@ def generate_slug(length=6):
 
 
 def render_markdown(text):
-    html = markdown.markdown(text)
+    html = markdown.markdown(text, extensions=["smarty"])
     return nh3.clean(html, link_rel=None, attributes=_SANITIZE_ATTRIBUTES)
 
 
