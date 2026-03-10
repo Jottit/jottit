@@ -20,11 +20,13 @@ def test_new_shows_editor(client):
     assert b"Write something" in r.data
 
 
-# POST /new creates a page and redirects to a slug derived from the title
-def test_new_publish_creates_page_with_nice_slug(client):
+# Anonymous POST /new creates a page with a random slug, not title-based
+def test_new_anonymous_gets_random_slug(client):
     r = client.post("/new", data={"title": "Hello World", "content": "Body"})
     assert r.status_code == 302
-    assert r.headers["Location"] == "/hello-world"
+    slug = r.headers["Location"].lstrip("/")
+    assert slug != "hello-world"
+    assert len(slug) == 6
 
 
 # -- Editor --
