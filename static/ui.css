@@ -51,6 +51,12 @@
     border-bottom: 1px solid var(--subtle);
 }
 
+@media (prefers-color-scheme: dark) {
+    .public-header {
+        border-bottom: none;
+    }
+}
+
 .public-header .public-header-logo {
     margin-right: auto;
     font-weight: 800;
