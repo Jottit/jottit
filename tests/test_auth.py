@@ -366,7 +366,7 @@ def test_signin_page(client):
 def test_signin_rejects_unknown_email(client):
     r = client.post("/signin", data={"email": "nobody@example.com"})
     assert r.status_code == 200
-    assert b"recognize that email" in r.data
+    assert b"Email not found" in r.data
     assert b"Create a page" in r.data
     assert b"Try another email" in r.data
 
