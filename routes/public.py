@@ -26,7 +26,6 @@ from db import (
     get_revision,
     get_revision_count,
     get_revisions_paginated,
-    get_slugs_for_user,
     get_user,
     find_page_by_original_slug,
     find_page_owner_for_redirect,
@@ -36,7 +35,6 @@ from utils import (
     get_description,
     get_title,
     reading_time,
-    process_wikilinks,
     render_bio,
     render_markdown,
 )
@@ -79,7 +77,6 @@ def home():
 
 def subdomain_home(user):
     pages = get_pages_for_user(user["id"])
-    existing_slugs = {p["slug"] for p in pages}
     pinned = []
     listed = []
     for p in pages:
@@ -110,7 +107,7 @@ def subdomain_home(user):
         if not user.get("avatar") and not user.get("bio"):
             profile_incomplete = True
     bio = user.get("bio")
-    bio_html = render_bio(bio, existing_slugs) if bio else ""
+    bio_html = render_bio(bio) if bio else ""
     return render_template(
         "subdomain_home.html",
         user=user,
@@ -202,11 +199,7 @@ def view_page(slug):
 
     page_title = get_title(row["content"])
     page_description = get_description(row["content"])
-    existing_slugs = None
-    if subdomain_user:
-        existing_slugs = get_slugs_for_user(subdomain_user["id"])
-    content = process_wikilinks(row["content"], existing_slugs)
-    html = render_markdown(content)
+    html = render_markdown(row["content"])
     html = html.replace("<h1>", '<h1 class="p-name">', 1)
 
     content_title = ""
@@ -225,7 +218,7 @@ def view_page(slug):
         site_title = subdomain_user.get("name") or subdomain_user.get("username")
         avatar_url = subdomain_user.get("avatar")
         bio = subdomain_user.get("bio")
-        bio_html = render_bio(bio, existing_slugs) if bio else ""
+        bio_html = render_bio(bio) if bio else ""
         license_info = LICENSES.get(subdomain_user.get("license") or "")
 
     owner_initials = None
@@ -320,7 +313,7 @@ def view_revision(slug, revision):
     if not row:
         abort(404)
 
-    html = render_markdown(process_wikilinks(row["content"]))
+    html = render_markdown(row["content"])
     return render_template(
         "revision.html",
         content=html,
@@ -346,7 +339,7 @@ def _build_site_feed_entries(user_id):
                 "title": get_title(entry["content"]) or "",
                 "url": page_url,
                 "body": body,
-                "body_html": render_markdown(process_wikilinks(body)),
+                "body_html": render_markdown(body),
                 "created_at": entry["created_at"],
             }
         )
@@ -365,7 +358,7 @@ def _build_feed_entries(page_id, slug):
                 "title": get_title(entry["content"]) or "",
                 "url": page_url,
                 "body": body,
-                "body_html": render_markdown(process_wikilinks(body)),
+                "body_html": render_markdown(body),
                 "created_at": entry["created_at"],
             }
         )

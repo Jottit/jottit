@@ -101,10 +101,11 @@ def test_render_bio_plain_text():
     assert render_bio("Just a writer") == "Just a writer"
 
 
-# Bio wikilinks render as HTML links
-def test_render_bio_wikilink():
+# Bio wikilinks render as plain text (wikilinks not supported)
+def test_render_bio_wikilink_plain():
     result = render_bio("See [[About]]")
-    assert '<a href="/about">About</a>' in result
+    assert "[[About]]" in result
+    assert "<a" not in result
 
 
 # Bio markdown links render as HTML links

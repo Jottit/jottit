@@ -220,8 +220,9 @@ def test_slugify():
     assert slugify("123 Numbers") == "123-numbers"
 
 
-# [[About]] wikilinks render as HTML links
-def test_wikilink_renders(client):
+# Wikilinks are not supported — render as literal text
+def test_wikilink_renders_as_text(client):
     client.post("/wl1/edit", data={"title": "", "content": "See [[About]]"})
     r = client.get("/wl1")
-    assert b'<a href="/about">About</a>' in r.data
+    assert b"[[About]]" in r.data
+    assert b'<a href="/about">' not in r.data

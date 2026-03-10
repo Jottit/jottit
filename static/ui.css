@@ -445,9 +445,6 @@
 .profile-bio a {
     text-decoration: underline;
 }
-.profile-bio a.wikilink-new {
-    text-decoration-style: dashed;
-}
 
 /* Profile header variants — same centered structure, elements layer in */
 

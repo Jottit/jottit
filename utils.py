@@ -72,39 +72,14 @@ def valid_username(s):
     return bool(re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", s))
 
 
-def process_wikilinks(content, existing_slugs=None):
-    def replace(match):
-        name = match.group(1).strip()
-        if not name:
-            return match.group(0)
-        page_slug = slugify(name)
-        if not page_slug:
-            return match.group(0)
-        display = html_escape(name)
-        if existing_slugs is not None and page_slug not in existing_slugs:
-            return f'<a href="/{page_slug}" class="wikilink-new">{display}</a>'
-        return f'<a href="/{page_slug}">{display}</a>'
-
-    return re.sub(r"\[\[([^\[\]]+)\]\]", replace, content)
-
-
-def render_bio(text, existing_slugs=None):
-    text = process_wikilinks(text, existing_slugs)
-
+def render_bio(text):
     def replace_md_link(m):
         display = html_escape(m.group(1))
         href = html_escape(m.group(2))
-        css = ""
-        if existing_slugs is not None and href.startswith("/"):
-            slug = href.lstrip("/")
-            if slug and slug not in existing_slugs:
-                css = ' class="wikilink-new"'
-        return f'<a href="{href}"{css}>{display}</a>'
+        return f'<a href="{href}">{display}</a>'
 
     text = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", replace_md_link, text)
-    return nh3.clean(
-        text, tags={"a"}, attributes={"a": {"href", "class"}}, link_rel=None
-    )
+    return nh3.clean(text, tags={"a"}, attributes={"a": {"href"}}, link_rel=None)
 
 
 def get_title(content):

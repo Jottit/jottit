@@ -72,10 +72,6 @@
     text-decoration: underline;
 }
 
-a.wikilink-new {
-    text-decoration-style: dashed;
-}
-
 .page ul,
 .page ol {
     margin-bottom: 1.5rem;
