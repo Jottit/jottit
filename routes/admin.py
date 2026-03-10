@@ -4,6 +4,7 @@ from flask import flash, redirect, render_template, request, session
 
 from db import (
     check_username_available,
+    delete_user,
     find_or_create_user,
     update_user_avatar,
     update_user_settings,
@@ -202,6 +203,26 @@ def settings_avatar():
     url = upload_image(key, cropped, file.content_type)
     update_user_avatar(user_id, url)
     return redirect("/settings/profile")
+
+
+@bp.route("/settings/delete", methods=["GET", "POST"])
+def settings_delete():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    if request.method == "GET":
+        return render_template("settings_delete.html")
+
+    confirm = request.form.get("confirm", "").strip().lower()
+    if confirm != "delete":
+        return render_template(
+            "settings_delete.html", error='Please type "delete" to confirm.'
+        )
+
+    delete_user(user_id)
+    session.clear()
+    return redirect("/")
 
 
 @bp.route("/settings/avatar/delete", methods=["POST"])

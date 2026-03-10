@@ -171,7 +171,12 @@ def view_page(slug):
                 return redirect(f"/{slug}/edit")
             abort(404)
     else:
-        page_meta = get_page_meta(slug)
+        if session.get("user_id"):
+            page_meta = get_page_meta(slug, session["user_id"])
+        else:
+            page_meta = None
+        if not page_meta:
+            page_meta = get_page_meta(slug)
         if not page_meta:
             owner_user_id = find_page_owner_for_redirect(slug)
             if owner_user_id:
@@ -179,7 +184,7 @@ def view_page(slug):
                 if user and user.get("username"):
                     return redirect(subdomain_url(user["username"], f"/{slug}"))
             original = find_page_by_original_slug(slug)
-            if original:
+            if original and original["slug"] != slug:
                 if original["user_id"]:
                     owner = get_user(original["user_id"])
                     if owner and owner.get("username"):

@@ -1057,6 +1057,14 @@
     font-size: var(--font-size-md);
 }
 
+.settings-delete-link {
+    display: block;
+    text-align: center;
+    margin-top: var(--space-8);
+    font-size: var(--font-size-xs);
+    color: var(--muted);
+}
+
 .settings-row-right {
     display: flex;
     align-items: center;

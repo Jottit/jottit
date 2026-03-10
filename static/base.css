@@ -481,18 +481,34 @@ select:focus {
     }
 }
 
+.delete-confirm-label {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    margin-bottom: var(--space-2);
+}
+
+.delete-form .input {
+    margin-bottom: var(--space-3);
+}
+
 .delete-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.delete-form-actions {
     display: flex;
     justify-content: center;
     gap: var(--space-3);
 }
 
 @media (max-width: 640px) {
-    .delete-form {
+    .delete-form-actions {
         flex-direction: column;
     }
 
-    .delete-form .btn {
+    .delete-form-actions .btn {
         width: 100%;
         text-align: center;
     }
