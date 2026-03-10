@@ -4,14 +4,19 @@ var preview = document.getElementById('preview');
 var siteSlug = document.querySelector('.editor').dataset.slug;
 
 function smartypants(html) {
-    return html
-        .replace(/---/g, '\u2014')
-        .replace(/--/g, '\u2013')
-        .replace(/\.\.\./g, '\u2026')
-        .replace(/(^|[-\u2014/(\[{"\s])'/g, '$1\u2018')
-        .replace(/'/g, '\u2019')
-        .replace(/(^|[-\u2014/(\[{\u2018\s])"/g, '$1\u201C')
-        .replace(/"/g, '\u201D');
+    var parts = html.split(/(<[^>]*>)/);
+    for (var i = 0; i < parts.length; i++) {
+        if (parts[i].charAt(0) === '<') continue;
+        parts[i] = parts[i]
+            .replace(/---/g, '\u2014')
+            .replace(/--/g, '\u2013')
+            .replace(/\.\.\./g, '\u2026')
+            .replace(/(^|[-\u2014/(\[{"\s])'/g, '$1\u2018')
+            .replace(/'/g, '\u2019')
+            .replace(/(^|[-\u2014/(\[{\u2018\s])"/g, '$1\u201C')
+            .replace(/"/g, '\u201D');
+    }
+    return parts.join('');
 }
 
 function processWikilinks(text) {
