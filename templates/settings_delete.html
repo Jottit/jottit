@@ -7,11 +7,11 @@
     <a href="/settings" class="panel-back">&larr; Settings</a>
     <h1 class="title">Delete account</h1>
     <div class="panel panel--compact">
-        <p class="danger-confirm-text">This will permanently delete your account and unlink all your pages. This cannot be undone.</p>
-
         {% if error %}
-        <p class="error">{{ error }}</p>
+        <p class="notice notice--error">{{ error }}</p>
         {% endif %}
+
+        <p class="danger-confirm-text">This will permanently delete your account and unlink all your pages. This cannot be undone.</p>
 
         <form method="post" action="/settings/delete" class="delete-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

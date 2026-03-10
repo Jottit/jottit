@@ -307,8 +307,9 @@ a {
 
 
 .panel--compact {
+    --panel-padding: var(--space-10);
     max-width: 450px;
-    padding: var(--space-10);
+    padding: var(--panel-padding);
 }
 
 .panel--wide {
