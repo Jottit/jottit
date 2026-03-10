@@ -364,6 +364,10 @@ def test_signin_page(client):
 # Full sign-in: submit email, verify code, session contains user_id
 def test_signin_full_flow(client):
     r = client.post("/signin", data={"email": "user@example.com"})
+    assert r.status_code == 302
+    assert "/signin/verify" in r.headers["Location"]
+
+    r = client.get("/signin/verify")
     assert r.status_code == 200
     assert b"Check your email" in r.data
 

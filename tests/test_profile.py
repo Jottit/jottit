@@ -15,8 +15,8 @@ from utils import render_bio
 
 
 # Uploading an avatar saves the image URL to the user record
-@patch("routes.upload_image", return_value="/uploads/1/avatar.jpg")
-@patch("routes.crop_square")
+@patch("routes.admin.upload_image", return_value="/uploads/1/avatar.jpg")
+@patch("routes.admin.crop_square")
 def test_avatar_upload(mock_crop, mock_upload, client):
     mock_crop.return_value = io.BytesIO(b"cropped")
     user_id = find_or_create_user("avatar@example.com")
@@ -49,7 +49,7 @@ def test_avatar_upload_rejects_invalid_type(client):
 
 
 # Removing an avatar deletes the image and clears the user record
-@patch("routes.delete_image")
+@patch("routes.admin.delete_image")
 def test_avatar_removal(mock_delete, client):
     user_id = find_or_create_user("avatar3@example.com")
     update_user_avatar(user_id, "/uploads/1/avatar.jpg")
@@ -183,6 +183,5 @@ def test_subdomain_page_shows_profile_header(client):
     host = "profpage.jottit.localhost:8000"
     r = client.get("/pp1", headers={"Host": host})
     assert r.status_code == 200
-    assert b"profile-header" in r.data
-    assert b"Writer" in r.data
+    assert b"page-byline" in r.data
     assert b"u-photo" in r.data

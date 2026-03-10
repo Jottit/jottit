@@ -1,15 +1,32 @@
 import json
 
 from conftest import create_user_with_username
-from db import claim_page, get_page_meta, save_page, update_page_listing
+from db import (
+    claim_page,
+    find_or_create_user,
+    get_page_meta,
+    save_page,
+    set_user_username,
+    update_page_listing,
+)
 
 # -- RSS Feed --
 
 
+def _create_claimed_page(slug, title, content):
+    user_id = find_or_create_user(f"{slug}@example.com")
+    set_user_username(user_id, slug)
+    save_page(slug, f"# {title}\n\n{content}", False)
+    page_meta = get_page_meta(slug)
+    claim_page(page_meta["id"], user_id)
+    return user_id
+
+
 # Single-page RSS feed returns valid RSS XML with title and content
 def test_rss_feed(client):
-    client.post("/feed1/edit", data={"title": "Hello", "content": "World"})
-    r = client.get("/feed1/feed.xml")
+    _create_claimed_page("feed1", "Hello", "World")
+    host = "feed1.jottit.localhost:8000"
+    r = client.get("/feed1/feed.xml", headers={"Host": host})
     assert r.status_code == 200
     assert r.content_type == "application/rss+xml; charset=utf-8"
     assert b"<title>Hello</title>" in r.data
@@ -25,8 +42,9 @@ def test_rss_feed_nonexistent(client):
 
 # RSS feed includes source markdown in a custom element
 def test_rss_feed_has_source_markdown(client):
-    client.post("/feed5/edit", data={"title": "T", "content": "**bold**"})
-    r = client.get("/feed5/feed.xml")
+    _create_claimed_page("feed5", "T", "**bold**")
+    host = "feed5.jottit.localhost:8000"
+    r = client.get("/feed5/feed.xml", headers={"Host": host})
     assert b"<source:markdown>" in r.data
     assert b"**bold**" in r.data
 
@@ -36,8 +54,9 @@ def test_rss_feed_has_source_markdown(client):
 
 # Single-page JSON feed returns valid JSON Feed 1.1 with content and source markdown
 def test_json_feed(client):
-    client.post("/jf1/edit", data={"title": "Hello", "content": "World"})
-    r = client.get("/jf1/feed.json")
+    _create_claimed_page("jf1", "Hello", "World")
+    host = "jf1.jottit.localhost:8000"
+    r = client.get("/jf1/feed.json", headers={"Host": host})
     assert r.status_code == 200
     assert r.content_type == "application/feed+json; charset=utf-8"
     feed = json.loads(r.data)
@@ -58,14 +77,15 @@ def test_json_feed_nonexistent(client):
 # -- Feed discovery --
 
 
-# Published pages include RSS and JSON feed discovery link tags
+# Published pages on subdomains include RSS and JSON feed discovery link tags
 def test_page_has_feed_discovery_links(client):
-    client.post("/disc1/edit", data={"title": "T", "content": "X"})
-    r = client.get("/disc1")
+    _create_claimed_page("disc1", "T", "X")
+    host = "disc1.jottit.localhost:8000"
+    r = client.get("/disc1", headers={"Host": host})
     assert b'type="application/rss+xml"' in r.data
-    assert b"/disc1/feed.xml" in r.data
+    assert b"/feed.xml" in r.data
     assert b'type="application/feed+json"' in r.data
-    assert b"/disc1/feed.json" in r.data
+    assert b"/feed.json" in r.data
 
 
 # -- Site-level feeds --

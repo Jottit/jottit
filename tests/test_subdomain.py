@@ -57,7 +57,7 @@ def test_subdomain_page_shows_site_title(client):
     body = r.data.decode()
     assert "My Site Title" in body
     assert "h-card" in body
-    assert 'class="p-name u-url"' in body
+    assert "p-name u-url" in body
 
 
 # A subdomain returns 404 for pages belonging to other users

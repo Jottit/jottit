@@ -44,6 +44,7 @@ from routes import (
     bp,
     BASE_DOMAIN,
     LICENSES,
+    account_link_vars,
     compute_initials,
     find_page,
     is_creator,
@@ -65,31 +66,14 @@ def home():
     if subdomain_user:
         return subdomain_home(subdomain_user)
 
-    signed_in = "user_id" in session
     pages = []
-    owner_avatar_url = None
-    owner_initials = None
-    user = None
-    if signed_in:
-        user_id = session["user_id"]
-        pages = get_pages_for_user(user_id)
-        user = g.current_user
-        if user:
-            owner_avatar_url = user.get("avatar")
-            owner_initials = compute_initials(user)
-    profile_url = (
-        subdomain_url(user["username"])
-        if user and user.get("username")
-        else "/settings"
-    )
+    if "user_id" in session:
+        pages = get_pages_for_user(session["user_id"])
     return render_template(
         "home.html",
-        signed_in=signed_in,
         pages=pages[:3],
         has_more_pages=len(pages) > 3,
-        owner_avatar_url=owner_avatar_url,
-        owner_initials=owner_initials,
-        profile_url=profile_url,
+        **account_link_vars(),
     )
 
 
@@ -147,14 +131,14 @@ def subdomain_home(user):
 def about():
     if g.subdomain_user:
         return view_page("about")
-    return render_template("about.html", signed_in="user_id" in session)
+    return render_template("about.html", **account_link_vars())
 
 
 @bp.route("/talk")
 def talk():
     if g.subdomain_user:
         return view_page("talk")
-    return render_template("talk.html", signed_in="user_id" in session)
+    return render_template("talk.html", **account_link_vars())
 
 
 @bp.route("/<slug>")

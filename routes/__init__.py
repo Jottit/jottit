@@ -94,6 +94,24 @@ def send_verification(email, purpose):
     session[f"{purpose}_email"] = email
 
 
+def account_link_vars():
+    signed_in = "user_id" in session
+    user = g.current_user if signed_in else None
+    owner_avatar_url = user.get("avatar") if user else None
+    owner_initials = compute_initials(user) if user else None
+    profile_url = (
+        subdomain_url(user["username"])
+        if user and user.get("username")
+        else "/settings"
+    )
+    return {
+        "signed_in": signed_in,
+        "owner_avatar_url": owner_avatar_url,
+        "owner_initials": owner_initials,
+        "profile_url": profile_url,
+    }
+
+
 def require_user():
     user_id = session.get("user_id")
     if not user_id:

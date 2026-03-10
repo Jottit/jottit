@@ -1,0 +1,11 @@
+{% if signed_in %} {% if owner_avatar_url %}
+<a href="{{ profile_url }}" class="signin-link"
+  ><img src="{{ owner_avatar_url }}" alt="" class="admin-avatar-img"
+/></a>
+{% else %}
+<a href="{{ profile_url }}" class="signin-link admin-avatar">{{ owner_initials }}</a>
+{% endif %} {% else %}
+<span class="signin-link"
+  >Already have an account? <a href="/signin">Sign in</a></span
+>
+{% endif %}

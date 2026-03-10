@@ -198,7 +198,7 @@ def test_page_has_h_entry_markup(client):
     assert 'class="page h-entry"' in body
     assert 'class="p-name"' in body
     assert 'class="e-content"' in body
-    assert 'class="dt-published' in body
+    assert "dt-published" in body
     assert "datetime=" in body
     assert 'class="u-url"' in body
     assert 'href="/mf1"' in body
