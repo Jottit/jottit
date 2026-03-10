@@ -3,6 +3,17 @@ var contentInput = document.querySelector('.editor-content');
 var preview = document.getElementById('preview');
 var siteSlug = document.querySelector('.editor').dataset.slug;
 
+function smartypants(html) {
+    return html
+        .replace(/---/g, '\u2014')
+        .replace(/--/g, '\u2013')
+        .replace(/\.\.\./g, '\u2026')
+        .replace(/(^|[-\u2014/(\[{"\s])'/g, '$1\u2018')
+        .replace(/'/g, '\u2019')
+        .replace(/(^|[-\u2014/(\[{\u2018\s])"/g, '$1\u201C')
+        .replace(/"/g, '\u201D');
+}
+
 function processWikilinks(text) {
     return text.replace(/\[\[([^\[\]]+)\]\]/g, function(match, name) {
         name = name.trim();
@@ -19,7 +30,7 @@ function updatePreview() {
     var body = contentInput.value;
     var html = '';
     if (title) html += '<h1>' + title.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</h1>';
-    if (body) html += marked.parse(processWikilinks(body));
+    if (body) html += smartypants(marked.parse(processWikilinks(body)));
     preview.innerHTML = html;
 }
 
