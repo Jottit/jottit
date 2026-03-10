@@ -2,7 +2,7 @@
 
 A radically simple web publishing tool. Write markdown, get a beautiful page with a shareable URL.
 
-The original Jottit was co-created by Simon Carstensen and Aaron Swartz in 2007. This is a spiritual successor — simpler, with dramatically better typography and design.
+The original Jottit was co-created by Simon Carstensen and Aaron Swartz in 2007. This is a spiritual successor.
 
 **Live at [jottit.org](https://jottit.org)**
 
@@ -10,14 +10,14 @@ The original Jottit was co-created by Simon Carstensen and Aaron Swartz in 2007.
 
 1. Click "Create a page"
 2. Write markdown in the split-pane editor
-3. Hit publish — get a shareable URL
+3. Hit publish, get a shareable URL
 
-No account required. Claim your page later with just an email.
+No account required. Claim your page later with just an email to create an account.
 
 ## Stack
 
 - Flask + Jinja2 (server-side rendered)
-- Vanilla JS (editor only — no JS on published pages)
+- Vanilla JS (admin only, no JS on published pages)
 - Vanilla CSS
 - PostgreSQL
 
@@ -42,8 +42,12 @@ pytest
 
 ## Funding
 
-This project was funded by Paul Graham.
+This project was made possible by the generous support of Paul Graham. Thank you, PG.
+
+## Built with
+
+Jottit was built using [Claude Code](https://claude.ai/claude-code).
 
 ## License
 
-MIT
+AGPL
