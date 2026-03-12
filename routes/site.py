@@ -417,8 +417,9 @@ def delete_page_route(slug):
         )
 
     delete_page(page_meta["id"])
-    if g.subdomain_user:
-        return redirect(profile_url(g.subdomain_user["username"]))
+    user = get_user(user_id) if user_id else None
+    if user and user.get("username"):
+        return redirect(profile_url(user["username"]))
     return redirect(base_url("/"))
 
 
