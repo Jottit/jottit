@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Account — Jottit{% endblock %}
+{% block title %}Username — Jottit{% endblock %}
 
 {% block body %}
 <div class="panel-page">
     <a href="/settings" class="panel-back">&larr; Settings</a>
-    <h1 class="title">Account</h1>
+    <h1 class="title">Username</h1>
     <div class="panel">
 
         {% for message in get_flashed_messages() %}
@@ -15,7 +15,7 @@
         <p class="notice notice--error">{{ error }}</p>
         {% endif %}
 
-        <form method="post" action="/settings/account">
+        <form method="post" action="/settings/username">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="field">
                 <label class="label" for="username">Username</label>
@@ -29,13 +29,7 @@
 
             <button type="submit" class="btn btn-solid settings-save">Save</button>
         </form>
-
-        <div class="field">
-            <span class="label">Email</span>
-            <p>{{ user.email }}</p>
-        </div>
     </div>
-    <a href="/settings/delete" class="settings-delete-link">Delete account</a>
 </div>
 <script src="/static/settings.js?v={{ asset_v }}"></script>
 <script src="/static/check-username.js?v={{ asset_v }}" data-current="{{ user.username or '' }}"></script>

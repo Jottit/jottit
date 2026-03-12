@@ -910,7 +910,6 @@
 .auth-subdomain-row .auth-input {
     flex: 0 0 auto;
     width: 10ch;
-    text-align: right;
     margin-bottom: 0;
     border-bottom: none;
 }
@@ -919,6 +918,7 @@
     border-bottom: none;
 }
 
+.auth-subdomain-prefix,
 .auth-subdomain-suffix {
     font-size: var(--font-size-xl);
     color: var(--muted);
@@ -1148,6 +1148,7 @@
 .settings-subdomain-row .input {
     border: none;
     background: transparent;
+    padding-left: 0;
 }
 
 .settings-subdomain-row .input:focus {
@@ -1160,11 +1161,19 @@
     margin-top: var(--space-2);
 }
 
+.settings-subdomain-prefix,
 .settings-subdomain-suffix {
-    padding-right: var(--space-3);
     font-size: var(--font-size-sm);
     color: var(--muted);
     white-space: nowrap;
+}
+
+.settings-subdomain-prefix {
+    padding-left: var(--space-3);
+}
+
+.settings-subdomain-suffix {
+    padding-right: var(--space-3);
 }
 
 .notice {

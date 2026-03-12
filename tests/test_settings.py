@@ -2,6 +2,7 @@ import json
 
 from db import (
     claim_page,
+    create_verification_code,
     find_or_create_user,
     get_page_meta,
     get_user,
@@ -32,7 +33,8 @@ def test_user_settings_shows_hub(client):
     assert r.status_code == 200
     assert b"Hub User" in r.data
     assert b"My bio" in r.data
-    assert b"Account" in r.data
+    assert b"Username" in r.data
+    assert b"Email" in r.data
     assert b"Export" in r.data
     assert b"Sign out" in r.data
 
@@ -64,27 +66,26 @@ def test_settings_profile_save(client):
     assert user["bio"] == "Hello"
 
 
-# Account settings page shows username, email, and delete link
-def test_settings_account_page(client):
-    user_id = find_or_create_user("account@example.com")
-    set_user_username(user_id, "acctuser")
+# Username settings page shows form
+def test_settings_username_page(client):
+    user_id = find_or_create_user("uname@example.com")
+    set_user_username(user_id, "unameuser")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.get("/settings/account")
+    r = client.get("/settings/username")
     assert r.status_code == 200
-    assert b"account@example.com" in r.data
+    assert b"Username" in r.data
     assert b"jottit.org/@" in r.data
-    assert b"Delete account" in r.data
 
 
-# Saving username via account settings
-def test_settings_account_save_username(client):
+# Saving username
+def test_settings_username_save(client):
     user_id = find_or_create_user("setsub2@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post("/settings/account", data={"username": "myname"})
+    r = client.post("/settings/username", data={"username": "myname"})
     assert r.status_code == 302
 
     user = get_user(user_id)
@@ -92,18 +93,18 @@ def test_settings_account_save_username(client):
 
 
 # Invalid username format is rejected
-def test_settings_account_invalid_username(client):
+def test_settings_username_invalid(client):
     user_id = find_or_create_user("settings3@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post("/settings/account", data={"username": "BAD!"})
+    r = client.post("/settings/username", data={"username": "BAD!"})
     assert r.status_code == 200
     assert b"lowercase" in r.data
 
 
 # Duplicate username is rejected
-def test_settings_account_username_uniqueness(client):
+def test_settings_username_uniqueness(client):
     user_id1 = find_or_create_user("settings4@example.com")
     set_user_username(user_id1, "taken")
 
@@ -111,12 +112,86 @@ def test_settings_account_username_uniqueness(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id2
 
-    r = client.post("/settings/account", data={"username": "taken"})
+    r = client.post("/settings/username", data={"username": "taken"})
     assert r.status_code == 200
     assert b"already taken" in r.data
 
 
-# Old /settings/subdomain redirects to /settings/account
+# Email settings page shows email and delete link
+def test_settings_email_page(client):
+    user_id = find_or_create_user("emailpage@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/settings/email")
+    assert r.status_code == 200
+    assert b"emailpage@example.com" in r.data
+    assert b"Delete account" in r.data
+
+
+# Email change sends verification code and updates after verify
+def test_settings_email_change_flow(client):
+    user_id = find_or_create_user("old@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/settings/email", data={"email": "new@example.com"})
+    assert r.status_code == 302
+    assert "/settings/email/verify" in r.headers["Location"]
+
+    code = create_verification_code("new@example.com", "email_change")
+    r = client.post(
+        "/settings/email/verify", data={"code": code, "email": "new@example.com"}
+    )
+    assert r.status_code == 302
+    assert "/settings/email" in r.headers["Location"]
+
+    user = get_user(user_id)
+    assert user["email"] == "new@example.com"
+
+
+# Email change rejects invalid code
+def test_settings_email_change_invalid_code(client):
+    user_id = find_or_create_user("emailcode@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    client.post("/settings/email", data={"email": "emailnew@example.com"})
+    r = client.post(
+        "/settings/email/verify",
+        data={"code": "000000", "email": "emailnew@example.com"},
+    )
+    assert r.status_code == 200
+    assert b"Invalid" in r.data
+
+    user = get_user(user_id)
+    assert user["email"] == "emailcode@example.com"
+
+
+# Email change rejects already-used email
+def test_settings_email_change_rejects_taken(client):
+    find_or_create_user("taken@example.com")
+    user_id = find_or_create_user("changer@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/settings/email", data={"email": "taken@example.com"})
+    assert r.status_code == 200
+    assert b"already in use" in r.data
+
+
+# Submitting same email redirects back without verification
+def test_settings_email_change_same_email(client):
+    user_id = find_or_create_user("same@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.post("/settings/email", data={"email": "same@example.com"})
+    assert r.status_code == 302
+    assert "/settings/email" in r.headers["Location"]
+
+
+# Old /settings/subdomain redirects to /settings/username
 def test_settings_subdomain_redirects(client):
     user_id = find_or_create_user("redirsub@example.com")
     with client.session_transaction() as sess:
@@ -124,10 +199,10 @@ def test_settings_subdomain_redirects(client):
 
     r = client.get("/settings/subdomain")
     assert r.status_code == 301
-    assert "/settings/account" in r.headers["Location"]
+    assert "/settings/username" in r.headers["Location"]
 
 
-# Old /settings/address redirects to /settings/account
+# Old /settings/address redirects to /settings/username
 def test_settings_address_redirects(client):
     user_id = find_or_create_user("rediraddr@example.com")
     with client.session_transaction() as sess:
@@ -135,7 +210,7 @@ def test_settings_address_redirects(client):
 
     r = client.get("/settings/address")
     assert r.status_code == 301
-    assert "/settings/account" in r.headers["Location"]
+    assert "/settings/username" in r.headers["Location"]
 
 
 # Export settings page renders with a download option

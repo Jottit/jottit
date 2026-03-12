@@ -8,6 +8,7 @@ from db import (
     find_or_create_user,
     get_user,
     update_user_avatar,
+    update_user_email,
     update_user_settings,
     user_exists,
     verify_code,
@@ -143,23 +144,28 @@ def settings_license():
 
 @bp.route("/settings/address", methods=["GET", "POST"])
 def settings_address_redirect():
-    return redirect("/settings/account", 301)
+    return redirect("/settings/username", 301)
 
 
 @bp.route("/settings/subdomain", methods=["GET", "POST"])
 def settings_subdomain_redirect():
-    return redirect("/settings/account", 301)
+    return redirect("/settings/username", 301)
 
 
 @bp.route("/settings/account", methods=["GET", "POST"])
+def settings_account_redirect():
+    return redirect("/settings/username", 301)
+
+
+@bp.route("/settings/username", methods=["GET", "POST"])
 @limiter.limit("5 per 5 minutes", methods=["POST"])
-def settings_account():
+def settings_username():
     user_id, user = require_user()
     if not user:
         return redirect("/signin")
 
     if request.method == "GET":
-        return render_template("settings_account.html", user=user)
+        return render_template("settings_username.html", user=user)
 
     username = request.form.get("username", "").strip().lower()
 
@@ -174,7 +180,7 @@ def settings_account():
 
     if error:
         return render_template(
-            "settings_account.html",
+            "settings_username.html",
             user={**user, "username": username},
             error=error,
         )
@@ -187,7 +193,78 @@ def settings_account():
         user.get("license"),
     )
     flash("Saved")
-    return redirect("/settings/account")
+    return redirect("/settings/username")
+
+
+@bp.route("/settings/email", methods=["GET", "POST"])
+@limiter.limit("5 per 5 minutes", methods=["POST"])
+def settings_email():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    if request.method == "GET":
+        return render_template("settings_email.html", user=user)
+
+    email = request.form.get("email", "").strip().lower()
+    if not email:
+        return render_template(
+            "settings_email.html", user=user, error="Email is required."
+        )
+    if not valid_email(email):
+        return render_template(
+            "settings_email.html",
+            user={**user, "email": email},
+            error="Please enter a valid email address.",
+        )
+    if email == user["email"]:
+        return redirect("/settings/email")
+    if user_exists(email):
+        return render_template(
+            "settings_email.html",
+            user={**user, "email": email},
+            error="That email is already in use.",
+        )
+
+    send_verification(email, "email_change")
+    session["email_change_new"] = email
+    return redirect("/settings/email/verify")
+
+
+@bp.route("/settings/email/verify", methods=["GET", "POST"])
+@limiter.limit("5 per 10 minutes", methods=["POST"])
+def settings_email_verify():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    email = session.get("email_change_new")
+    if not email:
+        return redirect("/settings/email")
+
+    if request.method == "GET":
+        return render_template(
+            "verify.html", email=email, action="/settings/email/verify"
+        )
+
+    code = request.form.get("code", "").strip()
+    if not verify_code(email, code, "email_change"):
+        return render_template(
+            "verify.html",
+            email=email,
+            action="/settings/email/verify",
+            error="Invalid or expired code.",
+        )
+
+    if user_exists(email):
+        session.pop("email_change_new", None)
+        flash("That email is already in use.")
+        return redirect("/settings/email")
+
+    update_user_email(user_id, email)
+    session.pop("email_change_new", None)
+    flash("Email updated")
+    return redirect("/settings/email")
 
 
 @bp.route("/settings/export")

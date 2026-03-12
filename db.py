@@ -486,6 +486,15 @@ def delete_page(page_id):
         conn.commit()
 
 
+def update_user_email(user_id, email):
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE users SET email = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (email, user_id),
+        )
+        conn.commit()
+
+
 def delete_user(user_id):
     with get_db() as conn:
         conn.execute("UPDATE pages SET user_id = NULL WHERE user_id = %s", (user_id,))
