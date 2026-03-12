@@ -72,10 +72,13 @@ def valid_username(s):
     return bool(re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", s))
 
 
-def render_bio(text):
+def render_bio(text, url_prefix=""):
     def replace_md_link(m):
         display = html_escape(m.group(1))
-        href = html_escape(m.group(2))
+        href = m.group(2)
+        if url_prefix and not href.startswith(("http://", "https://", "/", "#")):
+            href = f"{url_prefix}/{href}"
+        href = html_escape(href)
         return f'<a href="{href}">{display}</a>'
 
     text = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", replace_md_link, text)

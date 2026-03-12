@@ -104,7 +104,7 @@ def subdomain_home(user):
         if not user.get("avatar") and not user.get("bio"):
             profile_incomplete = True
     bio = user.get("bio")
-    bio_html = render_bio(bio) if bio else ""
+    bio_html = render_bio(bio, g.url_prefix) if bio else ""
     return render_template(
         "profile.html",
         user=user,
@@ -262,7 +262,7 @@ def view_page(slug):
         site_title = subdomain_user.get("name") or subdomain_user.get("username")
         avatar_url = subdomain_user.get("avatar")
         bio = subdomain_user.get("bio")
-        bio_html = render_bio(bio) if bio else ""
+        bio_html = render_bio(bio, g.url_prefix) if bio else ""
         license_info = LICENSES.get(subdomain_user.get("license") or "")
 
     owner_initials = None
