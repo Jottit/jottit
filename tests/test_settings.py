@@ -21,7 +21,7 @@ def test_settings_requires_signin(client):
     assert "/signin" in r.headers["Location"]
 
 
-# Settings page shows name, bio, account, address, export, and sign out
+# Settings page shows name, bio, username, email, export, and sign out
 def test_user_settings_shows_hub(client):
     user_id = find_or_create_user("settings@example.com")
     set_user_username(user_id, "sethub")
@@ -37,6 +37,7 @@ def test_user_settings_shows_hub(client):
     assert b"Email" in r.data
     assert b"Export" in r.data
     assert b"Sign out" in r.data
+    assert b"Delete account" in r.data
 
 
 # Profile settings page shows name and bio fields
@@ -117,7 +118,7 @@ def test_settings_username_uniqueness(client):
     assert b"already taken" in r.data
 
 
-# Email settings page shows email and delete link
+# Email settings page shows email
 def test_settings_email_page(client):
     user_id = find_or_create_user("emailpage@example.com")
     with client.session_transaction() as sess:
@@ -126,7 +127,6 @@ def test_settings_email_page(client):
     r = client.get("/settings/email")
     assert r.status_code == 200
     assert b"emailpage@example.com" in r.data
-    assert b"Delete account" in r.data
 
 
 # Email change sends verification code and updates after verify

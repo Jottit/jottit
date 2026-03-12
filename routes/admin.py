@@ -154,7 +154,7 @@ def settings_subdomain_redirect():
 
 @bp.route("/settings/account", methods=["GET", "POST"])
 def settings_account_redirect():
-    return redirect("/settings/username", 301)
+    return redirect("/settings/email", 301)
 
 
 @bp.route("/settings/username", methods=["GET", "POST"])
