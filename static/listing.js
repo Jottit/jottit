@@ -1,10 +1,10 @@
 (function() {
+    var form = document.querySelector('.listing-form');
     var select = document.querySelector('.listing-select');
     var csrf = document.querySelector('input[name="csrf_token"]');
-    if (!select) return;
+    if (!select || !form) return;
     select.addEventListener('change', function() {
-        var slug = select.getAttribute('data-slug');
-        fetch('/' + slug + '/listing', {
+        fetch(form.action, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

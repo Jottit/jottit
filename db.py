@@ -263,7 +263,7 @@ def get_revision(page_id, revision):
 def get_user(user_id):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, email, username, name, bio, avatar, license FROM users WHERE id = %s",
+            "SELECT id, email, username, name, bio, avatar, license, subdomain FROM users WHERE id = %s",
             (user_id,),
         ).fetchone()
 
@@ -271,7 +271,7 @@ def get_user(user_id):
 def get_user_by_username(username):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, email, username, name, bio, avatar, license FROM users WHERE username = %s",
+            "SELECT id, email, username, name, bio, avatar, license, subdomain FROM users WHERE username = %s",
             (username,),
         ).fetchone()
 

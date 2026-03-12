@@ -8,8 +8,8 @@
 
 {% block head %}
 {% if is_subdomain %}
-<link rel="alternate" type="application/rss+xml" href="/feed.xml" title="{{ site_title or page_title or 'Jottit' }}">
-<link rel="alternate" type="application/feed+json" href="/feed.json" title="{{ site_title or page_title or 'Jottit' }}">
+<link rel="alternate" type="application/rss+xml" href="{{ url_prefix }}/feed.xml" title="{{ site_title or page_title or 'Jottit' }}">
+<link rel="alternate" type="application/feed+json" href="{{ url_prefix }}/feed.json" title="{{ site_title or page_title or 'Jottit' }}">
 {% endif %}
 {% endblock %}
 
@@ -18,7 +18,7 @@
 <div class="admin-banner">
     <a href="{{ base_url }}" class="admin-banner-home">Jottit</a>
     <div class="admin-banner-actions">
-        <a href="/new" class="btn btn-publish btn--sm">Create page</a>
+        <a href="{{ url_prefix }}/new" class="btn btn-publish btn--sm">Write</a>
         {% if owner_avatar_url %}
         <a href="{{ base_url }}/settings" title="Settings"><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"></a>
         {% else %}
@@ -30,9 +30,9 @@
 {% if site_title %}
 <header class="page-byline h-card">
     {% if avatar_url %}
-    <a href="/"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="page-byline-avatar u-photo"></a>
+    <a href="{{ url_prefix }}"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="page-byline-avatar u-photo"></a>
     {% endif %}
-    <a class="page-byline-name p-name u-url" href="/">{{ site_title }}</a>
+    <a class="page-byline-name p-name u-url" href="{{ url_prefix }}">{{ site_title }}</a>
 </header>
 {% endif %}
 {% if unclaimed %}
@@ -45,12 +45,12 @@
         {% if content_title %}<div class="e-content-title">{{ content_title | safe }}</div>{% endif %}
         <time class="page-meta dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>
         <div class="e-content">{{ content_body | safe }}</div>
-        <a class="u-url" href="/{{ slug }}" hidden></a>
+        <a class="u-url" href="{{ url_prefix }}/{{ slug }}" hidden></a>
     </article>
     {% if show_actions %}
     <div class="page-actions">
         {% if is_owner %}
-        <form method="post" action="/{{ slug }}/listing" class="listing-form">
+        <form method="post" action="{{ url_prefix }}/{{ slug }}/listing" class="listing-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="listing-select-wrap">
                 <select name="listing" class="listing-select" data-slug="{{ slug }}">
@@ -63,9 +63,9 @@
         {% endif %}
         <div class="page-actions-buttons">
             {% if draft %}<span class="draft-pill">DRAFT</span>{% endif %}
-            {% if is_owner %}<a href="/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
-            {% if has_history %}<a href="/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>{% endif %}
-            <a href="/{{ slug }}/edit" class="btn btn--primary btn--sm">Edit</a>
+            {% if is_owner %}<a href="{{ url_prefix }}/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
+            {% if has_history %}<a href="{{ url_prefix }}/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>{% endif %}
+            <a href="{{ url_prefix }}/{{ slug }}/edit" class="btn btn--primary btn--sm">Edit</a>
         </div>
     </div>
     {% endif %}

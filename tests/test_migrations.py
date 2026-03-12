@@ -157,6 +157,5 @@ def test_backfill_usernames_makes_page_accessible(client):
         conn.commit()
 
     user = get_user(user_id)
-    host = f"{user['username']}.jottit.localhost:8000"
-    r = client.get("/mypage", headers={"Host": host})
+    r = client.get(f"/@{user['username']}/mypage")
     assert r.status_code == 200

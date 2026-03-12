@@ -68,12 +68,12 @@ def test_publish_creates_page(client):
     assert r.headers["Location"] == "/mypage"
 
 
-# Viewing a page with a trailing slash still works
-def test_trailing_slash_works(client):
+# Viewing a page with a trailing slash redirects to canonical URL
+def test_trailing_slash_redirects(client):
     client.post("/tslash/edit", data={"title": "Hi", "content": "There"})
     r = client.get("/tslash/")
-    assert r.status_code == 200
-    assert b"Hi" in r.data
+    assert r.status_code == 301
+    assert r.headers["Location"] == "/tslash"
 
 
 # -- View page --

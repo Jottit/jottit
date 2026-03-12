@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     bio TEXT,
     license TEXT,
     avatar TEXT,
+    subdomain TEXT UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

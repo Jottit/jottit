@@ -134,55 +134,51 @@ def test_render_bio_strips_other_tags():
     assert "bold" in result
 
 
-# -- Subdomain profile display --
+# -- Profile display --
 
 
-# Subdomain homepage displays the user's bio with p-note microformat
-def test_subdomain_home_shows_bio(client):
+# Profile homepage displays the user's bio with p-note microformat
+def test_profile_home_shows_bio(client):
     user_id = create_user_with_username(client, "biohome@example.com", "biohome", "bh1")
     update_user_settings(user_id, "Bio Home", "biohome", "My cool bio")
 
-    host = "biohome.jottit.localhost:8000"
-    r = client.get("/", headers={"Host": host})
+    r = client.get("/@biohome")
     assert r.status_code == 200
     assert b"My cool bio" in r.data
     assert b"p-note" in r.data
 
 
-# Subdomain homepage shows avatar with u-photo microformat
-def test_subdomain_home_shows_avatar(client):
+# Profile homepage shows avatar with u-photo microformat
+def test_profile_home_shows_avatar(client):
     user_id = create_user_with_username(client, "avhome@example.com", "avhome", "ah1")
     update_user_avatar(user_id, "/uploads/test/avatar.jpg")
 
-    host = "avhome.jottit.localhost:8000"
-    r = client.get("/", headers={"Host": host})
+    r = client.get("/@avhome")
     assert r.status_code == 200
     assert b"u-photo" in r.data
     assert b"profile-avatar" in r.data
 
 
-# Subdomain homepage without avatar renders gracefully
-def test_subdomain_home_no_avatar_graceful(client):
+# Profile homepage without avatar renders gracefully
+def test_profile_home_no_avatar_graceful(client):
     user_id = create_user_with_username(client, "noav@example.com", "noavuser", "na1")
     update_user_settings(user_id, "No Avatar", "noavuser")
 
-    host = "noavuser.jottit.localhost:8000"
-    r = client.get("/", headers={"Host": host})
+    r = client.get("/@noavuser")
     assert r.status_code == 200
     assert b"u-photo" not in r.data
     assert b"No Avatar" in r.data
 
 
-# Subdomain pages show a profile header with avatar and bio
-def test_subdomain_page_shows_profile_header(client):
+# Profile pages show a profile header with avatar and bio
+def test_profile_page_shows_profile_header(client):
     user_id = create_user_with_username(
         client, "profpage@example.com", "profpage", "pp1"
     )
     update_user_settings(user_id, "Prof Page", "profpage", "Writer")
     update_user_avatar(user_id, "/uploads/test/avatar.jpg")
 
-    host = "profpage.jottit.localhost:8000"
-    r = client.get("/pp1", headers={"Host": host})
+    r = client.get("/@profpage/pp1")
     assert r.status_code == 200
     assert b"page-byline" in r.data
     assert b"u-photo" in r.data

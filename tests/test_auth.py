@@ -135,11 +135,10 @@ def test_claim_full_flow(client):
     assert r.status_code == 302
     assert "/cf3/claim/address" in r.headers["Location"]
 
-    # Step 4: address
+    # Step 4: address — redirects to profile URL
     r = client.post("/cf3/claim/address", data={"username": "testuser"})
     assert r.status_code == 302
-    # Slug gets renamed to slugified title
-    assert "/my-great-page" in r.headers["Location"]
+    assert "/@testuser" in r.headers["Location"]
 
     claimed_user_id = find_or_create_user("user@example.com")
     page_meta = get_page_meta("my-great-page", claimed_user_id)
@@ -307,9 +306,8 @@ def test_returning_user_skips_setup(client):
         "/ret2/claim/verify", data={"code": code, "email": "returning@example.com"}
     )
     assert r.status_code == 302
-    # Should skip setup and go straight to subdomain
-    assert "returnuser.jottit.localhost:8000" in r.headers["Location"]
-    assert "/second-page" in r.headers["Location"]
+    # Should skip setup and go straight to profile
+    assert "/@returnuser" in r.headers["Location"]
 
     claimed_user_id = find_or_create_user("returning@example.com")
     page_meta = get_page_meta("second-page", claimed_user_id)
@@ -391,6 +389,20 @@ def test_signin_full_flow(client):
 
     with client.session_transaction() as sess:
         assert "user_id" in sess
+
+
+# Sign-in with username redirects to profile
+def test_signin_with_username_redirects_to_profile(client):
+    user_id = find_or_create_user("signinuser@example.com")
+    set_user_username(user_id, "signinuser")
+
+    client.post("/signin", data={"email": "signinuser@example.com"})
+    code = create_verification_code("signinuser@example.com", "signin")
+    r = client.post(
+        "/signin/verify", data={"code": code, "email": "signinuser@example.com"}
+    )
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/@signinuser"
 
 
 # Invalid sign-in code shows an error
@@ -500,6 +512,6 @@ def test_claim_renames_slug_from_title(client):
     r = client.post("/cf3b/claim/address", data={"username": "sluguser"})
     assert r.status_code == 302
     user_id = find_or_create_user("slugtest@example.com")
-    assert "/the-brand-age" in r.headers["Location"]
+    assert "/@sluguser" in r.headers["Location"]
     assert get_page_meta("the-brand-age", user_id) is not None
     assert get_page_meta("cf3b") is None

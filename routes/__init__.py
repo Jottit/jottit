@@ -60,8 +60,17 @@ def base_url(path=""):
     return f"{request.scheme}://{BASE_DOMAIN}{path}"
 
 
-def subdomain_url(username, path=""):
-    return f"{request.scheme}://{username}.{BASE_DOMAIN}{path}"
+def profile_url(username, path=""):
+    return f"/@{username}{path}"
+
+
+def _set_profile_user(username):
+    user = get_user_by_username(username)
+    if not user:
+        abort(404)
+    g.subdomain_user = user
+    g.url_prefix = f"/@{username}"
+    return user
 
 
 def find_page(slug):
@@ -99,16 +108,14 @@ def account_link_vars():
     user = g.current_user if signed_in else None
     owner_avatar_url = user.get("avatar") if user else None
     owner_initials = compute_initials(user) if user else None
-    profile_url = (
-        subdomain_url(user["username"])
-        if user and user.get("username")
-        else "/settings"
+    account_profile_url = (
+        profile_url(user["username"]) if user and user.get("username") else "/settings"
     )
     return {
         "signed_in": signed_in,
         "owner_avatar_url": owner_avatar_url,
         "owner_initials": owner_initials,
-        "profile_url": profile_url,
+        "profile_url": account_profile_url,
     }
 
 
@@ -141,13 +148,29 @@ def resolve_subdomain():
     subdomain = _get_subdomain()
     if subdomain == "www":
         return redirect(f"{request.scheme}://{BASE_DOMAIN}{request.full_path}", 301)
-    if not subdomain:
-        g.subdomain_user = None
-        return
-    user = get_user_by_username(subdomain)
-    if not user:
-        abort(404)
-    g.subdomain_user = user
+    if subdomain:
+        path = request.full_path.rstrip("?")
+        if path == "/":
+            path = ""
+        return redirect(f"{request.scheme}://{BASE_DOMAIN}/@{subdomain}{path}", 301)
+    g.subdomain_user = None
+    g.url_prefix = ""
+
+
+@bp.before_request
+def strip_trailing_slash():
+    path = request.path
+    if path != "/" and path.endswith("/"):
+        query = request.query_string.decode()
+        url = path.rstrip("/")
+        if query:
+            url = f"{url}?{query}"
+        return redirect(url, 301)
+
+
+@bp.app_context_processor
+def inject_url_prefix():
+    return {"url_prefix": getattr(g, "url_prefix", "")}
 
 
 from routes import public, site, admin  # noqa: E402, F401

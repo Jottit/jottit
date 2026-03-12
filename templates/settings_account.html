@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Account — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/settings" class="panel-back">&larr; Settings</a>
+    <h1 class="title">Account</h1>
+    <div class="panel">
+        <div class="field">
+            <span class="label">Email</span>
+            <p>{{ user.email }}</p>
+        </div>
+    </div>
+    <a href="/settings/delete" class="settings-delete-link">Delete account</a>
+</div>
+{% endblock %}

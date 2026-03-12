@@ -37,11 +37,18 @@
         </a>
 
         <div class="settings-list">
-            <a href="/settings/subdomain" class="settings-row">
+            <a href="/settings/account" class="settings-row">
+                <span class="settings-row-label">Account</span>
+                <span class="settings-row-right">
+                    <span class="settings-row-value">{{ user.email }}</span>
+                    <span class="settings-chevron">&rsaquo;</span>
+                </span>
+            </a>
+            <a href="/settings/address" class="settings-row">
                 <span class="settings-row-label">Address</span>
                 <span class="settings-row-right">
                     {% if user.username %}
-                    <span class="settings-row-value">{{ user.username }}.jottit.org</span>
+                    <span class="settings-row-value">jottit.org/@{{ user.username }}</span>
                     {% endif %}
                     <span class="settings-chevron">&rsaquo;</span>
                 </span>
@@ -66,6 +73,5 @@
             </div>
         </div>
     </div>
-    <a href="/settings/delete" class="settings-delete-link">Delete account</a>
 </div>
 {% endblock %}

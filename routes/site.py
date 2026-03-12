@@ -37,12 +37,13 @@ from routes import (
     bp,
     limiter,
     LISTING_OPTIONS,
+    _set_profile_user,
     base_url,
     can_edit,
     find_page,
     is_creator,
+    profile_url,
     send_verification,
-    subdomain_url,
 )
 
 
@@ -68,6 +69,8 @@ def pages_list():
     user_id = session.get("user_id")
     if not user_id:
         return redirect("/signin")
+    user = g.current_user
+    username = user.get("username") if user else None
     pages = get_pages_for_user(user_id)
     page_list = []
     for p in pages:
@@ -79,7 +82,40 @@ def pages_list():
                 "draft": p["draft"],
             }
         )
-    return render_template("pages.html", pages=page_list)
+    return render_template("pages.html", pages=page_list, username=username)
+
+
+# --- @username routes for site actions ---
+
+
+@bp.route("/@<username>/new", methods=["GET", "POST"])
+def profile_new_page(username):
+    _set_profile_user(username)
+    return new_page()
+
+
+@bp.route("/@<username>/<slug>/edit", methods=["GET", "POST"])
+def profile_edit_page(username, slug):
+    _set_profile_user(username)
+    return edit_page(slug)
+
+
+@bp.route("/@<username>/<slug>/delete", methods=["GET", "POST"])
+def profile_delete_page(username, slug):
+    _set_profile_user(username)
+    return delete_page_route(slug)
+
+
+@bp.route("/@<username>/<slug>/listing", methods=["POST"])
+def profile_update_listing(username, slug):
+    _set_profile_user(username)
+    return update_listing(slug)
+
+
+@bp.route("/@<username>/<slug>/export")
+def profile_export_page(username, slug):
+    _set_profile_user(username)
+    return export_page_route(slug)
 
 
 @bp.route("/new", methods=["GET", "POST"])
@@ -120,7 +156,7 @@ def new_page():
     slug = save_page(slug, content, draft, subdomain_user_id)
     _track_new_page(slug, subdomain_user_id)
 
-    return redirect(f"/{slug}")
+    return redirect(f"{g.url_prefix}/{slug}")
 
 
 def _track_new_page(slug, subdomain_user_id):
@@ -148,11 +184,11 @@ def edit_page(slug):
         if owner_user_id:
             user = get_user(owner_user_id)
             if user and user.get("username"):
-                return redirect(subdomain_url(user["username"], f"/{slug}/edit"))
+                return redirect(profile_url(user["username"], f"/{slug}/edit"))
             return redirect(f"/{slug}")
 
     if not can_edit(page_meta):
-        return redirect(f"/{slug}")
+        return redirect(f"{g.url_prefix}/{slug}")
 
     if request.method == "GET":
         row = get_page(page_meta["id"]) if page_meta else None
@@ -197,7 +233,7 @@ def edit_page(slug):
                     rename_page(new_page_meta["id"], nice_slug)
                     slug = nice_slug
 
-    return redirect(f"/{slug}")
+    return redirect(f"{g.url_prefix}/{slug}")
 
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])
@@ -289,7 +325,7 @@ def _finish_claim(slug, page_meta, user_id, username):
     session.pop("claim_email", None)
     session.pop("claim_verified", None)
     session.pop("claim_name", None)
-    return redirect(subdomain_url(username))
+    return redirect(profile_url(username))
 
 
 @bp.route("/<slug>/claim/setup", methods=["GET", "POST"])
@@ -382,7 +418,7 @@ def delete_page_route(slug):
 
     delete_page(page_meta["id"])
     if g.subdomain_user:
-        return redirect(subdomain_url(g.subdomain_user["username"]))
+        return redirect(profile_url(g.subdomain_user["username"]))
     return redirect(base_url("/"))
 
 
@@ -406,7 +442,7 @@ def update_listing(slug):
     if request.headers.get("X-Requested-With") == "fetch":
         return "", 204
 
-    return redirect(f"/{slug}")
+    return redirect(f"{g.url_prefix}/{slug}")
 
 
 @bp.route("/<slug>/export")
@@ -415,7 +451,7 @@ def export_page_route(slug):
     if not page_meta:
         abort(404)
     if not can_edit(page_meta):
-        return redirect(f"/{slug}")
+        return redirect(f"{g.url_prefix}/{slug}")
 
     pages = get_export_pages(page_meta["id"])
     buf = io.BytesIO()

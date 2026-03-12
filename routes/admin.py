@@ -20,7 +20,7 @@ from storage import (
     validate_image,
 )
 from utils import RESERVED_USERNAMES, valid_email, valid_username
-from routes import bp, limiter, LICENSES, require_user, send_verification, subdomain_url
+from routes import bp, limiter, LICENSES, profile_url, require_user, send_verification
 
 
 @bp.route("/signin", methods=["GET", "POST"])
@@ -70,7 +70,7 @@ def signin_verify():
     session["user_id"] = user_id
     user = get_user(user_id)
     if user and user.get("username"):
-        return redirect(subdomain_url(user["username"]))
+        return redirect(profile_url(user["username"]))
     return redirect("/")
 
 
@@ -86,7 +86,7 @@ def user_settings():
     if not user:
         return redirect("/signin")
 
-    back_url = subdomain_url(user["username"]) if user.get("username") else "/"
+    back_url = profile_url(user["username"]) if user.get("username") else "/"
     return render_template(
         "settings.html", user=user, back_url=back_url, licenses=LICENSES
     )
@@ -141,15 +141,15 @@ def settings_license():
     return redirect("/settings/license")
 
 
-@bp.route("/settings/subdomain", methods=["GET", "POST"])
+@bp.route("/settings/address", methods=["GET", "POST"])
 @limiter.limit("5 per 5 minutes", methods=["POST"])
-def settings_subdomain():
+def settings_address():
     user_id, user = require_user()
     if not user:
         return redirect("/signin")
 
     if request.method == "GET":
-        return render_template("settings_subdomain.html", user=user)
+        return render_template("settings_address.html", user=user)
 
     username = request.form.get("username", "").strip().lower()
 
@@ -164,7 +164,7 @@ def settings_subdomain():
 
     if error:
         return render_template(
-            "settings_subdomain.html",
+            "settings_address.html",
             user={**user, "username": username},
             error=error,
         )
@@ -176,8 +176,22 @@ def settings_subdomain():
         user.get("bio") or "",
         user.get("license"),
     )
-    flash("Subdomain saved")
-    return redirect("/settings/subdomain")
+    flash("Address saved")
+    return redirect("/settings/address")
+
+
+@bp.route("/settings/subdomain", methods=["GET", "POST"])
+def settings_subdomain_redirect():
+    return redirect("/settings/address", 301)
+
+
+@bp.route("/settings/account")
+def settings_account():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    return render_template("settings_account.html", user=user)
 
 
 @bp.route("/settings/export")

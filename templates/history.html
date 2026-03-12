@@ -4,13 +4,13 @@
 
 {% block body %}
 <div class="panel-page">
-    <a href="/{{ slug }}" class="panel-back">&larr; Back</a>
+    <a href="{{ url_prefix }}/{{ slug }}" class="panel-back">&larr; Back</a>
     <h1 class="title">Revision history</h1>
     <div class="panel panel--compact">
         <ul class="sites-menu">
             {% for rev in revisions %}
             <li>
-                <a href="/{{ slug }}/history/{{ rev.revision }}" class="sites-menu-link">
+                <a href="{{ url_prefix }}/{{ slug }}/history/{{ rev.revision }}" class="sites-menu-link">
                     <span class="sites-menu-name">{{ rev.created_at | relative_time }}</span>
                     <span class="sites-menu-url">{% if rev.delta is none %}Created{% elif rev.delta > 0 %}+{{ rev.delta }} words{% elif rev.delta < 0 %}{{ rev.delta }} words{% else %}edited{% endif %}</span>
                 </a>

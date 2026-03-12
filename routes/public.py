@@ -42,12 +42,13 @@ from routes import (
     bp,
     BASE_DOMAIN,
     LICENSES,
+    _set_profile_user,
     account_link_vars,
     compute_initials,
     find_page,
     is_creator,
     can_edit,
-    subdomain_url,
+    profile_url,
 )
 
 
@@ -60,10 +61,6 @@ def uploaded_file(filename):
 
 @bp.route("/")
 def home():
-    subdomain_user = g.subdomain_user
-    if subdomain_user:
-        return subdomain_home(subdomain_user)
-
     pages = []
     if "user_id" in session:
         pages = get_pages_for_user(session["user_id"])
@@ -124,17 +121,64 @@ def subdomain_home(user):
     )
 
 
+# --- @username routes ---
+
+
+@bp.route("/@<username>")
+def profile_home(username):
+    user = _set_profile_user(username)
+    return subdomain_home(user)
+
+
+@bp.route("/@<username>/<slug>")
+def profile_view_page(username, slug):
+    _set_profile_user(username)
+    return view_page(slug)
+
+
+@bp.route("/@<username>/<slug>/history")
+def profile_page_history(username, slug):
+    _set_profile_user(username)
+    return page_history(slug)
+
+
+@bp.route("/@<username>/<slug>/history/<int:revision>")
+def profile_view_revision(username, slug, revision):
+    _set_profile_user(username)
+    return view_revision(slug, revision)
+
+
+@bp.route("/@<username>/<slug>/feed.xml")
+def profile_rss_feed(username, slug):
+    _set_profile_user(username)
+    return rss_feed(slug)
+
+
+@bp.route("/@<username>/<slug>/feed.json")
+def profile_json_feed(username, slug):
+    _set_profile_user(username)
+    return json_feed(slug)
+
+
+@bp.route("/@<username>/feed.xml")
+def profile_site_rss_feed(username):
+    _set_profile_user(username)
+    return site_rss_feed()
+
+
+@bp.route("/@<username>/feed.json")
+def profile_site_json_feed(username):
+    _set_profile_user(username)
+    return site_json_feed()
+
+
 @bp.route("/about")
 def about():
-    if g.subdomain_user:
-        return view_page("about")
     return render_template("about.html", **account_link_vars())
 
 
 @bp.route("/talk")
 def talk():
-    if g.subdomain_user:
-        return view_page("talk")
     return render_template("talk.html", **account_link_vars())
 
 
@@ -147,9 +191,9 @@ def view_page(slug):
         if not page_meta:
             original = find_page_by_original_slug(slug, subdomain_user["id"])
             if original:
-                return redirect(f"/{original['slug']}", 301)
+                return redirect(f"{g.url_prefix}/{original['slug']}", 301)
             if session.get("user_id") == subdomain_user["id"]:
-                return redirect(f"/{slug}/edit")
+                return redirect(f"{g.url_prefix}/{slug}/edit")
             abort(404)
     else:
         if session.get("user_id"):
@@ -163,14 +207,14 @@ def view_page(slug):
             if owner_user_id:
                 user = get_user(owner_user_id)
                 if user and user.get("username"):
-                    return redirect(subdomain_url(user["username"], f"/{slug}"))
+                    return redirect(profile_url(user["username"], f"/{slug}"))
             original = find_page_by_original_slug(slug)
             if original and original["slug"] != slug:
                 if original["user_id"]:
                     owner = get_user(original["user_id"])
                     if owner and owner.get("username"):
                         return redirect(
-                            subdomain_url(owner["username"], f"/{original['slug']}"),
+                            profile_url(owner["username"], f"/{original['slug']}"),
                             301,
                         )
                 return redirect(f"/{original['slug']}", 301)
@@ -178,7 +222,7 @@ def view_page(slug):
         if page_meta["user_id"] is not None:
             user = get_user(page_meta["user_id"])
             if user and user.get("username"):
-                return redirect(subdomain_url(user["username"], f"/{slug}"))
+                return redirect(profile_url(user["username"], f"/{slug}"))
 
     if not page_meta:
         abort(404)
@@ -329,11 +373,11 @@ def view_revision(slug, revision):
 
 def _build_site_feed_entries(user_id):
     entries = get_feed_entries_for_user(user_id)
-    base_url = request.url_root.rstrip("/")
+    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
     items = []
     for entry in entries:
         body = get_body(entry["content"])
-        page_url = f"{base_url}/{entry['slug']}"
+        page_url = f"{feed_base}/{entry['slug']}"
         items.append(
             {
                 "title": get_title(entry["content"]) or "",
@@ -348,8 +392,8 @@ def _build_site_feed_entries(user_id):
 
 def _build_feed_entries(page_id, slug):
     entries = get_feed_entries(page_id)
-    base_url = request.url_root.rstrip("/")
-    page_url = f"{base_url}/{slug}"
+    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
+    page_url = f"{feed_base}/{slug}"
     items = []
     for entry in entries:
         body = get_body(entry["content"])
@@ -397,7 +441,7 @@ def sitemap():
     ]
     for page in pages:
         if page["username"]:
-            loc = f"https://{page['username']}.{BASE_DOMAIN}/{page['slug']}"
+            loc = f"https://{BASE_DOMAIN}/@{page['username']}/{page['slug']}"
         else:
             loc = f"https://{BASE_DOMAIN}/{page['slug']}"
         lastmod = page["updated_at"].strftime("%Y-%m-%d")
@@ -420,10 +464,10 @@ def site_rss_feed():
 
     site_title = user.get("name") or user.get("username")
     items = _build_site_feed_entries(user["id"])
-    base_url = request.url_root.rstrip("/")
+    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
     avatar_url = user.get("avatar")
     if avatar_url and avatar_url.startswith("/"):
-        avatar_url = base_url + avatar_url
+        avatar_url = f"{request.scheme}://{BASE_DOMAIN}{avatar_url}"
 
     last_build_date = format_datetime(items[0]["created_at"]) if items else ""
 
@@ -432,7 +476,7 @@ def site_rss_feed():
         '<rss version="2.0" xmlns:source="http://source.scripting.com/">',
         "  <channel>",
         f"    <title>{xml_escape(site_title)}</title>",
-        f"    <link>{xml_escape(base_url)}</link>",
+        f"    <link>{xml_escape(feed_base)}</link>",
         "    <description></description>",
         f"    <lastBuildDate>{last_build_date}</lastBuildDate>",
     ]
@@ -440,7 +484,7 @@ def site_rss_feed():
         parts.append("    <image>")
         parts.append(f"      <url>{xml_escape(avatar_url)}</url>")
         parts.append(f"      <title>{xml_escape(site_title)}</title>")
-        parts.append(f"      <link>{xml_escape(base_url)}</link>")
+        parts.append(f"      <link>{xml_escape(feed_base)}</link>")
         parts.append("    </image>")
     parts.extend(_render_rss_items(items))
     parts.append("  </channel>")
@@ -458,16 +502,16 @@ def site_json_feed():
 
     site_title = user.get("name") or user.get("username")
     items = _build_site_feed_entries(user["id"])
-    base_url = request.url_root.rstrip("/")
+    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
     avatar_url = user.get("avatar")
     if avatar_url and avatar_url.startswith("/"):
-        avatar_url = base_url + avatar_url
+        avatar_url = f"{request.scheme}://{BASE_DOMAIN}{avatar_url}"
 
     feed = {
         "version": "https://jsonfeed.org/version/1.1",
         "title": site_title,
-        "home_page_url": base_url,
-        "feed_url": f"{base_url}/feed.json",
+        "home_page_url": feed_base,
+        "feed_url": f"{feed_base}/feed.json",
     }
     if avatar_url:
         feed["icon"] = avatar_url

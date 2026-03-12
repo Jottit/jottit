@@ -20,7 +20,7 @@ def test_settings_requires_signin(client):
     assert "/signin" in r.headers["Location"]
 
 
-# Settings page shows name, bio, address, export, and sign out
+# Settings page shows name, bio, account, address, export, and sign out
 def test_user_settings_shows_hub(client):
     user_id = find_or_create_user("settings@example.com")
     set_user_username(user_id, "sethub")
@@ -32,6 +32,7 @@ def test_user_settings_shows_hub(client):
     assert r.status_code == 200
     assert b"Hub User" in r.data
     assert b"My bio" in r.data
+    assert b"Account" in r.data
     assert b"Address" in r.data
     assert b"Export" in r.data
     assert b"Sign out" in r.data
@@ -64,25 +65,25 @@ def test_settings_profile_save(client):
     assert user["bio"] == "Hello"
 
 
-# Subdomain settings page shows address form
-def test_settings_subdomain_shows_form(client):
+# Address settings page shows address form
+def test_settings_address_shows_form(client):
     user_id = find_or_create_user("setsub@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.get("/settings/subdomain")
+    r = client.get("/settings/address")
     assert r.status_code == 200
     assert b"Address" in r.data
-    assert b".jottit.org" in r.data
+    assert b"jottit.org/@" in r.data
 
 
-# Saving subdomain updates the username
-def test_settings_subdomain_save(client):
+# Saving address updates the username
+def test_settings_address_save(client):
     user_id = find_or_create_user("setsub2@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post("/settings/subdomain", data={"username": "myname"})
+    r = client.post("/settings/address", data={"username": "myname"})
     assert r.status_code == 302
 
     user = get_user(user_id)
@@ -90,18 +91,18 @@ def test_settings_subdomain_save(client):
 
 
 # Invalid username format is rejected
-def test_settings_subdomain_invalid_username(client):
+def test_settings_address_invalid_username(client):
     user_id = find_or_create_user("settings3@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post("/settings/subdomain", data={"username": "BAD!"})
+    r = client.post("/settings/address", data={"username": "BAD!"})
     assert r.status_code == 200
     assert b"lowercase" in r.data
 
 
 # Duplicate username is rejected
-def test_settings_subdomain_username_uniqueness(client):
+def test_settings_address_username_uniqueness(client):
     user_id1 = find_or_create_user("settings4@example.com")
     set_user_username(user_id1, "taken")
 
@@ -109,9 +110,32 @@ def test_settings_subdomain_username_uniqueness(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id2
 
-    r = client.post("/settings/subdomain", data={"username": "taken"})
+    r = client.post("/settings/address", data={"username": "taken"})
     assert r.status_code == 200
     assert b"already taken" in r.data
+
+
+# Old /settings/subdomain redirects to /settings/address
+def test_settings_subdomain_redirects(client):
+    user_id = find_or_create_user("redirsub@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/settings/subdomain")
+    assert r.status_code == 301
+    assert "/settings/address" in r.headers["Location"]
+
+
+# Account settings page shows email and delete link
+def test_settings_account_page(client):
+    user_id = find_or_create_user("account@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/settings/account")
+    assert r.status_code == 200
+    assert b"account@example.com" in r.data
+    assert b"Delete account" in r.data
 
 
 # Export settings page renders with a download option

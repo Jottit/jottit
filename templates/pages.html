@@ -11,9 +11,9 @@
         <ul class="sites-menu">
             {% for page in pages %}
             <li>
-                <a href="/{{ page.slug }}" class="sites-menu-link">
+                <a href="{% if username %}/@{{ username }}/{{ page.slug }}{% else %}/{{ page.slug }}{% endif %}" class="sites-menu-link">
                     <span class="sites-menu-name">{{ page.title }}{% if page.draft %} <span class="draft-pill">DRAFT</span>{% endif %}</span>
-                    <span class="sites-menu-url">jottit.org/{{ page.slug }}</span>
+                    <span class="sites-menu-url">{% if username %}jottit.org/@{{ username }}/{{ page.slug }}{% else %}jottit.org/{{ page.slug }}{% endif %}</span>
                 </a>
             </li>
             {% endfor %}

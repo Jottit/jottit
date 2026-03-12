@@ -10,7 +10,7 @@
 <div class="editor" data-slug="{{ slug or '' }}">
     <div class="editor-split">
         <div class="editor-pane">
-            <form id="editor-form" class="editor-form" method="post" action="{% if slug %}/{{ slug }}/edit{% else %}/new{% endif %}">
+            <form id="editor-form" class="editor-form" method="post" action="{% if slug %}{{ url_prefix }}/{{ slug }}/edit{% else %}{{ url_prefix }}/new{% endif %}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="title" class="sr-only">Title</label>
                 <input class="editor-title" id="title" type="text" name="title" placeholder="Title" value="{{ title }}" {% if not title %}autofocus{% endif %}>
@@ -26,7 +26,7 @@
         <a href="https://commonmark.org/help/" target="_blank" class="editor-markdown-link" tabindex="-1">Markdown</a>
         <div class="editor-actions">
             <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
-            <a href="{% if is_new %}/{% else %}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>
+            <a href="{% if is_new %}/{% else %}{{ url_prefix }}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>
         </div>
     </footer>
 </div>
