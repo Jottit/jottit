@@ -106,7 +106,7 @@ def subdomain_home(user):
     bio = user.get("bio")
     bio_html = render_bio(bio) if bio else ""
     return render_template(
-        "subdomain_home.html",
+        "profile.html",
         user=user,
         pages=page_list,
         site_title=site_title,
