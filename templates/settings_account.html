@@ -7,6 +7,29 @@
     <a href="/settings" class="panel-back">&larr; Settings</a>
     <h1 class="title">Account</h1>
     <div class="panel">
+
+        {% for message in get_flashed_messages() %}
+        <p class="notice notice--success">{{ message }}</p>
+        {% endfor %}
+        {% if error %}
+        <p class="notice notice--error">{{ error }}</p>
+        {% endif %}
+
+        <form method="post" action="/settings/account">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label class="label" for="username">Username</label>
+                <div class="settings-subdomain-row">
+                    <span class="settings-subdomain-prefix">jottit.org/@</span>
+                    <input class="input" type="text" id="username" name="username" value="{{ user.username or '' }}" placeholder="yourname">
+                </div>
+                <p class="subdomain-notice help-text" hidden></p>
+                <p class="help-text">Changing your username will break existing links.</p>
+            </div>
+
+            <button type="submit" class="btn btn-solid settings-save">Save</button>
+        </form>
+
         <div class="field">
             <span class="label">Email</span>
             <p>{{ user.email }}</p>
@@ -14,4 +37,6 @@
     </div>
     <a href="/settings/delete" class="settings-delete-link">Delete account</a>
 </div>
+<script src="/static/settings.js?v={{ asset_v }}"></script>
+<script src="/static/check-username.js?v={{ asset_v }}" data-current="{{ user.username or '' }}"></script>
 {% endblock %}

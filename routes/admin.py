@@ -142,14 +142,24 @@ def settings_license():
 
 
 @bp.route("/settings/address", methods=["GET", "POST"])
+def settings_address_redirect():
+    return redirect("/settings/account", 301)
+
+
+@bp.route("/settings/subdomain", methods=["GET", "POST"])
+def settings_subdomain_redirect():
+    return redirect("/settings/account", 301)
+
+
+@bp.route("/settings/account", methods=["GET", "POST"])
 @limiter.limit("5 per 5 minutes", methods=["POST"])
-def settings_address():
+def settings_account():
     user_id, user = require_user()
     if not user:
         return redirect("/signin")
 
     if request.method == "GET":
-        return render_template("settings_address.html", user=user)
+        return render_template("settings_account.html", user=user)
 
     username = request.form.get("username", "").strip().lower()
 
@@ -164,7 +174,7 @@ def settings_address():
 
     if error:
         return render_template(
-            "settings_address.html",
+            "settings_account.html",
             user={**user, "username": username},
             error=error,
         )
@@ -176,22 +186,8 @@ def settings_address():
         user.get("bio") or "",
         user.get("license"),
     )
-    flash("Address saved")
-    return redirect("/settings/address")
-
-
-@bp.route("/settings/subdomain", methods=["GET", "POST"])
-def settings_subdomain_redirect():
-    return redirect("/settings/address", 301)
-
-
-@bp.route("/settings/account")
-def settings_account():
-    user_id, user = require_user()
-    if not user:
-        return redirect("/signin")
-
-    return render_template("settings_account.html", user=user)
+    flash("Saved")
+    return redirect("/settings/account")
 
 
 @bp.route("/settings/export")
