@@ -6,7 +6,29 @@ from datetime import datetime, timezone
 from html import escape as html_escape
 
 import markdown
+from markdown.inlinepatterns import InlineProcessor
+from markdown.extensions import Extension
+from xml.etree.ElementTree import Element
 import nh3
+
+_URL_RE = r"(https?://[^\s<>\[\]\"'\)]+)"
+
+
+class _AutolinkPattern(InlineProcessor):
+    def handleMatch(self, m, data):
+        url = m.group(1)
+        url = url.rstrip(".,;:!?")
+        el = Element("a")
+        el.set("href", url)
+        el.text = url
+        end = m.start(0) + len(url)
+        return el, m.start(0), end
+
+
+class _AutolinkExtension(Extension):
+    def extendMarkdown(self, md):
+        md.inlinePatterns.register(_AutolinkPattern(_URL_RE, md), "autolink_urls", 120)
+
 
 RESERVED_SLUGS = {
     "new",
@@ -52,7 +74,7 @@ def generate_slug(length=6):
 
 
 def render_markdown(text):
-    html = markdown.markdown(text, extensions=["smarty"])
+    html = markdown.markdown(text, extensions=["smarty", _AutolinkExtension()])
     return nh3.clean(html, link_rel=None, attributes=_SANITIZE_ATTRIBUTES)
 
 

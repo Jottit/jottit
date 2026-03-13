@@ -70,6 +70,8 @@
 .page a {
     color: inherit;
     text-decoration: underline;
+    text-decoration-skip-ink: auto;
+    text-underline-offset: 0.15em;
 }
 
 .page ul,

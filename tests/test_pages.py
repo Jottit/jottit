@@ -95,6 +95,15 @@ def test_view_page_renders_markdown(client):
     assert b"<strong>bold</strong>" in r.data
 
 
+# Bare URLs in content are auto-linked on the published page
+def test_view_page_autolinks_urls(client):
+    client.post(
+        "/linkpage/edit", data={"title": "", "content": "Visit https://jottit.org"}
+    )
+    r = client.get("/linkpage")
+    assert b'<a href="https://jottit.org">https://jottit.org</a>' in r.data
+
+
 # Viewing a nonexistent slug returns 404
 def test_view_nonexistent_page(client):
     r = client.get("/doesnotexist")
