@@ -30,7 +30,7 @@
 }
 
 .e-content-title h1 {
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-2);
 }
 
 .page-meta {
@@ -71,7 +71,7 @@
     color: inherit;
     text-decoration: underline;
     text-decoration-skip-ink: auto;
-    text-underline-offset: 0.15em;
+    text-underline-offset: 0.3em;
 }
 
 .page ul,
