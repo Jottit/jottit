@@ -32,6 +32,7 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_DOMAIN=os.environ.get("SESSION_COOKIE_DOMAIN", ".jottit.localhost"),
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+    WTF_CSRF_TIME_LIMIT=None,
 )
 
 CSRFProtect(app)
