@@ -34,10 +34,15 @@ function updatePreview() {
 var storageKey = 'jottit-draft:' + window.location.pathname;
 var cursorKey = 'jottit-cursor:' + window.location.pathname;
 
+var serverTitle = titleInput.value;
+var serverContent = contentInput.value;
+
 function saveDraft() {
     localStorage.setItem(storageKey, JSON.stringify({
         title: titleInput.value,
-        content: contentInput.value
+        content: contentInput.value,
+        serverTitle: serverTitle,
+        serverContent: serverContent
     }));
 }
 
@@ -71,8 +76,14 @@ var saved = localStorage.getItem(storageKey);
 if (saved) {
     try {
         var draft = JSON.parse(saved);
-        if (draft.title !== undefined) titleInput.value = draft.title;
-        if (draft.content !== undefined) contentInput.value = draft.content;
+        var draftMatchesServer = draft.serverTitle === serverTitle
+            && draft.serverContent === serverContent;
+        if (draftMatchesServer || (!serverTitle && !serverContent)) {
+            if (draft.title !== undefined) titleInput.value = draft.title;
+            if (draft.content !== undefined) contentInput.value = draft.content;
+        } else {
+            clearDraft();
+        }
     } catch (e) {}
 }
 
@@ -109,7 +120,29 @@ setTimeout(function() {
 
 var form = document.querySelector('.editor-form');
 if (form) {
-    form.addEventListener('submit', clearDraft);
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = document.querySelector('.btn-publish');
+        btn.disabled = true;
+        btn.textContent = 'Publishing\u2026';
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            redirect: 'follow'
+        }).then(function(response) {
+            if (response.ok) {
+                clearDraft();
+                window.location.href = response.url;
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Publish';
+            }
+        }).catch(function() {
+            btn.disabled = false;
+            btn.textContent = 'Publish';
+        });
+    });
 }
 
 var cancelLink = document.querySelector('.editor-actions a');
