@@ -126,6 +126,11 @@ if (form) {
         btn.disabled = true;
         btn.textContent = 'Publishing\u2026';
 
+        function resetButton() {
+            btn.disabled = false;
+            btn.textContent = 'Publish';
+        }
+
         fetch(form.action, {
             method: 'POST',
             body: new FormData(form),
@@ -135,13 +140,9 @@ if (form) {
                 clearDraft();
                 window.location.href = response.url;
             } else {
-                btn.disabled = false;
-                btn.textContent = 'Publish';
+                resetButton();
             }
-        }).catch(function() {
-            btn.disabled = false;
-            btn.textContent = 'Publish';
-        });
+        }).catch(resetButton);
     });
 }
 
