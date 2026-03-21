@@ -336,8 +336,7 @@ def settings_tokens():
     new_token = None
     if request.method == "POST":
         name = request.form.get("name", "").strip()[:100]
-        token, token_id = create_api_token(user_id, name)
-        new_token = token
+        new_token, _ = create_api_token(user_id, name)
 
     tokens = get_api_tokens(user_id)
     return render_template("settings_tokens.html", tokens=tokens, new_token=new_token)

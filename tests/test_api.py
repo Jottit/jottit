@@ -19,9 +19,6 @@ def _setup_user_with_token(username="testuser"):
     return user_id, token
 
 
-# -- Auth --
-
-
 def test_missing_token_returns_401(client):
     r = client.get("/api/v1/pages")
     assert r.status_code == 401
@@ -39,18 +36,12 @@ def test_valid_token_returns_200(client):
     assert r.status_code == 200
 
 
-# -- GET /api/v1/user --
-
-
 def test_get_current_user(client):
     _, token = _setup_user_with_token()
     r = client.get("/api/v1/user", headers=_auth(token))
     assert r.status_code == 200
     data = r.get_json()
     assert data["username"] == "testuser"
-
-
-# -- GET /api/v1/users/<username> --
 
 
 def test_get_user_profile(client):
@@ -75,9 +66,6 @@ def test_get_user_profile_not_found(client):
     _, token = _setup_user_with_token()
     r = client.get("/api/v1/users/nobody", headers=_auth(token))
     assert r.status_code == 404
-
-
-# -- CRUD --
 
 
 def test_create_page(client):
@@ -205,9 +193,6 @@ def test_delete_page_not_found(client):
     assert r.status_code == 404
 
 
-# -- Revisions --
-
-
 def test_list_revisions(client):
     user_id, token = _setup_user_with_token()
     save_page("revpage", "# V1\n\nFirst", False, user_id)
@@ -224,9 +209,6 @@ def test_revisions_not_found(client):
     _, token = _setup_user_with_token()
     r = client.get("/api/v1/pages/nope/revisions", headers=_auth(token))
     assert r.status_code == 404
-
-
-# -- Source tracking --
 
 
 def test_default_source_is_api(client):
@@ -267,9 +249,6 @@ def test_update_records_source(client):
     meta = get_page_meta("srcpage", user_id)
     rev = get_revision(meta["id"], 2)
     assert rev["source"] == "mcp"
-
-
-# -- AI assisted --
 
 
 def test_ai_assisted_defaults_false(client):
@@ -319,9 +298,6 @@ def test_ai_assisted_on_update(client):
     assert rev["ai_assisted"] is True
 
 
-# -- Token management --
-
-
 def test_settings_tokens_requires_signin(client):
     r = client.get("/settings/tokens")
     assert r.status_code == 302
@@ -354,9 +330,6 @@ def test_revoke_token(client):
     assert r.status_code == 401
 
 
-# -- JSON error handlers --
-
-
 def test_api_404_returns_json(client):
     _, token = _setup_user_with_token()
     r = client.get("/api/v1/nonexistent-route", headers=_auth(token))
@@ -364,12 +337,9 @@ def test_api_404_returns_json(client):
     assert r.get_json()["error"] == "Not found"
 
 
-# -- Scoping --
-
-
 def test_cannot_see_other_users_pages(client):
-    user1_id, token1 = _setup_user_with_token("user1")
-    user2_id, token2 = _setup_user_with_token("user2")
+    user1_id, _ = _setup_user_with_token("user1")
+    _, token2 = _setup_user_with_token("user2")
     save_page("secret", "# Secret\n\nContent", False, user1_id)
 
     r = client.get("/api/v1/pages/secret", headers=_auth(token2))
@@ -378,7 +348,7 @@ def test_cannot_see_other_users_pages(client):
 
 def test_cannot_delete_other_users_pages(client):
     user1_id, token1 = _setup_user_with_token("user1")
-    user2_id, token2 = _setup_user_with_token("user2")
+    _, token2 = _setup_user_with_token("user2")
     save_page("owned", "# Mine\n\nContent", False, user1_id)
 
     r = client.delete("/api/v1/pages/owned", headers=_auth(token2))

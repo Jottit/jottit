@@ -23,20 +23,16 @@ LISTING_OPTIONS = ("listed", "unlisted", "pinned")
 
 def _require_auth():
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
+    if not auth.startswith("Bearer ") or len(auth) == 7:
         return None
-    token = auth[7:]
-    if not token:
-        return None
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    token_hash = hashlib.sha256(auth[7:].encode()).hexdigest()
     return get_user_by_token_hash(token_hash)
 
 
 def _get_source():
-    header = request.headers.get("X-Jottit-Source", "").lower()
-    if header == "mcp":
-        return "mcp"
-    return "api"
+    return (
+        "mcp" if request.headers.get("X-Jottit-Source", "").lower() == "mcp" else "api"
+    )
 
 
 def _error(message, status):
@@ -52,9 +48,6 @@ def _serialize_page(meta, page_data):
         "listing": meta["listing"],
         "updated_at": page_data["created_at"].isoformat(),
     }
-
-
-# --- User endpoints ---
 
 
 @api_bp.route("/user")
@@ -103,9 +96,6 @@ def get_user_profile(username):
     )
 
 
-# --- Page endpoints ---
-
-
 @api_bp.route("/pages")
 def list_pages():
     user = _require_auth()
@@ -149,13 +139,9 @@ def create_page():
     draft = data.get("draft", False)
     ai_assisted = data.get("ai_assisted", False)
 
-    slug = data.get("slug")
-    if slug:
-        slug = slugify(slug)
+    slug = slugify(data.get("slug", ""))
     if not slug:
-        title = get_title(content)
-        if title:
-            slug = slugify(title)
+        slug = slugify(get_title(content) or "")
     if not slug:
         slug = generate_slug()
 
@@ -244,9 +230,6 @@ def delete_page_by_slug(slug):
 
     delete_page(meta["id"])
     return jsonify({"ok": True})
-
-
-# --- Revisions endpoint ---
 
 
 @api_bp.route("/pages/<slug>/revisions")
