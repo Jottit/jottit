@@ -1,0 +1,129 @@
+import json
+import os
+
+import httpx
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("Jottit")
+
+BASE_URL = os.environ.get("JOTTIT_BASE_URL", "https://jottit.org")
+API_TOKEN = os.environ.get("JOTTIT_API_TOKEN", "")
+
+
+def _client():
+    return httpx.Client(
+        base_url=BASE_URL,
+        headers={"Authorization": f"Bearer {API_TOKEN}"},
+        timeout=30,
+    )
+
+
+def _read_headers():
+    return {}
+
+
+def _write_headers():
+    return {"X-Jottit-Source": "mcp"}
+
+
+def _format_response(resp):
+    if resp.status_code >= 400:
+        try:
+            body = resp.json()
+            return f"Error {resp.status_code}: {body.get('error', resp.text)}"
+        except Exception:
+            return f"Error {resp.status_code}: {resp.text}"
+    return json.dumps(resp.json(), indent=2)
+
+
+@mcp.tool()
+def get_page(slug: str) -> str:
+    """Get a Jottit page by its slug. Returns the page's title, content (markdown), draft status, listing, and last updated timestamp."""
+    with _client() as client:
+        resp = client.get(f"/api/v1/pages/{slug}", headers=_read_headers())
+    return _format_response(resp)
+
+
+@mcp.tool()
+def list_pages() -> str:
+    """List all pages owned by the authenticated user. Returns each page's slug, title, draft status, listing, and last updated timestamp."""
+    with _client() as client:
+        resp = client.get("/api/v1/pages", headers=_read_headers())
+    return _format_response(resp)
+
+
+@mcp.tool()
+def create_page(
+    content: str,
+    slug: str = "",
+    draft: bool = False,
+    listing: str = "listed",
+) -> str:
+    """Create a new Jottit page. Content should be markdown — start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Listing can be 'listed', 'unlisted', or 'pinned'."""
+    body = {
+        "content": content,
+        "draft": draft,
+        "listing": listing,
+        "ai_assisted": True,
+    }
+    if slug:
+        body["slug"] = slug
+    with _client() as client:
+        resp = client.post("/api/v1/pages", headers=_write_headers(), json=body)
+    return _format_response(resp)
+
+
+@mcp.tool()
+def update_page(
+    slug: str,
+    content: str = "",
+    draft: bool | None = None,
+    listing: str = "",
+) -> str:
+    """Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line."""
+    body: dict = {"ai_assisted": True}
+    if content:
+        body["content"] = content
+    if draft is not None:
+        body["draft"] = draft
+    if listing:
+        body["listing"] = listing
+    with _client() as client:
+        resp = client.put(f"/api/v1/pages/{slug}", headers=_write_headers(), json=body)
+    return _format_response(resp)
+
+
+@mcp.tool()
+def delete_page(slug: str) -> str:
+    """Permanently delete a Jottit page. This cannot be undone."""
+    with _client() as client:
+        resp = client.delete(f"/api/v1/pages/{slug}", headers=_write_headers())
+    return _format_response(resp)
+
+
+@mcp.tool()
+def get_revisions(slug: str, page: int = 1, per_page: int = 20) -> str:
+    """List revision history for a page. Returns revision number, timestamp, word count, source (web/api/mcp), and whether it was AI-assisted. Newest revisions first."""
+    with _client() as client:
+        resp = client.get(
+            f"/api/v1/pages/{slug}/revisions",
+            params={"page": page, "per_page": per_page},
+            headers=_read_headers(),
+        )
+    return _format_response(resp)
+
+
+@mcp.tool()
+def get_user_profile(username: str) -> str:
+    """Get a Jottit user's public profile and their listed/pinned pages."""
+    with _client() as client:
+        resp = client.get(f"/api/v1/users/{username}", headers=_read_headers())
+    return _format_response(resp)
+
+
+def main():
+    mcp.run()
+
+
+if __name__ == "__main__":
+    main()
