@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 import os
 import secrets
@@ -122,15 +123,15 @@ def _find_page_by_slug(conn, slug, user_id=None):
     ).fetchone()
 
 
-def save_page(slug, content, draft, user_id=None):
+def save_page(slug, content, draft, user_id=None, source="web", ai_assisted=False):
     with get_db() as conn:
         page = _find_page_by_slug(conn, slug, user_id)
 
         if page:
             conn.execute(
-                """INSERT INTO revisions (page_id, revision, content)
-                   VALUES (%s, (SELECT COALESCE(MAX(revision), 0) + 1 FROM revisions WHERE page_id = %s), %s)""",
-                (page["id"], page["id"], content),
+                """INSERT INTO revisions (page_id, revision, content, source, ai_assisted)
+                   VALUES (%s, (SELECT COALESCE(MAX(revision), 0) + 1 FROM revisions WHERE page_id = %s), %s, %s, %s)""",
+                (page["id"], page["id"], content, source, ai_assisted),
             )
             conn.execute(
                 "UPDATE pages SET draft = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
@@ -154,8 +155,8 @@ def save_page(slug, content, draft, user_id=None):
                 )
                 page_id = cursor.fetchone()["id"]
             conn.execute(
-                "INSERT INTO revisions (page_id, revision, content) VALUES (%s, 1, %s)",
-                (page_id, content),
+                "INSERT INTO revisions (page_id, revision, content, source, ai_assisted) VALUES (%s, 1, %s, %s, %s)",
+                (page_id, content, source, ai_assisted),
             )
 
         conn.commit()
@@ -219,7 +220,7 @@ def find_page_by_original_slug(original_slug, user_id=None):
 def get_revisions(page_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT r.revision, r.created_at, r.content FROM revisions r
+            """SELECT r.revision, r.created_at, r.content, r.source, r.ai_assisted FROM revisions r
                WHERE r.page_id = %s
                ORDER BY r.revision ASC""",
             (page_id,),
@@ -230,7 +231,7 @@ def get_revisions_paginated(page_id, page=1, per_page=6):
     offset = (page - 1) * per_page
     with get_db() as conn:
         return conn.execute(
-            """SELECT r.revision, r.created_at,
+            """SELECT r.revision, r.created_at, r.source, r.ai_assisted,
                       LENGTH(r.content) - LENGTH(REPLACE(r.content, ' ', '')) + 1 AS word_count,
                       LAG(LENGTH(r.content) - LENGTH(REPLACE(r.content, ' ', '')) + 1)
                           OVER (ORDER BY r.revision ASC) AS prev_word_count
@@ -254,7 +255,7 @@ def get_revision_count(page_id):
 def get_revision(page_id, revision):
     with get_db() as conn:
         return conn.execute(
-            """SELECT r.content, r.created_at, r.revision FROM revisions r
+            """SELECT r.content, r.created_at, r.revision, r.source, r.ai_assisted FROM revisions r
                WHERE r.page_id = %s AND r.revision = %s""",
             (page_id, revision),
         ).fetchone()
@@ -500,3 +501,51 @@ def delete_user(user_id):
         conn.execute("UPDATE pages SET user_id = NULL WHERE user_id = %s", (user_id,))
         conn.execute("DELETE FROM users WHERE id = %s", (user_id,))
         conn.commit()
+
+
+def create_api_token(user_id, name):
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    with get_db() as conn:
+        row = conn.execute(
+            "INSERT INTO api_tokens (user_id, token_hash, name) VALUES (%s, %s, %s) RETURNING id",
+            (user_id, token_hash, name),
+        ).fetchone()
+        conn.commit()
+    return token, row["id"]
+
+
+def get_api_tokens(user_id):
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT id, name, last_used_at, created_at FROM api_tokens WHERE user_id = %s ORDER BY created_at DESC",
+            (user_id,),
+        ).fetchall()
+
+
+def delete_api_token(token_id, user_id):
+    with get_db() as conn:
+        result = conn.execute(
+            "DELETE FROM api_tokens WHERE id = %s AND user_id = %s",
+            (token_id, user_id),
+        )
+        conn.commit()
+        return result.rowcount > 0
+
+
+def get_user_by_token_hash(token_hash):
+    with get_db() as conn:
+        row = conn.execute(
+            """SELECT u.id, u.email, u.username, u.name, u.bio, u.avatar, u.license
+               FROM api_tokens t
+               JOIN users u ON t.user_id = u.id
+               WHERE t.token_hash = %s""",
+            (token_hash,),
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE api_tokens SET last_used_at = NOW() WHERE token_hash = %s",
+                (token_hash,),
+            )
+            conn.commit()
+        return row

@@ -4,8 +4,11 @@ from flask import flash, redirect, render_template, request, session
 
 from db import (
     check_username_available,
+    create_api_token,
+    delete_api_token,
     delete_user,
     find_or_create_user,
+    get_api_tokens,
     get_user,
     update_user_avatar,
     update_user_email,
@@ -321,6 +324,35 @@ def settings_delete():
     delete_user(user_id)
     session.clear()
     return redirect("/")
+
+
+@bp.route("/settings/tokens", methods=["GET", "POST"])
+@limiter.limit("5 per 5 minutes", methods=["POST"])
+def settings_tokens():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    new_token = None
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()[:100]
+        token, token_id = create_api_token(user_id, name)
+        new_token = token
+
+    tokens = get_api_tokens(user_id)
+    return render_template("settings_tokens.html", tokens=tokens, new_token=new_token)
+
+
+@bp.route("/settings/tokens/<int:token_id>/revoke", methods=["POST"])
+@limiter.limit("10 per 5 minutes")
+def settings_token_revoke(token_id):
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    delete_api_token(token_id, user_id)
+    flash("Token revoked")
+    return redirect("/settings/tokens")
 
 
 @bp.route("/settings/avatar/delete", methods=["POST"])

@@ -1229,6 +1229,51 @@
     margin-top: var(--space-2);
 }
 
+/* API tokens */
+
+.token-display {
+    display: block;
+    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg);
+    border-radius: 4px;
+    font-size: var(--font-size-sm);
+    word-break: break-all;
+}
+
+.tokens-list {
+    margin-top: var(--space-8);
+}
+
+.tokens-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tokens-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.tokens-name {
+    font-size: var(--font-size-md);
+}
+
+.tokens-meta {
+    font-size: var(--font-size-xs);
+    color: var(--muted);
+}
+
+.btn-danger {
+    background: transparent;
+    color: var(--error);
+    border: 1px solid var(--error);
+    font-size: var(--font-size-xs);
+    padding: var(--space-1) var(--space-3);
+}
+
 /* Revision banner */
 
 .revision-banner {

@@ -3,12 +3,13 @@ import os
 from datetime import timedelta
 
 import sentry_sdk
-from flask import Flask, render_template, request, session
+from flask import Flask, jsonify, render_template, request, session
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from db import init_db, run_migrations
 from routes import bp, limiter
+from routes.api import api_bp
 from utils import relative_time, render_bio
 
 dsn = os.environ.get("SENTRY_DSN")
@@ -35,9 +36,11 @@ app.config.update(
     WTF_CSRF_TIME_LIMIT=None,
 )
 
-CSRFProtect(app)
+csrf = CSRFProtect(app)
 limiter.init_app(app)
 app.register_blueprint(bp)
+app.register_blueprint(api_bp)
+csrf.exempt(api_bp)
 
 
 # --- Asset versioning ---
@@ -120,16 +123,22 @@ def isoformat_filter(value):
 
 @app.errorhandler(404)
 def page_not_found(e):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Not found"}), 404
     return render_template("404.html"), 404
 
 
 @app.errorhandler(429)
 def too_many_requests(e):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Too many requests"}), 429
     return render_template("429.html"), 429
 
 
 @app.errorhandler(500)
 def internal_error(e):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Internal server error"}), 500
     return render_template("500.html"), 500
 
 

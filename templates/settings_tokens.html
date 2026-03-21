@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}API Tokens — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/settings" class="panel-back">&larr; Settings</a>
+    <h1 class="title">API Tokens</h1>
+    <div class="panel">
+
+        {% for message in get_flashed_messages() %}
+        <p class="notice notice--success">{{ message }}</p>
+        {% endfor %}
+
+        {% if new_token %}
+        <div class="notice notice--success">
+            <p>Your new token (copy it now — it won't be shown again):</p>
+            <code class="token-display">{{ new_token }}</code>
+        </div>
+        {% endif %}
+
+        <form method="post" action="/settings/tokens">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label class="label" for="name">Token name</label>
+                <input class="input" type="text" id="name" name="name" placeholder="e.g. My script" maxlength="100">
+            </div>
+            <button type="submit" class="btn btn-solid">Create token</button>
+        </form>
+
+        {% if tokens %}
+        <div class="settings-list tokens-list">
+            {% for token in tokens %}
+            <div class="settings-row tokens-row">
+                <div class="tokens-info">
+                    <span class="tokens-name">{{ token.name or "Unnamed token" }}</span>
+                    <span class="tokens-meta">
+                        Created {{ token.created_at | relative_time }}{% if token.last_used_at %} · last used {{ token.last_used_at | relative_time }}{% endif %}
+                    </span>
+                </div>
+                <form method="post" action="/settings/tokens/{{ token.id }}/revoke">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-small">Revoke</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
