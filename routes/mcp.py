@@ -282,6 +282,21 @@ def _call_tool(name, args, user):
     return _text_result(f"Error: unknown tool '{name}'")
 
 
+@mcp_bp.route("/mcp", methods=["GET"])
+def handle_mcp_sse():
+    user = _require_auth()
+    if not user:
+        r = jsonify({"error": "Unauthorized"})
+        r.status_code = 401
+        r.headers["WWW-Authenticate"] = "Bearer"
+        return r
+
+    def stream():
+        yield ": ok\n\n"
+
+    return Response(stream(), content_type="text/event-stream")
+
+
 @mcp_bp.route("/mcp", methods=["POST"])
 def handle_mcp():
     user = _require_auth()
