@@ -1,6 +1,5 @@
 import base64
 import hashlib
-import os
 import secrets
 
 from flask import Blueprint, jsonify, redirect, render_template, request, session
@@ -17,22 +16,21 @@ from db import (
     verify_code,
 )
 from mail import send_verification_email
-from routes import limiter
+from routes import BASE_DOMAIN, limiter
 from utils import valid_email
 
 oauth_bp = Blueprint("oauth", __name__)
 
-BASE_URL = os.environ.get("BASE_URL", "http://jottit.localhost:8000")
-
 
 @oauth_bp.route("/.well-known/oauth-authorization-server")
 def metadata():
+    base = f"{request.scheme}://{BASE_DOMAIN}"
     return jsonify(
         {
-            "issuer": BASE_URL,
-            "authorization_endpoint": f"{BASE_URL}/oauth/authorize",
-            "token_endpoint": f"{BASE_URL}/oauth/token",
-            "registration_endpoint": f"{BASE_URL}/oauth/register",
+            "issuer": base,
+            "authorization_endpoint": f"{base}/oauth/authorize",
+            "token_endpoint": f"{base}/oauth/token",
+            "registration_endpoint": f"{base}/oauth/register",
             "response_types_supported": ["code"],
             "grant_types_supported": ["authorization_code"],
             "code_challenge_methods_supported": ["S256"],
