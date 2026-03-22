@@ -200,6 +200,10 @@
     display: block;
 }
 
+.page-footer .page-footer-ai {
+    margin-bottom: var(--space-3);
+}
+
 .page-footer .page-footer-license {
     margin-bottom: var(--space-3);
 }

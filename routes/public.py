@@ -300,6 +300,7 @@ def view_page(slug):
         license_info=license_info,
         listing=page_meta["listing"],
         reading_time=reading_time(row["content"]),
+        ai_assisted=row.get("ai_assisted", False),
     )
     response = current_app.make_response(resp)
     if not is_owner and not show_actions and not row["draft"]:

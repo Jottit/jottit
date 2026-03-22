@@ -178,7 +178,7 @@ def get_page(page_id):
 def get_page_full(page_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT r.content, p.draft, r.created_at,
+            """SELECT r.content, p.draft, r.created_at, r.source, r.ai_assisted,
                       (SELECT COUNT(*) FROM revisions r2 WHERE r2.page_id = p.id) AS revision_count
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
