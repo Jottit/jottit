@@ -45,6 +45,7 @@ app.register_blueprint(api_bp)
 app.register_blueprint(oauth_bp)
 app.register_blueprint(mcp_bp)
 csrf.exempt(api_bp)
+csrf.exempt(oauth_bp)
 csrf.exempt(mcp_bp)
 
 
