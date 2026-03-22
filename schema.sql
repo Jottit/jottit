@@ -41,6 +41,15 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     UNIQUE (email, purpose)
 );
 
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL DEFAULT '',
+    last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
     filename TEXT PRIMARY KEY,
     applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -58,6 +67,7 @@ CREATE INDEX IF NOT EXISTS pages_original_slug ON pages (original_slug);
 CREATE UNIQUE INDEX IF NOT EXISTS pages_user_slug_unique ON pages (user_id, slug) WHERE user_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL;
 CREATE INDEX IF NOT EXISTS pages_draft_updated_idx ON pages (draft, updated_at DESC);
+CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens (user_id);
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
@@ -68,7 +78,8 @@ DO $$ BEGIN
             ('003_add_license.sql'),
             ('004_add_listing.sql'),
             ('005_per_user_slugs.sql'),
-            ('007_add_original_slug.sql')
+            ('007_add_original_slug.sql'),
+            ('011_add_api_tokens.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

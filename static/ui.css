@@ -1242,13 +1242,15 @@
 }
 
 .tokens-list {
-    margin-top: var(--space-8);
+    margin-top: var(--space-6);
 }
 
-.tokens-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.tokens-list .settings-row {
+    padding-inline: var(--panel-padding);
+}
+
+.tokens-list .settings-row:last-child {
+    border-bottom: none;
 }
 
 .tokens-info {
