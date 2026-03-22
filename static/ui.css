@@ -872,6 +872,12 @@
     width: 100%;
 }
 
+.oauth-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+}
+
 .shell-centered .auth-input {
     width: 100%;
     text-align: center;
