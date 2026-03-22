@@ -10,6 +10,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from db import init_db, run_migrations
 from routes import bp, limiter
 from routes.api import api_bp
+from routes.mcp import mcp_bp
+from routes.oauth import oauth_bp
 from utils import relative_time, render_bio
 
 dsn = os.environ.get("SENTRY_DSN")
@@ -40,7 +42,10 @@ csrf = CSRFProtect(app)
 limiter.init_app(app)
 app.register_blueprint(bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(oauth_bp)
+app.register_blueprint(mcp_bp)
 csrf.exempt(api_bp)
+csrf.exempt(mcp_bp)
 
 
 # --- Asset versioning ---

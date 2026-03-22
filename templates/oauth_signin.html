@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in — Jottit{% endblock %}
+
+{% block body %}
+<div class="shell shell-centered">
+    {% if not_found %}
+    <h1 class="title">Email not found</h1>
+    <p class="subtitle mb-6">Don't have an account? Create a page first,<br>then claim it with your email.</p>
+    <a href="/new" class="btn btn--primary">Create a page</a>
+    {% else %}
+    <h1 class="title">Sign in to authorize</h1>
+    <p class="subtitle">Enter your email to continue.</p>
+    {% if error %}
+    <p class="error">{{ error|safe }}</p>
+    {% endif %}
+    <form class="auth-form" method="post" action="/oauth/authorize">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="email" class="sr-only">Email address</label>
+        <input class="auth-input" type="email" name="email" id="email" required autofocus>
+        <button class="btn btn-solid" type="submit">Send code</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

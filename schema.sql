@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     id SERIAL PRIMARY KEY,
     email TEXT NOT NULL,
     code TEXT NOT NULL,
-    purpose TEXT NOT NULL CHECK (purpose IN ('claim', 'signin', 'email_change')),
+    purpose TEXT NOT NULL CHECK (purpose IN ('claim', 'signin', 'email_change', 'oauth')),
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (email, purpose)
@@ -47,6 +47,23 @@ CREATE TABLE IF NOT EXISTS api_tokens (
     token_hash TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL DEFAULT '',
     last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS oauth_clients (
+    id TEXT PRIMARY KEY,
+    redirect_uris TEXT[] NOT NULL,
+    client_name TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS oauth_codes (
+    code TEXT PRIMARY KEY,
+    client_id TEXT NOT NULL REFERENCES oauth_clients(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    redirect_uri TEXT NOT NULL,
+    code_challenge TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -68,6 +85,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS pages_user_slug_unique ON pages (user_id, slug
 CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL;
 CREATE INDEX IF NOT EXISTS pages_draft_updated_idx ON pages (draft, updated_at DESC);
 CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens (user_id);
+CREATE INDEX IF NOT EXISTS oauth_codes_expires_idx ON oauth_codes (expires_at);
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
@@ -79,7 +97,8 @@ DO $$ BEGIN
             ('004_add_listing.sql'),
             ('005_per_user_slugs.sql'),
             ('007_add_original_slug.sql'),
-            ('011_add_api_tokens.sql')
+            ('011_add_api_tokens.sql'),
+            ('014_add_oauth.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

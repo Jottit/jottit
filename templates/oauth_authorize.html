@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Authorize — Jottit{% endblock %}
+
+{% block body %}
+<div class="shell shell-centered">
+    <h1 class="title">Authorize</h1>
+    <p class="subtitle">{{ client_name }} wants to access your Jottit account.</p>
+    <form class="auth-form" method="post" action="/oauth/authorize">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="approve">
+        <button class="btn btn-solid" type="submit">Allow</button>
+    </form>
+    <form method="post" action="/oauth/authorize">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="deny">
+        <button class="btn btn--outline" type="submit">Deny</button>
+    </form>
+</div>
+{% endblock %}

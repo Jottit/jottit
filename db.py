@@ -533,6 +533,49 @@ def delete_api_token(token_id, user_id):
         return result.rowcount > 0
 
 
+def create_oauth_client(redirect_uris, client_name=""):
+    client_id = secrets.token_urlsafe(32)
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO oauth_clients (id, redirect_uris, client_name) VALUES (%s, %s, %s)",
+            (client_id, redirect_uris, client_name),
+        )
+        conn.commit()
+    return client_id
+
+
+def get_oauth_client(client_id):
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT id, redirect_uris, client_name FROM oauth_clients WHERE id = %s",
+            (client_id,),
+        ).fetchone()
+
+
+def create_oauth_code(client_id, user_id, redirect_uri, code_challenge):
+    code = secrets.token_urlsafe(32)
+    with get_db() as conn:
+        conn.execute(
+            """INSERT INTO oauth_codes (code, client_id, user_id, redirect_uri, code_challenge, expires_at)
+               VALUES (%s, %s, %s, %s, %s, NOW() + INTERVAL '10 minutes')""",
+            (code, client_id, user_id, redirect_uri, code_challenge),
+        )
+        conn.commit()
+    return code
+
+
+def consume_oauth_code(code, client_id, redirect_uri):
+    with get_db() as conn:
+        row = conn.execute(
+            """DELETE FROM oauth_codes
+               WHERE code = %s AND client_id = %s AND redirect_uri = %s AND expires_at > NOW()
+               RETURNING user_id, code_challenge""",
+            (code, client_id, redirect_uri),
+        ).fetchone()
+        conn.commit()
+        return row
+
+
 def get_user_by_token_hash(token_hash):
     with get_db() as conn:
         row = conn.execute(
