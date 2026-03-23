@@ -29,6 +29,7 @@ from utils import (
     generate_slug,
     get_body,
     get_title,
+    is_random_slug,
     slugify,
     valid_email,
     valid_username,
@@ -232,6 +233,18 @@ def edit_page(slug):
                 ):
                     rename_page(new_page_meta["id"], nice_slug)
                     slug = nice_slug
+    elif title and is_random_slug(slug):
+        effective_user_id = subdomain_user_id or session.get("user_id")
+        if effective_user_id:
+            nice_slug = slugify(title)
+            reserved = RESERVED_SLUGS if not subdomain_user else set()
+            if (
+                nice_slug
+                and nice_slug not in reserved
+                and not get_page_meta(nice_slug, effective_user_id)
+            ):
+                rename_page(page_meta["id"], nice_slug)
+                slug = nice_slug
 
     return redirect(f"{g.url_prefix}/{slug}")
 

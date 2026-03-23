@@ -78,6 +78,10 @@ def generate_slug(length=6):
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
+def is_random_slug(slug):
+    return bool(re.fullmatch(r"[a-z0-9]{6}", slug))
+
+
 def render_markdown(text):
     html = _mistune_md(text)
     html = _smartypants(html)
