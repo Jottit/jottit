@@ -759,6 +759,7 @@
     align-items: center;
     justify-content: space-between;
     border-top: 1px solid var(--border);
+    padding-top: var(--space-4);
 }
 
 @media (max-width: 639px) {
