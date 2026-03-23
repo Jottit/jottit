@@ -5,29 +5,34 @@ import string
 from datetime import datetime, timezone
 from html import escape as html_escape
 
-import markdown
-from markdown.inlinepatterns import InlineProcessor
-from markdown.extensions import Extension
-from xml.etree.ElementTree import Element
+import mistune
+from mistune.plugins.url import url as mistune_url_plugin
 import nh3
 
-_URL_RE = r"(https?://[^\s<>\[\]\"'\)]+)"
+_mistune_md = mistune.create_markdown()
+mistune_url_plugin(_mistune_md)
 
 
-class _AutolinkPattern(InlineProcessor):
-    def handleMatch(self, m, data):
-        url = m.group(1)
-        url = url.rstrip(".,;:!?")
-        el = Element("a")
-        el.set("href", url)
-        el.text = url
-        end = m.start(0) + len(url)
-        return el, m.start(0), end
+def _smartypants(html):
+    """Convert ASCII punctuation to typographic equivalents in text nodes."""
 
+    def _replace(text):
+        # Unescape HTML entities so patterns can match uniformly
+        text = text.replace("&quot;", '"')
+        text = text.replace("&#x27;", "'")
+        text = text.replace("&apos;", "'")
+        text = text.replace("---", "\u2014")
+        text = text.replace("--", "\u2013")
+        text = text.replace("...", "\u2026")
+        text = re.sub(r'(^|\s)"', "\\1\u201c", text)
+        text = re.sub(r'"', "\u201d", text)
+        text = re.sub(r"(\w)'(\w)", "\\1\u2019\\2", text)
+        text = re.sub(r"(^|\s)'", "\\1\u2018", text)
+        text = re.sub(r"'", "\u2019", text)
+        return text
 
-class _AutolinkExtension(Extension):
-    def extendMarkdown(self, md):
-        md.inlinePatterns.register(_AutolinkPattern(_URL_RE, md), "autolink_urls", 120)
+    parts = re.split(r"(<[^>]+>)", html)
+    return "".join(_replace(p) if not p.startswith("<") else p for p in parts)
 
 
 RESERVED_SLUGS = {
@@ -74,7 +79,8 @@ def generate_slug(length=6):
 
 
 def render_markdown(text):
-    html = markdown.markdown(text, extensions=["smarty", _AutolinkExtension()])
+    html = _mistune_md(text)
+    html = _smartypants(html)
     return nh3.clean(html, link_rel=None, attributes=_SANITIZE_ATTRIBUTES)
 
 
