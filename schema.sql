@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS revisions (
     page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
     revision INTEGER NOT NULL,
     content TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'web',
+    ai_assisted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (page_id, revision)
 );
@@ -98,6 +100,8 @@ DO $$ BEGIN
             ('005_per_user_slugs.sql'),
             ('007_add_original_slug.sql'),
             ('011_add_api_tokens.sql'),
+            ('012_add_revision_source.sql'),
+            ('013_add_revision_ai_assisted.sql'),
             ('014_add_oauth.sql')
         ON CONFLICT DO NOTHING;
     END IF;
