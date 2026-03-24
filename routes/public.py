@@ -301,6 +301,7 @@ def view_page(slug):
         listing=page_meta["listing"],
         reading_time=reading_time(row["content"]),
         ai_assisted=row.get("ai_assisted", False),
+        page_source=row.get("source", "web"),
     )
     response = current_app.make_response(resp)
     if not is_owner and not show_actions and not row["draft"]:

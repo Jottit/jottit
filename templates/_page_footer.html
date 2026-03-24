@@ -1,6 +1,8 @@
 <footer class="page-footer">
-    {% if ai_assisted %}
-    <span class="page-footer-ai">published with Claude</span>
+    {% if ai_assisted and page_source == "mcp" %}
+    <span class="page-footer-ai">published via MCP</span>
+    {% elif ai_assisted and page_source == "api" %}
+    <span class="page-footer-ai">published via API</span>
     {% endif %}
     {% if license_info %}
     <span class="page-footer-license">{% if license_info.url %}Licensed under <a href="{{ license_info.url }}">{{ license_info.name }}</a>{% else %}{{ license_info.name }}{% endif %}</span>
