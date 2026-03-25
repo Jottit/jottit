@@ -440,6 +440,11 @@ def sitemap():
     parts = [
         '<?xml version="1.0" encoding="utf-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        f"  <url>\n"
+        f"    <loc>https://{BASE_DOMAIN}/</loc>\n"
+        f"    <changefreq>daily</changefreq>\n"
+        f"    <priority>1.0</priority>\n"
+        f"  </url>",
     ]
     for page in pages:
         if page["username"]:
