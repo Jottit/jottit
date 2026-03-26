@@ -23,7 +23,7 @@ def delete(ctx, slug, yes):
             f"Page '{slug}' not found.",
             breadcrumbs=[{"label": "List pages", "command": "jottit list --json"}],
         )
-    if r.status_code not in (200, 204):
+    elif r.status_code not in (200, 204):
         fmt.error("Failed to delete page.")
 
     fmt.success(

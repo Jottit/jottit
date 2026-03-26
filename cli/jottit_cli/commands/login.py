@@ -4,6 +4,7 @@ import http.server
 import secrets
 import threading
 import webbrowser
+from urllib.parse import parse_qs, urlparse
 
 import click
 import httpx
@@ -23,8 +24,6 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
     state = None
 
     def do_GET(self):
-        from urllib.parse import urlparse, parse_qs
-
         qs = parse_qs(urlparse(self.path).query)
         _CallbackHandler.code = qs.get("code", [None])[0]
         _CallbackHandler.state = qs.get("state", [None])[0]
@@ -57,9 +56,7 @@ def login(ctx, token):
         )
         return
 
-    config = load_config(
-        base_url_override=ctx.obj.get("base_url_override"),
-    )
+    config = load_config(base_url_override=ctx.obj.get("base_url_override"))
     base = config.base_url.rstrip("/")
     http_client = httpx.Client(timeout=30)
 

@@ -45,3 +45,8 @@ class JottitClient:
         if username:
             return f"{self.base_url}/@{username}/{slug}"
         return f"{self.base_url}/{slug}"
+
+    def get_page_url(self, slug):
+        r = self.get("/user")
+        username = r.json().get("username") if r.status_code == 200 else None
+        return self.page_url(slug, username)

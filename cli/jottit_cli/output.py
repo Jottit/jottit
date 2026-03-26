@@ -32,13 +32,11 @@ class Formatter:
             if breadcrumbs:
                 envelope["breadcrumbs"] = breadcrumbs
             print(json.dumps(envelope, indent=2))
-            sys.exit(1)
         elif self.quiet:
             err_console.print(message)
-            sys.exit(1)
         else:
             err_console.print(f"[red]Error:[/red] {message}")
-            sys.exit(1)
+        sys.exit(1)
 
     def table(self, rows, columns, data_list=None, breadcrumbs=None, quiet_key=None):
         if self.use_json:
@@ -48,11 +46,10 @@ class Formatter:
             print(json.dumps(envelope, indent=2))
         elif self.quiet:
             for row in rows:
-                (
+                if isinstance(row, dict):
                     print(row.get(quiet_key, ""))
-                    if isinstance(row, dict)
-                    else print(row[0])
-                )
+                else:
+                    print(row[0])
         else:
             t = Table(show_header=True, show_edge=False, pad_edge=False)
             for col in columns:

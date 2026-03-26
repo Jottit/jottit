@@ -52,15 +52,12 @@ def edit(ctx, slug, file_path, inline_content, draft, listing):
             f"Page '{slug}' not found.",
             breadcrumbs=[{"label": "List pages", "command": "jottit list --json"}],
         )
-    if r.status_code != 200:
+    elif r.status_code != 200:
         error = r.json().get("error", "Failed to update page")
         fmt.error(error)
 
     data = r.json()
-
-    r2 = client.get("/user")
-    username = r2.json().get("username") if r2.status_code == 200 else None
-    url = client.page_url(slug, username)
+    url = client.get_page_url(slug)
 
     fmt.success(
         data=data,

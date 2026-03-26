@@ -59,10 +59,7 @@ def publish(ctx, file, slug, draft, private, listing, title, open_browser):
 
     data = r.json()
     page_slug = data["slug"]
-
-    r2 = client.get("/user")
-    username = r2.json().get("username") if r2.status_code == 200 else None
-    url = client.page_url(page_slug, username)
+    url = client.get_page_url(page_slug)
 
     if open_browser:
         webbrowser.open(url)

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import click
 
 from jottit_cli.auth import get_client
@@ -7,8 +9,6 @@ from jottit_cli.output import console
 def _relative_time(iso_str):
     if not iso_str:
         return ""
-    from datetime import datetime, timezone
-
     try:
         dt = datetime.fromisoformat(iso_str)
         now = datetime.now(timezone.utc)
