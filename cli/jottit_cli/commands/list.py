@@ -51,7 +51,7 @@ def list_pages(ctx, drafts, listing):
     if r.status_code != 200:
         fmt.error("Failed to list pages.")
 
-    pages = r.json()
+    pages = r.json().get("pages", [])
 
     if drafts:
         pages = [p for p in pages if p.get("draft")]

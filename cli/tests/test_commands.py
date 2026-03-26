@@ -151,22 +151,24 @@ class TestList:
         client = MagicMock()
         client.get.return_value = _mock_response(
             200,
-            [
-                {
-                    "slug": "page-1",
-                    "title": "Page 1",
-                    "draft": False,
-                    "listing": "listed",
-                    "updated_at": "2026-03-26T10:00:00+00:00",
-                },
-                {
-                    "slug": "page-2",
-                    "title": "Page 2",
-                    "draft": True,
-                    "listing": "unlisted",
-                    "updated_at": "2026-03-25T10:00:00+00:00",
-                },
-            ],
+            {
+                "pages": [
+                    {
+                        "slug": "page-1",
+                        "title": "Page 1",
+                        "draft": False,
+                        "listing": "listed",
+                        "updated_at": "2026-03-26T10:00:00+00:00",
+                    },
+                    {
+                        "slug": "page-2",
+                        "title": "Page 2",
+                        "draft": True,
+                        "listing": "unlisted",
+                        "updated_at": "2026-03-25T10:00:00+00:00",
+                    },
+                ]
+            },
         )
         from jottit_cli.output import Formatter
 
@@ -183,10 +185,12 @@ class TestList:
         client = MagicMock()
         client.get.return_value = _mock_response(
             200,
-            [
-                {"slug": "page-1", "draft": False, "listing": "listed"},
-                {"slug": "page-2", "draft": False, "listing": "listed"},
-            ],
+            {
+                "pages": [
+                    {"slug": "page-1", "draft": False, "listing": "listed"},
+                    {"slug": "page-2", "draft": False, "listing": "listed"},
+                ]
+            },
         )
         from jottit_cli.output import Formatter
 
