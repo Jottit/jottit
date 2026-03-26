@@ -126,6 +126,34 @@
     margin: 2.5rem 0;
 }
 
+.page table {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.page th,
+.page td {
+    padding: 0.6em 0.8em;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.page th {
+    font-family: var(--site-font-heading);
+    font-weight: 700;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--site-color-heading);
+    border-bottom-width: 2px;
+}
+
+.page tr:last-child td {
+    border-bottom: none;
+}
+
 /* Subdomain page listing */
 
 .page-listing-item {

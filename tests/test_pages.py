@@ -95,6 +95,16 @@ def test_view_page_renders_markdown(client):
     assert b"<strong>bold</strong>" in r.data
 
 
+# Markdown tables render as HTML tables
+def test_view_page_renders_table(client):
+    table_md = "| A | B |\n|---|---|\n| 1 | 2 |"
+    client.post("/tablepage/edit", data={"title": "", "content": table_md})
+    r = client.get("/tablepage")
+    assert b"<table>" in r.data
+    assert b"<th>A</th>" in r.data
+    assert b"<td>1</td>" in r.data
+
+
 # Bare URLs in content are auto-linked on the published page
 def test_view_page_autolinks_urls(client):
     client.post(

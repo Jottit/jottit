@@ -6,10 +6,12 @@ from datetime import datetime, timezone
 from html import escape as html_escape
 
 import mistune
+from mistune.plugins.table import table as mistune_table_plugin
 from mistune.plugins.url import url as mistune_url_plugin
 import nh3
 
 _mistune_md = mistune.create_markdown()
+mistune_table_plugin(_mistune_md)
 mistune_url_plugin(_mistune_md)
 
 
