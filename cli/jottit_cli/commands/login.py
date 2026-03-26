@@ -64,13 +64,18 @@ def login(ctx, token):
     port = server.server_address[1]
     redirect_uri = f"http://localhost:{port}/callback"
 
-    r = http_client.post(
-        f"{base}/oauth/register",
-        json={
-            "redirect_uris": [redirect_uri],
-            "client_name": "Jottit CLI",
-        },
-    )
+    try:
+        r = http_client.post(
+            f"{base}/oauth/register",
+            json={
+                "redirect_uris": [redirect_uri],
+                "client_name": "Jottit CLI",
+            },
+        )
+    except httpx.ConnectError:
+        fmt.error(f"Could not connect to {base}")
+    except httpx.TimeoutException:
+        fmt.error("Request timed out.")
     if r.status_code != 201:
         fmt.error("Failed to register OAuth client.")
     client_id = r.json()["client_id"]
