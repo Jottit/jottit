@@ -31,7 +31,7 @@ def _format_response(resp):
 
 @mcp.tool()
 def get_page(slug: str) -> str:
-    """Get a Jottit page by its slug. Returns the page's title, content (markdown), draft status, listing, and last updated timestamp."""
+    """Get a Jottit page by its slug. Returns the page's title, content (markdown), visibility, and last updated timestamp."""
     with _client() as client:
         resp = client.get(f"/api/v1/pages/{slug}")
     return _format_response(resp)
@@ -39,7 +39,7 @@ def get_page(slug: str) -> str:
 
 @mcp.tool()
 def list_pages() -> str:
-    """List all pages owned by the authenticated user. Returns each page's slug, title, draft status, listing, and last updated timestamp."""
+    """List all pages owned by the authenticated user. Returns each page's slug, title, visibility, and last updated timestamp."""
     with _client() as client:
         resp = client.get("/api/v1/pages")
     return _format_response(resp)
@@ -49,14 +49,12 @@ def list_pages() -> str:
 def create_page(
     content: str,
     slug: str = "",
-    draft: bool = False,
-    listing: str = "listed",
+    visibility: str = "private",
 ) -> str:
-    """Create a new Jottit page. Content should be markdown — start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Listing can be 'listed', 'unlisted', or 'pinned'."""
+    """Create a new Jottit page. Content should be markdown — start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Visibility can be 'private', 'unlisted', 'listed', or 'pinned'."""
     body = {
         "content": content,
-        "draft": draft,
-        "listing": listing,
+        "visibility": visibility,
         "ai_assisted": True,
     }
     if slug:
@@ -70,17 +68,14 @@ def create_page(
 def update_page(
     slug: str,
     content: str = "",
-    draft: bool | None = None,
-    listing: str = "",
+    visibility: str = "",
 ) -> str:
     """Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line."""
     body: dict = {"ai_assisted": True}
     if content:
         body["content"] = content
-    if draft is not None:
-        body["draft"] = draft
-    if listing:
-        body["listing"] = listing
+    if visibility:
+        body["visibility"] = visibility
     with _client() as client:
         resp = client.put(f"/api/v1/pages/{slug}", headers=WRITE_HEADERS, json=body)
     return _format_response(resp)

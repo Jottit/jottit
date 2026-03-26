@@ -12,13 +12,13 @@ from db import (
     get_user_by_token_hash,
     get_user_by_username,
     save_page,
-    update_page_listing,
+    update_page_visibility,
 )
 from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
-LISTING_OPTIONS = ("listed", "unlisted", "pinned")
+VISIBILITY_OPTIONS = ("private", "unlisted", "listed", "pinned")
 
 
 def _require_auth():
@@ -44,8 +44,7 @@ def _serialize_page(meta, page_data):
         "slug": meta["slug"],
         "title": get_title(page_data["content"]) or "",
         "content": page_data["content"],
-        "draft": page_data["draft"],
-        "listing": meta["listing"],
+        "visibility": meta["visibility"],
         "updated_at": page_data["created_at"].isoformat(),
     }
 
@@ -78,12 +77,11 @@ def get_user_profile(username):
         {
             "slug": p["slug"],
             "title": get_title(p["content"]) or "",
-            "draft": p["draft"],
-            "listing": p["listing"],
+            "visibility": p["visibility"],
             "updated_at": p["updated_at"].isoformat(),
         }
         for p in pages
-        if not p["draft"] and p["listing"] in ("listed", "pinned")
+        if p["visibility"] in ("listed", "pinned")
     ]
     return jsonify(
         {
@@ -108,8 +106,7 @@ def list_pages():
                 {
                     "slug": p["slug"],
                     "title": get_title(p["content"]) or "",
-                    "draft": p["draft"],
-                    "listing": p["listing"],
+                    "visibility": p["visibility"],
                     "updated_at": p["updated_at"].isoformat(),
                 }
                 for p in pages
@@ -136,7 +133,6 @@ def create_page():
             f"Content exceeds maximum length of {MAX_CONTENT_LENGTH} characters", 400
         )
 
-    draft = data.get("draft", False)
     ai_assisted = data.get("ai_assisted", False)
 
     slug = slugify(data.get("slug", ""))
@@ -145,18 +141,20 @@ def create_page():
     if not slug:
         slug = generate_slug()
 
-    listing = data.get("listing", "listed")
-    if listing not in LISTING_OPTIONS:
-        return _error(f"Listing must be one of: {', '.join(LISTING_OPTIONS)}", 400)
+    visibility = data.get("visibility", "private")
+    if visibility not in VISIBILITY_OPTIONS:
+        return _error(
+            f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
+        )
 
     slug = save_page(
-        slug, content, draft, user["id"], source=_get_source(), ai_assisted=ai_assisted
+        slug,
+        content,
+        visibility,
+        user["id"],
+        source=_get_source(),
+        ai_assisted=ai_assisted,
     )
-
-    if listing != "listed":
-        meta = get_page_meta(slug, user["id"])
-        if meta:
-            update_page_listing(meta["id"], listing)
 
     meta = get_page_meta(slug, user["id"])
     page_data = get_page(meta["id"])
@@ -200,18 +198,25 @@ def update_page(slug):
             f"Content exceeds maximum length of {MAX_CONTENT_LENGTH} characters", 400
         )
 
-    draft = data.get("draft", page_data["draft"])
     ai_assisted = data.get("ai_assisted", False)
 
-    save_page(
-        slug, content, draft, user["id"], source=_get_source(), ai_assisted=ai_assisted
-    )
+    visibility = data.get("visibility")
+    if visibility is not None:
+        if visibility not in VISIBILITY_OPTIONS:
+            return _error(
+                f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
+            )
+        update_page_visibility(meta["id"], visibility)
 
-    listing = data.get("listing")
-    if listing is not None:
-        if listing not in LISTING_OPTIONS:
-            return _error(f"Listing must be one of: {', '.join(LISTING_OPTIONS)}", 400)
-        update_page_listing(meta["id"], listing)
+    current_visibility = visibility or meta["visibility"]
+    save_page(
+        slug,
+        content,
+        current_visibility,
+        user["id"],
+        source=_get_source(),
+        ai_assisted=ai_assisted,
+    )
 
     meta = get_page_meta(slug, user["id"])
     page_data = get_page(meta["id"])

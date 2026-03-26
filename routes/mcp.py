@@ -11,7 +11,7 @@ from db import (
     get_revisions_paginated,
     get_user_by_username,
     save_page,
-    update_page_listing,
+    update_page_visibility,
 )
 from routes.api import _require_auth, _serialize_page
 from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
@@ -20,17 +20,17 @@ mcp_bp = Blueprint("mcp", __name__)
 
 PROTOCOL_VERSION = "2025-03-26"
 SERVER_INFO = {"name": "Jottit", "version": "1.0.0"}
-LISTING_OPTIONS = ("listed", "unlisted", "pinned")
+VISIBILITY_OPTIONS = ("private", "unlisted", "listed", "pinned")
 
 TOOLS = [
     {
         "name": "list_pages",
-        "description": "List all pages owned by the authenticated user. Returns each page's slug, title, draft status, listing, and last updated timestamp.",
+        "description": "List all pages owned by the authenticated user. Returns each page's slug, title, visibility, and last updated timestamp.",
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
         "name": "get_page",
-        "description": "Get a Jottit page by its slug. Returns the page's title, content (markdown), draft status, listing, and last updated timestamp.",
+        "description": "Get a Jottit page by its slug. Returns the page's title, content (markdown), visibility, and last updated timestamp.",
         "inputSchema": {
             "type": "object",
             "properties": {"slug": {"type": "string", "description": "The page slug"}},
@@ -39,7 +39,7 @@ TOOLS = [
     },
     {
         "name": "create_page",
-        "description": "Create a new Jottit page. Content should be markdown — start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Listing can be 'listed', 'unlisted', or 'pinned'.",
+        "description": "Create a new Jottit page. Content should be markdown — start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Visibility can be 'private', 'unlisted', 'listed', or 'pinned'.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -49,11 +49,10 @@ TOOLS = [
                     "description": "URL slug (optional)",
                     "default": "",
                 },
-                "draft": {"type": "boolean", "default": False},
-                "listing": {
+                "visibility": {
                     "type": "string",
-                    "enum": ["listed", "unlisted", "pinned"],
-                    "default": "listed",
+                    "enum": ["private", "unlisted", "listed", "pinned"],
+                    "default": "private",
                 },
             },
             "required": ["content"],
@@ -67,8 +66,10 @@ TOOLS = [
             "properties": {
                 "slug": {"type": "string", "description": "The page slug"},
                 "content": {"type": "string", "description": "Markdown content"},
-                "draft": {"type": "boolean"},
-                "listing": {"type": "string", "enum": ["listed", "unlisted", "pinned"]},
+                "visibility": {
+                    "type": "string",
+                    "enum": ["private", "unlisted", "listed", "pinned"],
+                },
             },
             "required": ["slug"],
         },
@@ -130,8 +131,7 @@ def _call_tool(name, args, user):
             {
                 "slug": p["slug"],
                 "title": get_title(p["content"]) or "",
-                "draft": p["draft"],
-                "listing": p["listing"],
+                "visibility": p["visibility"],
                 "updated_at": p["updated_at"].isoformat(),
             }
             for p in pages
@@ -155,11 +155,10 @@ def _call_tool(name, args, user):
                 f"Error: content exceeds {MAX_CONTENT_LENGTH} characters"
             )
 
-        draft = args.get("draft", False)
-        listing = args.get("listing", "listed")
-        if listing not in LISTING_OPTIONS:
+        visibility = args.get("visibility", "private")
+        if visibility not in VISIBILITY_OPTIONS:
             return _text_result(
-                f"Error: listing must be one of: {', '.join(LISTING_OPTIONS)}"
+                f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
             )
 
         slug = slugify(args.get("slug", ""))
@@ -168,11 +167,9 @@ def _call_tool(name, args, user):
         if not slug:
             slug = generate_slug()
 
-        slug = save_page(slug, content, draft, user_id, source="mcp", ai_assisted=True)
-        if listing != "listed":
-            meta = get_page_meta(slug, user_id)
-            if meta:
-                update_page_listing(meta["id"], listing)
+        slug = save_page(
+            slug, content, visibility, user_id, source="mcp", ai_assisted=True
+        )
 
         meta = get_page_meta(slug, user_id)
         page_data = get_page(meta["id"])
@@ -193,16 +190,18 @@ def _call_tool(name, args, user):
                 f"Error: content exceeds {MAX_CONTENT_LENGTH} characters"
             )
 
-        draft = args.get("draft", page_data["draft"])
-        save_page(slug, content, draft, user_id, source="mcp", ai_assisted=True)
-
-        listing = args.get("listing")
-        if listing is not None:
-            if listing not in LISTING_OPTIONS:
+        visibility = args.get("visibility")
+        if visibility is not None:
+            if visibility not in VISIBILITY_OPTIONS:
                 return _text_result(
-                    f"Error: listing must be one of: {', '.join(LISTING_OPTIONS)}"
+                    f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
                 )
-            update_page_listing(meta["id"], listing)
+            update_page_visibility(meta["id"], visibility)
+
+        current_visibility = visibility or meta["visibility"]
+        save_page(
+            slug, content, current_visibility, user_id, source="mcp", ai_assisted=True
+        )
 
         meta = get_page_meta(slug, user_id)
         page_data = get_page(meta["id"])
@@ -260,12 +259,11 @@ def _call_tool(name, args, user):
             {
                 "slug": p["slug"],
                 "title": get_title(p["content"]) or "",
-                "draft": p["draft"],
-                "listing": p["listing"],
+                "visibility": p["visibility"],
                 "updated_at": p["updated_at"].isoformat(),
             }
             for p in pages
-            if not p["draft"] and p["listing"] in ("listed", "pinned")
+            if p["visibility"] in ("listed", "pinned")
         ]
         return _text_result(
             json.dumps(

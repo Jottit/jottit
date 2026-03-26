@@ -7,7 +7,7 @@ from db import (
     get_page_meta,
     save_page,
     set_user_username,
-    update_page_listing,
+    update_page_visibility,
 )
 
 # -- RSS Feed --
@@ -16,7 +16,7 @@ from db import (
 def _create_claimed_page(slug, title, content):
     user_id = find_or_create_user(f"{slug}@example.com")
     set_user_username(user_id, slug)
-    save_page(slug, f"# {title}\n\n{content}", False)
+    save_page(slug, f"# {title}\n\n{content}", "listed")
     page_meta = get_page_meta(slug)
     claim_page(page_meta["id"], user_id)
     return user_id
@@ -90,7 +90,7 @@ def test_page_has_feed_discovery_links(client):
 # Profile RSS feed includes all the user's pages with source markdown
 def test_site_rss_feed(client):
     user_id = create_user_with_username(client, "rsssite@example.com", "rsssite", "rp1")
-    save_page("rp2", "# Second Post\n\n**bold**", False)
+    save_page("rp2", "# Second Post\n\n**bold**", "listed")
     page_meta = get_page_meta("rp2")
     claim_page(page_meta["id"], user_id)
 
@@ -109,7 +109,7 @@ def test_site_json_feed(client):
     user_id = create_user_with_username(
         client, "jsonsite@example.com", "jsonsite", "jp1"
     )
-    save_page("jp2", "# Page Two\n\nsome text", False)
+    save_page("jp2", "# Page Two\n\nsome text", "listed")
     page_meta = get_page_meta("jp2")
     claim_page(page_meta["id"], user_id)
 
@@ -140,10 +140,10 @@ def test_site_feed_excludes_unlisted(client):
     user_id = create_user_with_username(
         client, "feedlist@example.com", "feedlist", "flp1"
     )
-    save_page("flp2", "# Unlisted\n\nHidden", False)
+    save_page("flp2", "# Unlisted\n\nHidden", "listed")
     page_meta = get_page_meta("flp2")
     claim_page(page_meta["id"], user_id)
-    update_page_listing(page_meta["id"], "unlisted")
+    update_page_visibility(page_meta["id"], "unlisted")
 
     r = client.get("/@feedlist/feed.xml")
     assert b"<title>Test</title>" in r.data
@@ -160,7 +160,7 @@ def test_site_feed_includes_pinned(client):
     user_id = create_user_with_username(
         client, "feedpin@example.com", "feedpin", "fpp1"
     )
-    update_page_listing(get_page_meta("fpp1", user_id)["id"], "pinned")
+    update_page_visibility(get_page_meta("fpp1", user_id)["id"], "pinned")
 
     r = client.get("/@feedpin/feed.json")
     feed = json.loads(r.data)
