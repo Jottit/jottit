@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-REPO="jottit/jottit"
+REPO="Jottit/jottit"
 BIN_NAME="jottit"
 
 echo "Installing Jottit CLI..."
