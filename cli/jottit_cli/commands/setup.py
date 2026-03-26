@@ -7,7 +7,9 @@ import click
 
 @click.command()
 @click.argument("target", type=click.Choice(["claude"]))
-@click.option("--project", is_flag=True, help="Install to .claude/commands/ in current project")
+@click.option(
+    "--project", is_flag=True, help="Install to .claude/commands/ in current project"
+)
 @click.pass_context
 def setup(ctx, target, project):
     """Set up Jottit integration with AI tools.
@@ -37,7 +39,7 @@ def _setup_claude(fmt, project):
     fmt.success(
         data={"target": "claude", "path": str(dest)},
         message=f"Installed Jottit skill to {dest}\n"
-                f"Claude Code can now use 'jottit' commands ({location}).",
+        f"Claude Code can now use 'jottit' commands ({location}).",
         quiet_value=str(dest),
         breadcrumbs=[
             {"label": "Check auth", "command": "jottit whoami --json"},

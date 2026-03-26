@@ -48,7 +48,11 @@ class Formatter:
             print(json.dumps(envelope, indent=2))
         elif self.quiet:
             for row in rows:
-                print(row.get(quiet_key, "")) if isinstance(row, dict) else print(row[0])
+                (
+                    print(row.get(quiet_key, ""))
+                    if isinstance(row, dict)
+                    else print(row[0])
+                )
         else:
             t = Table(show_header=True, show_edge=False, pad_edge=False)
             for col in columns:

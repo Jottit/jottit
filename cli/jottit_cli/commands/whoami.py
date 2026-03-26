@@ -1,6 +1,6 @@
 import click
 
-from jottit_cli.main import get_client
+from jottit_cli.auth import get_client
 
 
 @click.command()

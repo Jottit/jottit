@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from jottit_cli.main import get_client
+from jottit_cli.auth import get_client
 
 
 def _read_content(file, title):
@@ -24,9 +24,13 @@ def _read_content(file, title):
 @click.option("--slug", help="Custom slug for the page")
 @click.option("--draft", is_flag=True, help="Publish as draft")
 @click.option("--private", is_flag=True, help="Publish as private (only you can see)")
-@click.option("--listing", type=click.Choice(["listed", "unlisted", "pinned"]), default=None)
+@click.option(
+    "--listing", type=click.Choice(["listed", "unlisted", "pinned"]), default=None
+)
 @click.option("--title", help="Page title (prepended as # heading if missing)")
-@click.option("--open", "open_browser", is_flag=True, help="Open in browser after publishing")
+@click.option(
+    "--open", "open_browser", is_flag=True, help="Open in browser after publishing"
+)
 @click.pass_context
 def publish(ctx, file, slug, draft, private, listing, title, open_browser):
     """Publish a new page.

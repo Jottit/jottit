@@ -1,6 +1,6 @@
 import click
 
-from jottit_cli.main import get_client
+from jottit_cli.auth import get_client
 from jottit_cli.output import console
 
 
@@ -8,6 +8,7 @@ def _relative_time(iso_str):
     if not iso_str:
         return ""
     from datetime import datetime, timezone
+
     try:
         dt = datetime.fromisoformat(iso_str)
         now = datetime.now(timezone.utc)
@@ -60,12 +61,14 @@ def list_pages(ctx, drafts, listing):
     rows = []
     for p in pages:
         title = p.get("title") or _title_from_content(p.get("content", ""))
-        rows.append({
-            "slug": p["slug"],
-            "title": title,
-            "listing": "draft" if p.get("draft") else p.get("listing", ""),
-            "updated": _relative_time(p.get("updated_at")),
-        })
+        rows.append(
+            {
+                "slug": p["slug"],
+                "title": title,
+                "listing": "draft" if p.get("draft") else p.get("listing", ""),
+                "updated": _relative_time(p.get("updated_at")),
+            }
+        )
 
     if not rows and not fmt.use_json:
         console.print("No pages found.")

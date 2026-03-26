@@ -14,6 +14,7 @@ def runner():
 
 def _mock_config(token="jot_test"):
     from jottit_cli.config import Config
+
     return Config(token=token, base_url="http://localhost:5000")
 
 
@@ -35,10 +36,16 @@ class TestWhoami:
     @patch("jottit_cli.commands.whoami.get_client")
     def test_whoami_human(self, mock_gc, runner):
         client = MagicMock()
-        client.get.return_value = _mock_response(200, {
-            "username": "simon", "name": "Simon", "email": "s@example.com",
-        })
+        client.get.return_value = _mock_response(
+            200,
+            {
+                "username": "simon",
+                "name": "Simon",
+                "email": "s@example.com",
+            },
+        )
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter())
         result = runner.invoke(cli, ["whoami"])
         assert result.exit_code == 0
@@ -47,10 +54,16 @@ class TestWhoami:
     @patch("jottit_cli.commands.whoami.get_client")
     def test_whoami_json(self, mock_gc, runner):
         client = MagicMock()
-        client.get.return_value = _mock_response(200, {
-            "username": "simon", "name": "Simon", "email": "s@example.com",
-        })
+        client.get.return_value = _mock_response(
+            200,
+            {
+                "username": "simon",
+                "name": "Simon",
+                "email": "s@example.com",
+            },
+        )
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter(use_json=True))
         result = runner.invoke(cli, ["--json", "whoami"])
         assert result.exit_code == 0
@@ -71,6 +84,7 @@ class TestPublish:
         client.get.return_value = _mock_response(200, {"username": "simon"})
         client.page_url.return_value = "http://localhost:5000/@simon/hello"
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter())
 
         result = runner.invoke(cli, ["publish", str(md_file)])
@@ -87,6 +101,7 @@ class TestPublish:
         client.get.return_value = _mock_response(200, {"username": "simon"})
         client.page_url.return_value = "http://localhost:5000/@simon/stdin-page"
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter())
 
         result = runner.invoke(cli, ["publish"], input="# From stdin\n\nHello")
@@ -104,6 +119,7 @@ class TestPublish:
         client.get.return_value = _mock_response(200, {"username": "simon"})
         client.page_url.return_value = "http://localhost:5000/@simon/hello"
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter(quiet=True))
 
         result = runner.invoke(cli, ["--quiet", "publish", str(md_file)])
@@ -120,6 +136,7 @@ class TestPublish:
         client.get.return_value = _mock_response(200, {"username": "simon"})
         client.page_url.return_value = "http://localhost:5000/@simon/my-title"
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter())
 
         result = runner.invoke(cli, ["publish", str(md_file), "--title", "My Title"])
@@ -132,11 +149,27 @@ class TestList:
     @patch("jottit_cli.commands.list.get_client")
     def test_list_json(self, mock_gc, runner):
         client = MagicMock()
-        client.get.return_value = _mock_response(200, [
-            {"slug": "page-1", "title": "Page 1", "draft": False, "listing": "listed", "updated_at": "2026-03-26T10:00:00+00:00"},
-            {"slug": "page-2", "title": "Page 2", "draft": True, "listing": "unlisted", "updated_at": "2026-03-25T10:00:00+00:00"},
-        ])
+        client.get.return_value = _mock_response(
+            200,
+            [
+                {
+                    "slug": "page-1",
+                    "title": "Page 1",
+                    "draft": False,
+                    "listing": "listed",
+                    "updated_at": "2026-03-26T10:00:00+00:00",
+                },
+                {
+                    "slug": "page-2",
+                    "title": "Page 2",
+                    "draft": True,
+                    "listing": "unlisted",
+                    "updated_at": "2026-03-25T10:00:00+00:00",
+                },
+            ],
+        )
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter(use_json=True))
 
         result = runner.invoke(cli, ["--json", "list"])
@@ -148,11 +181,15 @@ class TestList:
     @patch("jottit_cli.commands.list.get_client")
     def test_list_quiet(self, mock_gc, runner):
         client = MagicMock()
-        client.get.return_value = _mock_response(200, [
-            {"slug": "page-1", "draft": False, "listing": "listed"},
-            {"slug": "page-2", "draft": False, "listing": "listed"},
-        ])
+        client.get.return_value = _mock_response(
+            200,
+            [
+                {"slug": "page-1", "draft": False, "listing": "listed"},
+                {"slug": "page-2", "draft": False, "listing": "listed"},
+            ],
+        )
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter(quiet=True))
 
         result = runner.invoke(cli, ["--quiet", "list"])
@@ -172,6 +209,7 @@ class TestEdit:
         client.get.return_value = _mock_response(200, {"username": "simon"})
         client.page_url.return_value = "http://localhost:5000/@simon/my-page"
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter())
 
         result = runner.invoke(cli, ["edit", "my-page", "--file", str(md_file)])
@@ -185,6 +223,7 @@ class TestEdit:
         client.get.return_value = _mock_response(200, {"username": "simon"})
         client.page_url.return_value = "http://localhost:5000/@simon/my-page"
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter())
 
         result = runner.invoke(cli, ["edit", "my-page", "--no-draft"])
@@ -199,6 +238,7 @@ class TestDelete:
         client = MagicMock()
         client.delete.return_value = _mock_response(200, {})
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter())
 
         result = runner.invoke(cli, ["delete", "my-page", "--yes"])
@@ -210,6 +250,7 @@ class TestDelete:
         client = MagicMock()
         client.delete.return_value = _mock_response(200, {})
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter())
 
         result = runner.invoke(cli, ["delete", "my-page"], input="y\n")
@@ -220,6 +261,7 @@ class TestDelete:
     def test_delete_json_requires_yes(self, mock_gc, runner):
         client = MagicMock()
         from jottit_cli.output import Formatter
+
         mock_gc.return_value = (client, Formatter(use_json=True))
 
         result = runner.invoke(cli, ["--json", "delete", "my-page"])

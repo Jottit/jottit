@@ -24,13 +24,16 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         from urllib.parse import urlparse, parse_qs
+
         qs = parse_qs(urlparse(self.path).query)
         _CallbackHandler.code = qs.get("code", [None])[0]
         _CallbackHandler.state = qs.get("state", [None])[0]
         self.send_response(200)
         self.send_header("Content-Type", "text/html")
         self.end_headers()
-        self.wfile.write(b"<html><body><h2>Signed in! You can close this tab.</h2></body></html>")
+        self.wfile.write(
+            b"<html><body><h2>Signed in! You can close this tab.</h2></body></html>"
+        )
 
     def log_message(self, format, *args):
         pass
@@ -64,10 +67,13 @@ def login(ctx, token):
     port = server.server_address[1]
     redirect_uri = f"http://localhost:{port}/callback"
 
-    r = http_client.post(f"{base}/oauth/register", json={
-        "redirect_uris": [redirect_uri],
-        "client_name": "Jottit CLI",
-    })
+    r = http_client.post(
+        f"{base}/oauth/register",
+        json={
+            "redirect_uris": [redirect_uri],
+            "client_name": "Jottit CLI",
+        },
+    )
     if r.status_code != 201:
         fmt.error("Failed to register OAuth client.")
     client_id = r.json()["client_id"]
@@ -98,23 +104,31 @@ def login(ctx, token):
     if _CallbackHandler.state != state:
         fmt.error("State mismatch. Possible CSRF attack.")
 
-    r = http_client.post(f"{base}/oauth/token", data={
-        "grant_type": "authorization_code",
-        "code": _CallbackHandler.code,
-        "redirect_uri": redirect_uri,
-        "client_id": client_id,
-        "code_verifier": verifier,
-    })
+    r = http_client.post(
+        f"{base}/oauth/token",
+        data={
+            "grant_type": "authorization_code",
+            "code": _CallbackHandler.code,
+            "redirect_uri": redirect_uri,
+            "client_id": client_id,
+            "code_verifier": verifier,
+        },
+    )
     if r.status_code != 200:
         fmt.error("Failed to exchange authorization code for token.")
 
     access_token = r.json()["access_token"]
     save_config(access_token, config.base_url)
 
-    r = http_client.get(f"{base}/api/v1/user", headers={
-        "Authorization": f"Bearer {access_token}",
-    })
-    username = r.json().get("username", "unknown") if r.status_code == 200 else "unknown"
+    r = http_client.get(
+        f"{base}/api/v1/user",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+        },
+    )
+    username = (
+        r.json().get("username", "unknown") if r.status_code == 200 else "unknown"
+    )
 
     fmt.success(
         data={"username": username},
