@@ -41,10 +41,14 @@ def _title_from_content(content):
 
 
 @click.command("list")
-@click.option("--drafts", is_flag=True, help="Show only drafts")
-@click.option("--listing", type=click.Choice(["listed", "unlisted", "pinned"]))
+@click.option(
+    "--visibility",
+    type=click.Choice(["private", "unlisted", "listed", "pinned"]),
+    default=None,
+    help="Filter by visibility",
+)
 @click.pass_context
-def list_pages(ctx, drafts, listing):
+def list_pages(ctx, visibility):
     """List your pages."""
     client, fmt = get_client(ctx)
     r = client.get("/pages")
@@ -53,10 +57,8 @@ def list_pages(ctx, drafts, listing):
 
     pages = r.json().get("pages", [])
 
-    if drafts:
-        pages = [p for p in pages if p.get("draft")]
-    if listing:
-        pages = [p for p in pages if p.get("listing") == listing]
+    if visibility:
+        pages = [p for p in pages if p.get("visibility") == visibility]
 
     rows = []
     for p in pages:
@@ -65,7 +67,7 @@ def list_pages(ctx, drafts, listing):
             {
                 "slug": p["slug"],
                 "title": title,
-                "listing": "draft" if p.get("draft") else p.get("listing", ""),
+                "visibility": p.get("visibility", ""),
                 "updated": _relative_time(p.get("updated_at")),
             }
         )
@@ -76,7 +78,7 @@ def list_pages(ctx, drafts, listing):
 
     fmt.table(
         rows=rows,
-        columns=["Slug", "Title", "Listing", "Updated"],
+        columns=["Slug", "Title", "Visibility", "Updated"],
         data_list=pages,
         quiet_key="slug",
         breadcrumbs=[

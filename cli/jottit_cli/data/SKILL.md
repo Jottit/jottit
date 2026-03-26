@@ -17,8 +17,8 @@ When calling jottit commands, always pass `--json` for structured output. Parse 
 |------|---------|
 | Publish a file | `jottit publish notes.md --json` |
 | Publish from stdin | `echo "# Hello" \| jottit publish --json` |
-| Publish as draft | `jottit publish notes.md --draft --json` |
-| Publish private | `jottit publish notes.md --private --json` |
+| Publish private | `jottit publish notes.md --visibility private --json` |
+| Publish unlisted | `jottit publish notes.md --visibility unlisted --json` |
 | Edit a page | `jottit edit my-slug --file updated.md --json` |
 | List pages | `jottit list --json` |
 | Delete a page | `jottit delete my-slug --yes --json` |
@@ -39,26 +39,26 @@ On error: `{"ok": false, "error": "message", "breadcrumbs": [...]}`
 ### publish
 
 ```
-jottit publish [FILE] [--slug SLUG] [--draft] [--private] [--listing listed|unlisted|pinned] [--title TITLE] [--open] [--json]
+jottit publish [FILE] [--slug SLUG] [--visibility private|unlisted|listed|pinned] [--title TITLE] [--open] [--json]
 ```
 
-Publishes a new page. Reads content from FILE or stdin. If content has no `# heading` and `--title` is given, prepends it.
+Publishes a new page. Reads content from FILE or stdin. If content has no `# heading` and `--title` is given, prepends it. Default visibility is `private`.
 
 ### edit
 
 ```
-jottit edit SLUG [--file FILE] [--content TEXT] [--draft|--no-draft] [--listing listed|unlisted|pinned] [--json]
+jottit edit SLUG [--file FILE] [--content TEXT] [--visibility private|unlisted|listed|pinned] [--json]
 ```
 
-Updates an existing page. Content from `--file`, `--content`, or stdin. Can update metadata only with `--draft`/`--listing`.
+Updates an existing page. Content from `--file`, `--content`, or stdin. Can update metadata only with `--visibility`.
 
 ### list
 
 ```
-jottit list [--drafts] [--listing listed|unlisted|pinned] [--json]
+jottit list [--visibility private|unlisted|listed|pinned] [--json]
 ```
 
-Lists all your pages.
+Lists all your pages. Optionally filter by visibility.
 
 ### delete
 
@@ -89,9 +89,9 @@ jottit edit my-page --file revised.md --json
 echo "# Quick Thought\n\nSomething worth sharing." | jottit publish --json
 ```
 
-### Publish a draft, then make it live
+### Publish private, then make it public
 ```bash
-jottit publish draft.md --draft --json
+jottit publish draft.md --visibility private --json
 # later:
-jottit edit the-slug --no-draft --json
+jottit edit the-slug --visibility listed --json
 ```

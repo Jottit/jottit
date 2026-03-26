@@ -10,10 +10,14 @@ from jottit_cli.auth import get_client
 @click.argument("slug")
 @click.option("--file", "file_path", help="Read new content from file")
 @click.option("--content", "inline_content", help="Content string")
-@click.option("--draft/--no-draft", default=None, help="Set draft status")
-@click.option("--listing", type=click.Choice(["listed", "unlisted", "pinned"]))
+@click.option(
+    "--visibility",
+    type=click.Choice(["private", "unlisted", "listed", "pinned"]),
+    default=None,
+    help="Set page visibility",
+)
 @click.pass_context
-def edit(ctx, slug, file_path, inline_content, draft, listing):
+def edit(ctx, slug, file_path, inline_content, visibility):
     """Update an existing page.
 
     Content from --file, --content, or stdin:
@@ -35,15 +39,13 @@ def edit(ctx, slug, file_path, inline_content, draft, listing):
         if stdin_content:
             payload["content"] = stdin_content
 
-    if draft is not None:
-        payload["draft"] = draft
-    if listing:
-        payload["listing"] = listing
+    if visibility:
+        payload["visibility"] = visibility
 
     if not payload:
         raise click.UsageError(
             "Provide content via --file, --content, or stdin, "
-            "or use --draft/--no-draft/--listing to update metadata."
+            "or use --visibility to update metadata."
         )
 
     r = client.put(f"/pages/{slug}", json=payload)

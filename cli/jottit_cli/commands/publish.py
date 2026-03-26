@@ -22,17 +22,18 @@ def _read_content(file, title):
 @click.command()
 @click.argument("file", required=False)
 @click.option("--slug", help="Custom slug for the page")
-@click.option("--draft", is_flag=True, help="Publish as draft")
-@click.option("--private", is_flag=True, help="Publish as private (only you can see)")
 @click.option(
-    "--listing", type=click.Choice(["listed", "unlisted", "pinned"]), default=None
+    "--visibility",
+    type=click.Choice(["private", "unlisted", "listed", "pinned"]),
+    default=None,
+    help="Page visibility (default: private)",
 )
 @click.option("--title", help="Page title (prepended as # heading if missing)")
 @click.option(
     "--open", "open_browser", is_flag=True, help="Open in browser after publishing"
 )
 @click.pass_context
-def publish(ctx, file, slug, draft, private, listing, title, open_browser):
+def publish(ctx, file, slug, visibility, title, open_browser):
     """Publish a new page.
 
     Reads from FILE or stdin:
@@ -47,10 +48,8 @@ def publish(ctx, file, slug, draft, private, listing, title, open_browser):
     payload = {"content": content}
     if slug:
         payload["slug"] = slug
-    if draft:
-        payload["draft"] = True
-    if listing:
-        payload["listing"] = listing
+    if visibility:
+        payload["visibility"] = visibility
 
     r = client.post("/pages", json=payload)
     if r.status_code not in (200, 201):

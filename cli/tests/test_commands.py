@@ -156,15 +156,13 @@ class TestList:
                     {
                         "slug": "page-1",
                         "title": "Page 1",
-                        "draft": False,
-                        "listing": "listed",
+                        "visibility": "listed",
                         "updated_at": "2026-03-26T10:00:00+00:00",
                     },
                     {
                         "slug": "page-2",
                         "title": "Page 2",
-                        "draft": True,
-                        "listing": "unlisted",
+                        "visibility": "unlisted",
                         "updated_at": "2026-03-25T10:00:00+00:00",
                     },
                 ]
@@ -230,10 +228,10 @@ class TestEdit:
 
         mock_gc.return_value = (client, Formatter())
 
-        result = runner.invoke(cli, ["edit", "my-page", "--no-draft"])
+        result = runner.invoke(cli, ["edit", "my-page", "--visibility", "listed"])
         assert result.exit_code == 0
         call_json = client.put.call_args[1]["json"]
-        assert call_json == {"draft": False}
+        assert call_json == {"visibility": "listed"}
 
 
 class TestDelete:
