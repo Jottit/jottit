@@ -11,7 +11,11 @@
             {% for rev in revisions %}
             <li>
                 <a href="{{ url_prefix }}/{{ slug }}/history/{{ rev.revision }}" class="sites-menu-link">
-                    <span class="sites-menu-name">{{ rev.created_at | relative_time }}</span>
+                    <span class="sites-menu-name">
+                        {{ rev.created_at | relative_time }}
+                        {% if rev.ai_assisted %}<span class="provenance-pill provenance-pill--ai">AI-assisted</span>{% endif %}
+                        {% if rev.source != "web" %}<span class="provenance-pill">via {{ rev.source }}</span>{% endif %}
+                    </span>
                     <span class="sites-menu-url">{% if rev.delta is none %}Created{% elif rev.delta > 0 %}+{{ rev.delta }} words{% elif rev.delta < 0 %}{{ rev.delta }} words{% else %}edited{% endif %}</span>
                 </a>
             </li>

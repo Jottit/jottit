@@ -336,6 +336,8 @@ def page_history(slug):
                 "revision": rev["revision"],
                 "created_at": rev["created_at"],
                 "delta": delta,
+                "source": rev["source"],
+                "ai_assisted": rev["ai_assisted"],
             }
         )
 
@@ -366,6 +368,8 @@ def view_revision(slug, revision):
         slug=slug,
         revision=row["revision"],
         created_at=row["created_at"],
+        source=row["source"],
+        ai_assisted=row["ai_assisted"],
         is_subdomain=g.subdomain_user is not None,
     )
 

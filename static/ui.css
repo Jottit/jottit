@@ -971,6 +971,25 @@
     vertical-align: middle;
 }
 
+/* Provenance pills */
+
+.provenance-pill {
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    background: var(--border);
+    padding: 0.15em 0.6em;
+    border-radius: var(--radius-pill);
+    vertical-align: middle;
+}
+
+.provenance-pill--ai {
+    color: var(--warning);
+    background: rgba(230, 126, 34, 0.1);
+}
+
 /* Claim banner */
 
 .claim-banner {

@@ -4,7 +4,7 @@
 
 {% block body %}
 <div class="revision-banner">
-    You're viewing revision #{{ revision }} from {{ created_at | relative_time }}.
+    You're viewing revision #{{ revision }} from {{ created_at | relative_time }}.{% if ai_assisted %} <span class="provenance-pill provenance-pill--ai">AI-assisted</span>{% endif %}{% if source != "web" %} <span class="provenance-pill">via {{ source }}</span>{% endif %}
     <a href="{{ url_prefix }}/{{ slug }}">View current version</a>
 </div>
 <main class="page-main">
