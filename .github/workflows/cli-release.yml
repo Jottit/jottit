@@ -36,7 +36,7 @@ jobs:
 
       - name: Build binary
         run: |
-          pyinstaller --onefile --name jottit-${{ matrix.name }} cli/jottit_cli/main.py
+          pyinstaller --onefile --name jottit-${{ matrix.name }} --add-data "cli/jottit_cli/data:jottit_cli/data" cli/jottit_cli/main.py
 
       - name: Test binary
         run: |
