@@ -2,3 +2,4 @@ __pycache__/
 .coverage
 instance/
 mcp-server/.venv/
+.claude/
