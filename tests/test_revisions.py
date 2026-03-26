@@ -1,3 +1,4 @@
+from db import save_page
 from utils import describe_change
 
 # -- Revisions --
@@ -87,3 +88,80 @@ def test_describe_changed_content():
 # Returns generic "Edited page" when nothing changed
 def test_describe_same_content():
     assert describe_change("# T\n\nA", "# T\n\nA") == "Edited page"
+
+
+# -- History link always shown --
+
+
+# History link appears even with a single revision
+def test_history_link_with_single_revision(client):
+    client.post("/single/edit", data={"title": "T", "content": "Only one"})
+    r = client.get("/single")
+    assert b"/single/history" in r.data
+    assert b"History" in r.data
+
+
+# History page marks the latest revision as current
+def test_history_marks_current_revision(client):
+    save_page("cur1", "# T\n\nFirst", False)
+    save_page("cur1", "# T\n\nSecond", False)
+    r = client.get("/cur1/history")
+    assert b"Current" in r.data
+
+
+# Current revision links to the live page, not history view
+def test_current_revision_links_to_page(client):
+    save_page("cur2", "# T\n\nContent", False)
+    r = client.get("/cur2/history")
+    body = r.data.decode()
+    assert '/cur2"' in body or "/cur2'" in body
+
+
+# -- Provenance display --
+
+
+# AI-assisted revision shows badge in history
+def test_history_shows_ai_badge(client):
+    save_page("prov1", "# T\n\nFirst", False, source="mcp", ai_assisted=True)
+    save_page("prov1", "# T\n\nSecond", False, source="web", ai_assisted=False)
+    r = client.get("/prov1/history")
+    assert b"AI-assisted" in r.data
+    assert b"via mcp" in r.data
+
+
+# Web-only revision shows no provenance badge
+def test_history_no_badge_for_web(client):
+    save_page("prov2", "# T\n\nFirst", False)
+    r = client.get("/prov2/history")
+    assert b"AI-assisted" not in r.data
+    assert b"via web" not in r.data
+
+
+# Individual revision view shows provenance in banner
+def test_revision_view_shows_provenance(client):
+    save_page("prov3", "# T\n\nAI content", False, source="mcp", ai_assisted=True)
+    r = client.get("/prov3/history/1")
+    assert b"AI-assisted" in r.data
+    assert b"via mcp" in r.data
+
+
+# Published page footer shows AI attribution
+def test_page_footer_ai_attribution(client):
+    save_page("prov4", "# T\n\nBody", False, source="mcp", ai_assisted=True)
+    r = client.get("/prov4")
+    assert b"published with AI via MCP" in r.data
+
+
+# Published page footer shows source without AI
+def test_page_footer_source_only(client):
+    save_page("prov5", "# T\n\nBody", False, source="api", ai_assisted=False)
+    r = client.get("/prov5")
+    assert b"published via API" in r.data
+
+
+# Web pages show no provenance in footer
+def test_page_footer_no_provenance_for_web(client):
+    save_page("prov6", "# T\n\nBody", False)
+    r = client.get("/prov6")
+    assert b"published via" not in r.data
+    assert b"published with AI" not in r.data
