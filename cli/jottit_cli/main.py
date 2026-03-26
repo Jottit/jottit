@@ -50,3 +50,7 @@ cli.add_command(edit)
 cli.add_command(delete)
 cli.add_command(login)
 cli.add_command(setup)
+
+
+if __name__ == "__main__":
+    cli()
