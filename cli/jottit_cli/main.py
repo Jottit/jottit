@@ -11,7 +11,24 @@ from jottit_cli.commands.whoami import whoami
 from jottit_cli.output import Formatter
 
 
-@click.group()
+class _JottitGroup(click.Group):
+    """Allow global flags (--json, --quiet) after the subcommand."""
+
+    def parse_args(self, ctx, args):
+        # Pull global flags from anywhere in args before parsing
+        global_flags = {"--json", "--quiet"}
+        pulled = set()
+        remaining = []
+        for arg in args:
+            if arg in global_flags and arg not in pulled:
+                pulled.add(arg)
+                remaining.insert(0, arg)
+            else:
+                remaining.append(arg)
+        return super().parse_args(ctx, remaining)
+
+
+@click.group(cls=_JottitGroup)
 @click.option("--json", "use_json", is_flag=True, help="Output JSON with breadcrumbs")
 @click.option("--quiet", is_flag=True, help="Minimal output")
 @click.option("--token", help="API token (overrides config)")
