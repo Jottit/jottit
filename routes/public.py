@@ -295,7 +295,6 @@ def view_page(slug):
         page_description=page_description,
         site_title=site_title,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
-        has_history=row["revision_count"] > 1,
         is_subdomain=subdomain_user is not None,
         license_info=license_info,
         listing=page_meta["listing"],
@@ -326,6 +325,7 @@ def page_history(slug):
 
     revisions = get_revisions_paginated(page_meta["id"], page, per_page)
 
+    latest_revision = revisions[0]["revision"] if revisions and page == 1 else None
     paginated = []
     for rev in revisions:
         word_count = rev["word_count"]
@@ -338,6 +338,7 @@ def page_history(slug):
                 "delta": delta,
                 "source": rev["source"],
                 "ai_assisted": rev["ai_assisted"],
+                "current": rev["revision"] == latest_revision,
             }
         )
 

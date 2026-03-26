@@ -10,9 +10,10 @@
         <ul class="sites-menu">
             {% for rev in revisions %}
             <li>
-                <a href="{{ url_prefix }}/{{ slug }}/history/{{ rev.revision }}" class="sites-menu-link">
+                <a href="{% if rev.current %}{{ url_prefix }}/{{ slug }}{% else %}{{ url_prefix }}/{{ slug }}/history/{{ rev.revision }}{% endif %}" class="sites-menu-link">
                     <span class="sites-menu-name">
                         {{ rev.created_at | relative_time }}
+                        {% if rev.current %}<span class="provenance-pill">Current</span>{% endif %}
                         {% if rev.ai_assisted %}<span class="provenance-pill provenance-pill--ai">AI-assisted</span>{% endif %}
                         {% if rev.source != "web" %}<span class="provenance-pill">via {{ rev.source }}</span>{% endif %}
                     </span>

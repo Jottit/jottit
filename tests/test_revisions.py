@@ -90,6 +90,33 @@ def test_describe_same_content():
     assert describe_change("# T\n\nA", "# T\n\nA") == "Edited page"
 
 
+# -- History link always shown --
+
+
+# History link appears even with a single revision
+def test_history_link_with_single_revision(client):
+    client.post("/single/edit", data={"title": "T", "content": "Only one"})
+    r = client.get("/single")
+    assert b"/single/history" in r.data
+    assert b"History" in r.data
+
+
+# History page marks the latest revision as current
+def test_history_marks_current_revision(client):
+    save_page("cur1", "# T\n\nFirst", False)
+    save_page("cur1", "# T\n\nSecond", False)
+    r = client.get("/cur1/history")
+    assert b"Current" in r.data
+
+
+# Current revision links to the live page, not history view
+def test_current_revision_links_to_page(client):
+    save_page("cur2", "# T\n\nContent", False)
+    r = client.get("/cur2/history")
+    body = r.data.decode()
+    assert '/cur2"' in body or "/cur2'" in body
+
+
 # -- Provenance display --
 
 
