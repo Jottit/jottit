@@ -1,0 +1,75 @@
+name: CLI Release
+
+on:
+  push:
+    tags:
+      - 'cli-v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+            name: darwin-arm64
+          - os: macos-13
+            arch: amd64
+            name: darwin-amd64
+          - os: ubuntu-latest
+            arch: amd64
+            name: linux-amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            name: linux-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          pip install -e cli/
+
+      - name: Build binary
+        run: |
+          pyinstaller --onefile --name jottit-${{ matrix.name }} cli/jottit_cli/main.py
+
+      - name: Test binary
+        run: |
+          ./dist/jottit-${{ matrix.name }} --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jottit-${{ matrix.name }}
+          path: dist/jottit-${{ matrix.name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: binaries
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd binaries
+          sha256sum jottit-* > checksums.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            binaries/jottit-*
+            binaries/checksums.txt
+          generate_release_notes: true

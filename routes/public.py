@@ -59,6 +59,11 @@ def uploaded_file(filename):
     )
 
 
+@bp.route("/install-cli")
+def install_cli():
+    return send_from_directory("static", "install-cli.sh", mimetype="text/plain")
+
+
 @bp.route("/")
 def home():
     pages = []

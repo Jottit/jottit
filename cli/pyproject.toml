@@ -1,0 +1,20 @@
+[project]
+name = "jottit"
+version = "0.1.0"
+description = "Jottit CLI — publish pages from the terminal"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1.0",
+    "httpx>=0.27.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+jottit = "jottit_cli.main:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["jottit_cli"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

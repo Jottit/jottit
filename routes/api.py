@@ -30,9 +30,10 @@ def _require_auth():
 
 
 def _get_source():
-    return (
-        "mcp" if request.headers.get("X-Jottit-Source", "").lower() == "mcp" else "api"
-    )
+    source = request.headers.get("X-Jottit-Source", "").lower()
+    if source in ("mcp", "cli"):
+        return source
+    return "api"
 
 
 def _error(message, status):
