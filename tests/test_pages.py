@@ -138,24 +138,28 @@ def test_view_page_shows_latest_content(client):
     assert b"Second" in r.data
 
 
-# -- Draft visibility --
+# -- Private visibility --
 
 
-# Draft pages are visible to their creator
-def test_draft_visible_to_creator(client):
-    client.post(
-        "/dv1/edit", data={"title": "Secret", "content": "Draft content", "draft": "on"}
-    )
+# Private pages are visible to their creator
+def test_private_visible_to_creator(client):
+    from db import get_page_meta, update_page_visibility
+
+    client.post("/dv1/edit", data={"title": "Secret", "content": "Private content"})
+    page_meta = get_page_meta("dv1")
+    update_page_visibility(page_meta["id"], "private")
     r = client.get("/dv1")
     assert r.status_code == 200
-    assert b"draft" in r.data.lower()
+    assert b"private" in r.data.lower()
 
 
-# Draft pages return 404 for non-creators
-def test_draft_hidden_from_non_creator(client):
-    client.post(
-        "/dv2/edit", data={"title": "Secret", "content": "Draft content", "draft": "on"}
-    )
+# Private pages return 404 for non-creators
+def test_private_hidden_from_non_creator(client):
+    from db import get_page_meta, update_page_visibility
+
+    client.post("/dv2/edit", data={"title": "Secret", "content": "Private content"})
+    page_meta = get_page_meta("dv2")
+    update_page_visibility(page_meta["id"], "private")
     with client.session_transaction() as sess:
         sess.clear()
     r = client.get("/dv2")
@@ -170,7 +174,7 @@ def test_owner_can_delete_page(client):
     user_id = find_or_create_user("del@example.com")
     from db import save_page
 
-    save_page("del1", "# T\n\nX", False)
+    save_page("del1", "# T\n\nX", "listed")
     page_meta = get_page_meta("del1")
     claim_page(page_meta["id"], user_id)
     with client.session_transaction() as sess:
@@ -186,7 +190,7 @@ def test_non_owner_cannot_delete(client):
     user_id = find_or_create_user("del2@example.com")
     from db import save_page
 
-    save_page("del2", "# T\n\nX", False)
+    save_page("del2", "# T\n\nX", "listed")
     page_meta = get_page_meta("del2")
     claim_page(page_meta["id"], user_id)
 

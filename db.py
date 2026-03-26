@@ -114,16 +114,18 @@ def run_migrations():
 def _find_page_by_slug(conn, slug, user_id=None):
     if user_id is not None:
         return conn.execute(
-            "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id = %s",
+            "SELECT id, slug, user_id, visibility FROM pages WHERE slug = %s AND user_id = %s",
             (slug, user_id),
         ).fetchone()
     return conn.execute(
-        "SELECT id, slug, user_id, draft, listing FROM pages WHERE slug = %s AND user_id IS NULL",
+        "SELECT id, slug, user_id, visibility FROM pages WHERE slug = %s AND user_id IS NULL",
         (slug,),
     ).fetchone()
 
 
-def save_page(slug, content, draft, user_id=None, source="web", ai_assisted=False):
+def save_page(
+    slug, content, visibility="private", user_id=None, source="web", ai_assisted=False
+):
     with get_db() as conn:
         page = _find_page_by_slug(conn, slug, user_id)
 
@@ -134,14 +136,14 @@ def save_page(slug, content, draft, user_id=None, source="web", ai_assisted=Fals
                 (page["id"], page["id"], content, source, ai_assisted),
             )
             conn.execute(
-                "UPDATE pages SET draft = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-                (draft, page["id"]),
+                "UPDATE pages SET visibility = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                (visibility, page["id"]),
             )
         else:
             try:
                 cursor = conn.execute(
-                    "INSERT INTO pages (slug, original_slug, draft, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
-                    (slug, slug, draft, user_id),
+                    "INSERT INTO pages (slug, original_slug, visibility, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (slug, slug, visibility, user_id),
                 )
                 page_id = cursor.fetchone()["id"]
             except pg_errors.UniqueViolation:
@@ -150,8 +152,8 @@ def save_page(slug, content, draft, user_id=None, source="web", ai_assisted=Fals
 
                 slug = generate_slug()
                 cursor = conn.execute(
-                    "INSERT INTO pages (slug, original_slug, draft, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
-                    (slug, slug, draft, user_id),
+                    "INSERT INTO pages (slug, original_slug, visibility, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (slug, slug, visibility, user_id),
                 )
                 page_id = cursor.fetchone()["id"]
             conn.execute(
@@ -166,7 +168,7 @@ def save_page(slug, content, draft, user_id=None, source="web", ai_assisted=Fals
 def get_page(page_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT r.content, p.draft, r.created_at
+            """SELECT r.content, p.visibility, r.created_at
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
                WHERE p.id = %s
@@ -178,7 +180,7 @@ def get_page(page_id):
 def get_page_full(page_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT r.content, p.draft, r.created_at, r.source, r.ai_assisted,
+            """SELECT r.content, p.visibility, r.created_at, r.source, r.ai_assisted,
                       (SELECT COUNT(*) FROM revisions r2 WHERE r2.page_id = p.id) AS revision_count
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
@@ -355,7 +357,7 @@ def rename_page(page_id, new_slug):
 def get_pages_for_user(user_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT p.slug, p.draft, p.listing, p.updated_at, r.content
+            """SELECT p.slug, p.visibility, p.updated_at, r.content
                FROM pages p
                JOIN revisions r ON r.page_id = p.id
                WHERE p.user_id = %s
@@ -373,11 +375,11 @@ def get_slugs_for_user(user_id):
         return {row["slug"] for row in rows}
 
 
-def update_page_listing(page_id, listing):
+def update_page_visibility(page_id, visibility):
     with get_db() as conn:
         conn.execute(
-            "UPDATE pages SET listing = %s WHERE id = %s",
-            (listing, page_id),
+            "UPDATE pages SET visibility = %s WHERE id = %s",
+            (visibility, page_id),
         )
         conn.commit()
 
@@ -414,7 +416,7 @@ def get_export_pages(page_id):
             """SELECT p.slug, r.content, r.created_at
                FROM pages p
                JOIN revisions r ON r.page_id = p.id
-               WHERE p.id = %s AND p.draft = FALSE
+               WHERE p.id = %s AND p.visibility != 'private'
                AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)""",
             (page_id,),
         ).fetchall()
@@ -430,7 +432,7 @@ def get_export_pages_for_user(user_id):
                        r.created_at
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
-                   WHERE p.user_id = %s AND p.draft = FALSE
+                   WHERE p.user_id = %s AND p.visibility != 'private'
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY slug ASC""",
@@ -444,7 +446,7 @@ def get_feed_entries(page_id):
             """SELECT p.slug, r.content, r.created_at
                FROM pages p
                JOIN revisions r ON r.page_id = p.id
-               WHERE p.id = %s AND p.draft = FALSE
+               WHERE p.id = %s AND p.visibility IN ('listed', 'pinned')
                AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)""",
             (page_id,),
         ).fetchall()
@@ -460,8 +462,7 @@ def get_feed_entries_for_user(user_id):
                        r.created_at
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
-                   WHERE p.user_id = %s AND p.draft = FALSE
-                   AND p.listing IN ('listed', 'pinned')
+                   WHERE p.user_id = %s AND p.visibility IN ('listed', 'pinned')
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY created_at DESC
@@ -476,7 +477,7 @@ def get_public_pages():
             """SELECT p.slug, p.updated_at, u.username
                FROM pages p
                LEFT JOIN users u ON p.user_id = u.id
-               WHERE p.draft = FALSE
+               WHERE p.visibility != 'private'
                ORDER BY p.updated_at DESC""",
         ).fetchall()
 

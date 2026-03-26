@@ -50,19 +50,20 @@
     {% if show_actions %}
     <div class="page-actions">
         {% if is_owner %}
-        <form method="post" action="{{ url_prefix }}/{{ slug }}/listing" class="listing-form">
+        <form method="post" action="{{ url_prefix }}/{{ slug }}/visibility" class="listing-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="listing-select-wrap">
-                <select name="listing" class="listing-select" data-slug="{{ slug }}">
-                    <option value="listed"{% if listing == 'listed' %} selected{% endif %}>Listed</option>
-                    <option value="unlisted"{% if listing == 'unlisted' %} selected{% endif %}>Unlisted</option>
-                    <option value="pinned"{% if listing == 'pinned' %} selected{% endif %}>Pinned</option>
+                <select name="visibility" class="listing-select" data-slug="{{ slug }}">
+                    <option value="private"{% if visibility == 'private' %} selected{% endif %}>Private</option>
+                    <option value="unlisted"{% if visibility == 'unlisted' %} selected{% endif %}>Unlisted</option>
+                    <option value="listed"{% if visibility == 'listed' %} selected{% endif %}>Listed</option>
+                    <option value="pinned"{% if visibility == 'pinned' %} selected{% endif %}>Pinned</option>
                 </select>
             </div>
         </form>
         {% endif %}
         <div class="page-actions-buttons">
-            {% if draft %}<span class="draft-pill">DRAFT</span>{% endif %}
+            {% if visibility == 'private' %}<span class="draft-pill">PRIVATE</span>{% endif %}
             {% if is_owner %}<a href="{{ url_prefix }}/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
             {% if has_history %}<a href="{{ url_prefix }}/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>{% endif %}
             <a href="{{ url_prefix }}/{{ slug }}/edit" class="btn btn--primary btn--sm">Edit</a>

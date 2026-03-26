@@ -11,7 +11,7 @@
                 'X-CSRFToken': csrf ? csrf.value : '',
                 'X-Requested-With': 'fetch'
             },
-            body: 'listing=' + encodeURIComponent(select.value)
+            body: 'visibility=' + encodeURIComponent(select.value)
         });
     });
 })();

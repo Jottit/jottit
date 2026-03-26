@@ -24,7 +24,7 @@ def test_slug_redirects_to_profile(client):
 # Profile homepage lists the user's pages
 def test_profile_home_lists_pages(client):
     user_id = create_user_with_username(client, "sub@example.com", "subuser", "subp1")
-    save_page("subp2", "# Second\n\nMore content", False)
+    save_page("subp2", "# Second\n\nMore content", "listed")
     page_meta = get_page_meta("subp2")
     claim_page(page_meta["id"], user_id)
 
@@ -87,7 +87,7 @@ def test_old_slug_redirects_on_profile(client):
     user_id = find_or_create_user("subredir@example.com")
     set_user_username(user_id, "subredir")
     update_user_settings(user_id, "Sub Redir", "subredir")
-    save_page("old-slug", "# New Title\n\nContent", False, user_id)
+    save_page("old-slug", "# New Title\n\nContent", "listed", user_id)
     page = get_page_meta("old-slug", user_id)
 
     rename_page(page["id"], "new-title")
@@ -104,7 +104,7 @@ def test_nonexistent_original_slug_still_404(client):
 
 # Old slug redirects work for unclaimed pages after rename
 def test_old_slug_redirects_unclaimed_page(client):
-    save_page("rand123", "# Nice Title\n\nBody", False)
+    save_page("rand123", "# Nice Title\n\nBody", "listed")
     page = get_page_meta("rand123")
 
     rename_page(page["id"], "nice-title")
@@ -113,25 +113,25 @@ def test_old_slug_redirects_unclaimed_page(client):
     assert "/nice-title" in r.headers["Location"]
 
 
-# -- Listing --
+# -- Visibility --
 
 
-# New pages default to "listed" listing status
-def test_listing_default_is_listed(client):
+# New pages default to "listed" visibility (via create_user_with_username)
+def test_visibility_default_is_listed(client):
     user_id = create_user_with_username(client, "list1@example.com", "listuser1", "lp1")
     page_meta = get_page_meta("lp1", user_id)
-    assert page_meta["listing"] == "listed"
+    assert page_meta["visibility"] == "listed"
 
 
-# Owner can change a page's listing to "unlisted"
-def test_update_listing(client):
+# Owner can change a page's visibility to "unlisted"
+def test_update_visibility(client):
     user_id = create_user_with_username(client, "list2@example.com", "listuser2", "lp2")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@listuser2/lp2/listing", data={"listing": "unlisted"})
+    r = client.post("/@listuser2/lp2/visibility", data={"visibility": "unlisted"})
     assert r.status_code == 302
     page_meta = get_page_meta("lp2", user_id)
-    assert page_meta["listing"] == "unlisted"
+    assert page_meta["visibility"] == "unlisted"
 
 
 # Unlisted pages don't appear on the profile homepage
@@ -139,7 +139,7 @@ def test_unlisted_page_hidden_from_profile(client):
     user_id = create_user_with_username(client, "list3@example.com", "listuser3", "lp3")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@listuser3/lp3/listing", data={"listing": "unlisted"})
+    client.post("/@listuser3/lp3/visibility", data={"visibility": "unlisted"})
     r = client.get("/@listuser3")
     assert b"lp3" not in r.data
 
@@ -149,14 +149,14 @@ def test_pinned_page_shown_first(client):
     user_id = create_user_with_username(
         client, "list4@example.com", "listuser4", "lp4a"
     )
-    save_page("lp4b", "# Second\n\nContent", False)
+    save_page("lp4b", "# Second\n\nContent", "listed")
     page_meta2 = get_page_meta("lp4b")
     claim_page(page_meta2["id"], user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     # lp4b is newer, so it would normally appear first
     # Pin lp4a so it appears before lp4b
-    client.post("/@listuser4/lp4a/listing", data={"listing": "pinned"})
+    client.post("/@listuser4/lp4a/visibility", data={"visibility": "pinned"})
     r = client.get("/@listuser4")
     body = r.data.decode()
     assert "lp4a" in body
@@ -169,22 +169,22 @@ def test_pinned_page_shows_pin_icon(client):
     user_id = create_user_with_username(
         client, "pinicon@example.com", "pinicon", "pip1"
     )
-    save_page("pip2", "# Not Pinned\n\nContent", False)
+    save_page("pip2", "# Not Pinned\n\nContent", "listed")
     page_meta2 = get_page_meta("pip2")
     claim_page(page_meta2["id"], user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@pinicon/pip1/listing", data={"listing": "pinned"})
+    client.post("/@pinicon/pip1/visibility", data={"visibility": "pinned"})
     r = client.get("/@pinicon")
     body = r.data.decode()
     assert 'class="pin-icon"' in body
     assert body.count('class="pin-icon"') == 1
 
 
-# Non-owner gets 403 when trying to change listing
-def test_non_owner_cannot_update_listing(client):
+# Non-owner gets 403 when trying to change visibility
+def test_non_owner_cannot_update_visibility(client):
     create_user_with_username(client, "list5@example.com", "listuser5", "lp5")
-    r = client.post("/@listuser5/lp5/listing", data={"listing": "unlisted"})
+    r = client.post("/@listuser5/lp5/visibility", data={"visibility": "unlisted"})
     assert r.status_code == 403
 
 

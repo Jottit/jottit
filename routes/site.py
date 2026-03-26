@@ -18,7 +18,7 @@ from db import (
     rename_page,
     save_page,
     set_user_username,
-    update_page_listing,
+    update_page_visibility,
     update_user_settings,
     verify_code,
 )
@@ -37,7 +37,7 @@ from utils import (
 from routes import (
     bp,
     limiter,
-    LISTING_OPTIONS,
+    VISIBILITY_OPTIONS,
     _set_profile_user,
     base_url,
     can_edit,
@@ -80,7 +80,7 @@ def pages_list():
             {
                 "slug": p["slug"],
                 "title": title or "",
-                "draft": p["draft"],
+                "visibility": p["visibility"],
             }
         )
     return render_template("pages.html", pages=page_list, username=username)
@@ -107,10 +107,10 @@ def profile_delete_page(username, slug):
     return delete_page_route(slug)
 
 
-@bp.route("/@<username>/<slug>/listing", methods=["POST"])
-def profile_update_listing(username, slug):
+@bp.route("/@<username>/<slug>/visibility", methods=["POST"])
+def profile_update_visibility(username, slug):
     _set_profile_user(username)
-    return update_listing(slug)
+    return update_visibility(slug)
 
 
 @bp.route("/@<username>/<slug>/export")
@@ -130,14 +130,12 @@ def new_page():
             slug=None,
             title="",
             content="",
-            draft=False,
             is_new=True,
             is_subdomain=subdomain_user is not None,
         )
 
     title = request.form.get("title", "").strip()
     content = request.form.get("content", "").strip()[:MAX_CONTENT_LENGTH]
-    draft = "draft" in request.form
 
     if title:
         content = f"# {title}\n\n{content}"
@@ -154,7 +152,7 @@ def new_page():
     if not slug:
         slug = generate_slug()
 
-    slug = save_page(slug, content, draft, subdomain_user_id)
+    slug = save_page(slug, content, "listed", subdomain_user_id)
     _track_new_page(slug, subdomain_user_id)
 
     return redirect(f"{g.url_prefix}/{slug}")
@@ -194,7 +192,6 @@ def edit_page(slug):
     if request.method == "GET":
         row = get_page(page_meta["id"]) if page_meta else None
         content = row["content"] if row else ""
-        draft = row["draft"] if row else False
         title = get_title(content) or ""
         content = get_body(content)
         return render_template(
@@ -202,21 +199,21 @@ def edit_page(slug):
             slug=slug,
             title=title,
             content=content,
-            draft=draft,
             is_new=page_meta is None,
             is_subdomain=subdomain_user is not None,
         )
 
     title = request.form.get("title", "").strip()
     content = request.form.get("content", "").strip()[:MAX_CONTENT_LENGTH]
-    draft = "draft" in request.form
 
     if title:
         content = f"# {title}\n\n{content}"
 
     is_new = page_meta is None
     subdomain_user_id = subdomain_user["id"] if subdomain_user else None
-    slug = save_page(slug, content, draft, subdomain_user_id)
+    # Preserve existing visibility on edit; default to "listed" for new pages
+    visibility = page_meta["visibility"] if page_meta else "listed"
+    slug = save_page(slug, content, visibility, subdomain_user_id)
 
     if is_new:
         new_page_meta = _track_new_page(slug, subdomain_user_id)
@@ -436,9 +433,9 @@ def delete_page_route(slug):
     return redirect(base_url("/"))
 
 
-@bp.route("/<slug>/listing", methods=["POST"])
+@bp.route("/<slug>/visibility", methods=["POST"])
 @limiter.limit("30 per minute", methods=["POST"])
-def update_listing(slug):
+def update_visibility(slug):
     page_meta = find_page(slug)
     if not page_meta:
         abort(404)
@@ -447,11 +444,11 @@ def update_listing(slug):
     if not page_meta["user_id"] or page_meta["user_id"] != user_id:
         abort(403)
 
-    listing = request.form.get("listing", "listed")
-    if listing not in LISTING_OPTIONS:
-        listing = "listed"
+    visibility = request.form.get("visibility", "listed")
+    if visibility not in VISIBILITY_OPTIONS:
+        visibility = "listed"
 
-    update_page_listing(page_meta["id"], listing)
+    update_page_visibility(page_meta["id"], visibility)
 
     if request.headers.get("X-Requested-With") == "fetch":
         return "", 204

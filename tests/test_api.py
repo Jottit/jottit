@@ -46,7 +46,7 @@ def test_get_current_user(client):
 
 def test_get_user_profile(client):
     user_id, token = _setup_user_with_token()
-    slug = save_page("mypage", "# Hello\n\nWorld", False, user_id)
+    slug = save_page("mypage", "# Hello\n\nWorld", "listed", user_id)
     r = client.get("/api/v1/users/testuser", headers=_auth(token))
     assert r.status_code == 200
     data = r.get_json()
@@ -55,9 +55,9 @@ def test_get_user_profile(client):
     assert data["pages"][0]["slug"] == slug
 
 
-def test_get_user_profile_excludes_drafts(client):
+def test_get_user_profile_excludes_private(client):
     user_id, token = _setup_user_with_token()
-    save_page("draft-page", "# Draft\n\nContent", True, user_id)
+    save_page("private-page", "# Private\n\nContent", "private", user_id)
     r = client.get("/api/v1/users/testuser", headers=_auth(token))
     assert r.get_json()["pages"] == []
 
@@ -79,7 +79,7 @@ def test_create_page(client):
     data = r.get_json()
     assert data["title"] == "My Page"
     assert data["content"] == "# My Page\n\nHello world"
-    assert data["draft"] is False
+    assert data["visibility"] == "private"
 
 
 def test_create_page_with_custom_slug(client):
@@ -93,15 +93,15 @@ def test_create_page_with_custom_slug(client):
     assert r.get_json()["slug"] == "my-custom-slug"
 
 
-def test_create_page_as_draft(client):
+def test_create_page_as_private(client):
     _, token = _setup_user_with_token()
     r = client.post(
         "/api/v1/pages",
         headers=_auth(token),
-        json={"content": "# Draft\n\nContent", "draft": True},
+        json={"content": "# Private\n\nContent", "visibility": "private"},
     )
     assert r.status_code == 201
-    assert r.get_json()["draft"] is True
+    assert r.get_json()["visibility"] == "private"
 
 
 def test_create_page_empty_content_returns_400(client):
@@ -118,7 +118,7 @@ def test_create_page_no_json_returns_400(client):
 
 def test_get_page(client):
     user_id, token = _setup_user_with_token()
-    save_page("testslug", "# Title\n\nBody", False, user_id)
+    save_page("testslug", "# Title\n\nBody", "listed", user_id)
     r = client.get("/api/v1/pages/testslug", headers=_auth(token))
     assert r.status_code == 200
     data = r.get_json()
@@ -134,8 +134,8 @@ def test_get_page_not_found(client):
 
 def test_list_pages(client):
     user_id, token = _setup_user_with_token()
-    save_page("page1", "# One\n\nFirst", False, user_id)
-    save_page("page2", "# Two\n\nSecond", False, user_id)
+    save_page("page1", "# One\n\nFirst", "listed", user_id)
+    save_page("page2", "# Two\n\nSecond", "listed", user_id)
     r = client.get("/api/v1/pages", headers=_auth(token))
     assert r.status_code == 200
     pages = r.get_json()["pages"]
@@ -144,7 +144,7 @@ def test_list_pages(client):
 
 def test_update_page(client):
     user_id, token = _setup_user_with_token()
-    save_page("updme", "# Old\n\nOld content", False, user_id)
+    save_page("updme", "# Old\n\nOld content", "listed", user_id)
     r = client.put(
         "/api/v1/pages/updme",
         headers=_auth(token),
@@ -164,21 +164,21 @@ def test_update_page_not_found(client):
     assert r.status_code == 404
 
 
-def test_update_page_listing(client):
+def test_update_page_visibility(client):
     user_id, token = _setup_user_with_token()
-    save_page("lstpage", "# Test\n\nBody", False, user_id)
+    save_page("lstpage", "# Test\n\nBody", "listed", user_id)
     r = client.put(
         "/api/v1/pages/lstpage",
         headers=_auth(token),
-        json={"listing": "pinned"},
+        json={"visibility": "pinned"},
     )
     assert r.status_code == 200
-    assert r.get_json()["listing"] == "pinned"
+    assert r.get_json()["visibility"] == "pinned"
 
 
 def test_delete_page(client):
     user_id, token = _setup_user_with_token()
-    save_page("delme", "# Delete\n\nMe", False, user_id)
+    save_page("delme", "# Delete\n\nMe", "listed", user_id)
     r = client.delete("/api/v1/pages/delme", headers=_auth(token))
     assert r.status_code == 200
     assert r.get_json()["ok"] is True
@@ -195,8 +195,8 @@ def test_delete_page_not_found(client):
 
 def test_list_revisions(client):
     user_id, token = _setup_user_with_token()
-    save_page("revpage", "# V1\n\nFirst", False, user_id)
-    save_page("revpage", "# V2\n\nSecond", False, user_id)
+    save_page("revpage", "# V1\n\nFirst", "listed", user_id)
+    save_page("revpage", "# V2\n\nSecond", "listed", user_id)
     r = client.get("/api/v1/pages/revpage/revisions", headers=_auth(token))
     assert r.status_code == 200
     data = r.get_json()
@@ -240,7 +240,7 @@ def test_mcp_source_via_header(client):
 
 def test_update_records_source(client):
     user_id, token = _setup_user_with_token()
-    save_page("srcpage", "# V1\n\nFirst", False, user_id)
+    save_page("srcpage", "# V1\n\nFirst", "listed", user_id)
     client.put(
         "/api/v1/pages/srcpage",
         headers={**_auth(token), "X-Jottit-Source": "mcp"},
@@ -279,7 +279,7 @@ def test_ai_assisted_set_true(client):
 
 def test_ai_assisted_in_revisions_response(client):
     user_id, token = _setup_user_with_token()
-    save_page("aipage", "# V1\n\nFirst", False, user_id, ai_assisted=True)
+    save_page("aipage", "# V1\n\nFirst", "listed", user_id, ai_assisted=True)
     r = client.get("/api/v1/pages/aipage/revisions", headers=_auth(token))
     revisions = r.get_json()["revisions"]
     assert revisions[0]["ai_assisted"] is True
@@ -287,7 +287,7 @@ def test_ai_assisted_in_revisions_response(client):
 
 def test_ai_assisted_on_update(client):
     user_id, token = _setup_user_with_token()
-    save_page("aiupd", "# V1\n\nFirst", False, user_id)
+    save_page("aiupd", "# V1\n\nFirst", "listed", user_id)
     client.put(
         "/api/v1/pages/aiupd",
         headers=_auth(token),
@@ -340,7 +340,7 @@ def test_api_404_returns_json(client):
 def test_cannot_see_other_users_pages(client):
     user1_id, _ = _setup_user_with_token("user1")
     _, token2 = _setup_user_with_token("user2")
-    save_page("secret", "# Secret\n\nContent", False, user1_id)
+    save_page("secret", "# Secret\n\nContent", "listed", user1_id)
 
     r = client.get("/api/v1/pages/secret", headers=_auth(token2))
     assert r.status_code == 404
@@ -349,7 +349,7 @@ def test_cannot_see_other_users_pages(client):
 def test_cannot_delete_other_users_pages(client):
     user1_id, token1 = _setup_user_with_token("user1")
     _, token2 = _setup_user_with_token("user2")
-    save_page("owned", "# Mine\n\nContent", False, user1_id)
+    save_page("owned", "# Mine\n\nContent", "listed", user1_id)
 
     r = client.delete("/api/v1/pages/owned", headers=_auth(token2))
     assert r.status_code == 404

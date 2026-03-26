@@ -77,7 +77,7 @@ def subdomain_home(user):
     pinned = []
     listed = []
     for p in pages:
-        if p["draft"] or p["listing"] == "unlisted":
+        if p["visibility"] not in ("listed", "pinned"):
             continue
         title = get_title(p["content"]) if p["content"] else None
         item = {
@@ -86,9 +86,9 @@ def subdomain_home(user):
             "description": get_description(p["content"], max_length=350),
             "reading_time": reading_time(p["content"]),
             "updated_at": p["updated_at"],
-            "pinned": p["listing"] == "pinned",
+            "pinned": p["visibility"] == "pinned",
         }
-        if p["listing"] == "pinned":
+        if p["visibility"] == "pinned":
             pinned.append(item)
         else:
             listed.append(item)
@@ -235,7 +235,7 @@ def view_page(slug):
     is_owner = session.get("user_id") == page_meta["user_id"] and not unclaimed
     page_is_creator = is_creator(page_meta)
 
-    if row["draft"] and not is_owner and not page_is_creator:
+    if row["visibility"] == "private" and not is_owner and not page_is_creator:
         abort(404)
 
     page_can_edit = can_edit(page_meta)
@@ -280,7 +280,6 @@ def view_page(slug):
         "page.html",
         content_title=content_title,
         content_body=content_body,
-        draft=row["draft"],
         slug=slug,
         show_actions=show_actions,
         unclaimed=unclaimed and page_is_creator,
@@ -298,13 +297,13 @@ def view_page(slug):
         has_history=row["revision_count"] > 1,
         is_subdomain=subdomain_user is not None,
         license_info=license_info,
-        listing=page_meta["listing"],
+        visibility=page_meta["visibility"],
         reading_time=reading_time(row["content"]),
         ai_assisted=row.get("ai_assisted", False),
         page_source=row.get("source", "web"),
     )
     response = current_app.make_response(resp)
-    if not is_owner and not show_actions and not row["draft"]:
+    if not is_owner and not show_actions and row["visibility"] != "private":
         response.headers["Cache-Control"] = "public, max-age=60"
     return response
 

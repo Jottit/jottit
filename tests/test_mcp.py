@@ -96,7 +96,7 @@ def test_create_and_get_page(client):
 def test_update_page(client):
     user_id, token = _setup_user()
 
-    slug = save_page("test-update", "# Old\n\nContent", False, user_id, source="mcp")
+    slug = save_page("test-update", "# Old\n\nContent", "listed", user_id, source="mcp")
 
     r = _rpc(
         client,
@@ -116,7 +116,7 @@ def test_update_page(client):
 def test_delete_page(client):
     user_id, token = _setup_user()
 
-    slug = save_page("test-delete", "# Delete Me", False, user_id)
+    slug = save_page("test-delete", "# Delete Me", "listed", user_id)
 
     r = _rpc(
         client,
@@ -147,8 +147,8 @@ def test_delete_page(client):
 def test_get_revisions(client):
     user_id, token = _setup_user()
 
-    slug = save_page("test-revisions", "# V1", False, user_id)
-    save_page(slug, "# V2", False, user_id)
+    slug = save_page("test-revisions", "# V1", "listed", user_id)
+    save_page(slug, "# V2", "listed", user_id)
 
     r = _rpc(
         client,
@@ -167,7 +167,7 @@ def test_get_revisions(client):
 def test_get_user_profile(client):
     user_id, token = _setup_user()
 
-    save_page("profile-page", "# Public Page", False, user_id)
+    save_page("profile-page", "# Public Page", "listed", user_id)
 
     r = _rpc(
         client,

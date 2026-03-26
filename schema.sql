@@ -16,8 +16,7 @@ CREATE TABLE IF NOT EXISTS pages (
     slug TEXT NOT NULL,
     original_slug TEXT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    draft BOOLEAN NOT NULL DEFAULT FALSE,
-    listing TEXT NOT NULL DEFAULT 'listed',
+    visibility TEXT NOT NULL DEFAULT 'private',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -81,11 +80,11 @@ DO $$ BEGIN
 END $$;
 CREATE INDEX IF NOT EXISTS revisions_page_id_idx ON revisions (page_id);
 CREATE INDEX IF NOT EXISTS revisions_page_revision_idx ON revisions (page_id, revision DESC);
-CREATE INDEX IF NOT EXISTS pages_draft_idx ON pages (draft);
+CREATE INDEX IF NOT EXISTS pages_visibility_idx ON pages (visibility);
 CREATE INDEX IF NOT EXISTS pages_original_slug ON pages (original_slug);
 CREATE UNIQUE INDEX IF NOT EXISTS pages_user_slug_unique ON pages (user_id, slug) WHERE user_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL;
-CREATE INDEX IF NOT EXISTS pages_draft_updated_idx ON pages (draft, updated_at DESC);
+CREATE INDEX IF NOT EXISTS pages_visibility_updated_idx ON pages (visibility, updated_at DESC);
 CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens (user_id);
 CREATE INDEX IF NOT EXISTS oauth_codes_expires_idx ON oauth_codes (expires_at);
 
@@ -98,11 +97,16 @@ DO $$ BEGIN
             ('003_add_license.sql'),
             ('004_add_listing.sql'),
             ('005_per_user_slugs.sql'),
+            ('006_backfill_usernames.py'),
             ('007_add_original_slug.sql'),
+            ('008_add_pages_draft_updated_idx.sql'),
+            ('009_add_subdomain.sql'),
+            ('010_add_email_change_purpose.sql'),
             ('011_add_api_tokens.sql'),
             ('012_add_revision_source.sql'),
             ('013_add_revision_ai_assisted.sql'),
-            ('014_add_oauth.sql')
+            ('014_add_oauth.sql'),
+            ('015_unify_visibility.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;
