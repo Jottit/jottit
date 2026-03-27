@@ -2,33 +2,37 @@
 <div class="home">
   {% if signed_in %}
   {% include "_admin_banner.html" %}
-  <main class="home-pages">
+  <main class="user-content">
     {% if display_name %}
-    <div class="home-pages-header">
+    <div class="user-header">
       {% if owner_avatar_url %}
-      <img src="{{ owner_avatar_url }}" alt="{{ display_name }}" class="home-pages-avatar">
+      <img src="{{ owner_avatar_url }}" alt="{{ display_name }}" class="user-header-avatar">
       {% endif %}
       <div>
-        <h1 class="home-pages-name">{{ display_name }}</h1>
-        <a href="{{ profile_url }}" class="home-pages-profile-link">View profile</a>
+        <h1 class="user-header-name">{{ display_name }}</h1>
+        <a href="{{ profile_url }}" class="user-header-link">View profile</a>
       </div>
     </div>
     {% endif %}
     {% if counts %}
-    <nav class="profile-tabs">
-      <a href="/" class="profile-tab{% if tab == 'all' %} profile-tab--active{% endif %}">All <span class="profile-tab-count">{{ counts.all }}</span></a>
-      <a href="/?tab=pinned" class="profile-tab{% if tab == 'pinned' %} profile-tab--active{% endif %}">Pinned <span class="profile-tab-count">{{ counts.pinned }}</span></a>
-      <a href="/?tab=listed" class="profile-tab{% if tab == 'listed' %} profile-tab--active{% endif %}">Listed <span class="profile-tab-count">{{ counts.listed }}</span></a>
-      <a href="/?tab=unlisted" class="profile-tab{% if tab == 'unlisted' %} profile-tab--active{% endif %}">Unlisted <span class="profile-tab-count">{{ counts.unlisted }}</span></a>
-      <a href="/?tab=private" class="profile-tab{% if tab == 'private' %} profile-tab--active{% endif %}">Private <span class="profile-tab-count">{{ counts.private }}</span></a>
-    </nav>
+    <div class="tabs-container">
+      <button class="tabs-fade tabs-fade--left" aria-label="Scroll left">‹</button>
+      <nav class="tabs">
+        <a href="/" class="tab{% if tab == 'all' %} tab--active{% endif %}">All <span class="tab-count">{{ counts.all }}</span></a>
+        <a href="/?tab=listed" class="tab{% if tab == 'listed' %} tab--active{% endif %}">Listed <span class="tab-count">{{ counts.listed }}</span></a>
+        <a href="/?tab=unlisted" class="tab{% if tab == 'unlisted' %} tab--active{% endif %}">Unlisted <span class="tab-count">{{ counts.unlisted }}</span></a>
+        <a href="/?tab=private" class="tab{% if tab == 'private' %} tab--active{% endif %}">Private <span class="tab-count">{{ counts.private }}</span></a>
+        <a href="/?tab=pinned" class="tab{% if tab == 'pinned' %} tab--active{% endif %}">Pinned <span class="tab-count">{{ counts.pinned }}</span></a>
+      </nav>
+      <button class="tabs-fade tabs-fade--right" aria-label="Scroll right">›</button>
+    </div>
     {% endif %}
     <article class="page">
       {% if pages %}
       {% for page in pages %}
-      <div class="home-listing-item">
+      <div class="listing-item">
         <a href="/{{ page.slug }}" class="page-listing-link">
-          <span class="home-listing-title">{{ page.title or page.description|truncate(60, true) or page.slug }}{% if tab == 'all' and page.visibility != 'listed' %} <span class="visibility-label visibility-label--{{ page.visibility }}">{{ page.visibility }}</span>{% endif %}</span>
+          <span class="listing-title">{{ page.title or page.description|truncate(60, true) or page.slug }}{% if tab == 'all' and page.visibility != 'listed' %} <span class="visibility-label visibility-label--{{ page.visibility }}">{{ page.visibility }}</span>{% endif %}</span>
           <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">{{ page.updated_at | relative_time }} · {{ page.reading_time }} min read</time>
         </a>
       </div>
@@ -50,4 +54,7 @@
 
   {% include "_footer.html" %}
 </div>
+{% endblock %}
+{% block head %}
+<script src="/static/tabs.js?v={{ asset_v }}" defer></script>
 {% endblock %}

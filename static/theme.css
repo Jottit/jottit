@@ -154,18 +154,18 @@
     border-bottom: none;
 }
 
-/* Home page listing */
+/* Compact listing */
 
-.home-listing-item {
+.listing-item {
     padding: var(--space-4) 0;
     border-bottom: 1px solid var(--border);
 }
 
-.home-listing-item:last-child {
+.listing-item:last-child {
     border-bottom: none;
 }
 
-.home-listing-title {
+.listing-title {
     display: block;
     font-family: var(--site-font-heading);
     font-size: var(--font-size-base);
@@ -183,16 +183,70 @@
     vertical-align: middle;
 }
 
-/* Profile tabs */
+/* Tabs */
 
-.profile-tabs {
+.tabs-container {
+    position: relative;
+    margin-bottom: var(--space-4);
+}
+
+@media (min-width: 640px) {
+    .tabs-container {
+        margin-bottom: var(--space-8);
+    }
+}
+
+.tabs {
     display: flex;
     gap: var(--space-6, 24px);
     border-bottom: 1px solid var(--border);
-    margin-bottom: var(--space-8);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
 
-.profile-tab {
+.tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tabs-fade {
+    position: absolute;
+    top: 0;
+    bottom: 1px;
+    width: 48px;
+    display: flex;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+    color: var(--site-color-muted);
+    font-size: var(--font-size-xl);
+    transform: translateY(-3px);
+    z-index: 1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    padding: 0;
+}
+
+.tabs-fade--left {
+    left: 0;
+    justify-content: flex-start;
+    background: linear-gradient(to right, var(--bg) 40%, transparent);
+}
+
+.tabs-fade--right {
+    right: 0;
+    justify-content: flex-end;
+    background: linear-gradient(to left, var(--bg) 40%, transparent);
+}
+
+.tabs-container.can-scroll-start .tabs-fade--left,
+.tabs-container.can-scroll-end .tabs-fade--right {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.tab {
     display: inline-block;
     padding: var(--space-3) 0;
     font-family: var(--site-font-heading);
@@ -203,23 +257,25 @@
     text-decoration: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.profile-tab:hover {
+.tab:hover {
     color: var(--site-color-heading);
 }
 
-.profile-tab--active {
+.tab--active {
     color: var(--site-color-heading);
     border-bottom-color: var(--site-color-heading);
 }
 
-.profile-tab-count {
+.tab-count {
     font-size: var(--font-size-xs);
     color: var(--site-color-muted);
 }
 
-.profile-tab--active .profile-tab-count {
+.tab--active .tab-count {
     color: var(--site-color-heading);
 }
 

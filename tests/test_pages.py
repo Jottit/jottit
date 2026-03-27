@@ -285,7 +285,7 @@ def test_homepage_shows_tabs_when_logged_in(client):
         sess["user_id"] = user_id
     r = client.get("/")
     body = r.data.decode()
-    assert "profile-tab" in body
+    assert "tab--active" in body
     assert "All" in body
     assert "Private" in body
     assert "Unlisted" in body
@@ -335,7 +335,7 @@ def test_public_profile_shows_no_tabs(client):
     _setup_user_with_pages(client)
     r = client.get("/@tabuser")
     body = r.data.decode()
-    assert "profile-tab" not in body
+    assert "tab--active" not in body
     assert "Public One" in body
     assert "Pinned Post" in body
     assert "Unlisted Post" not in body
@@ -346,5 +346,5 @@ def test_public_profile_shows_no_tabs(client):
 def test_homepage_logged_out_shows_landing(client):
     r = client.get("/")
     body = r.data.decode()
-    assert "profile-tab" not in body
+    assert "tab--active" not in body
     assert "Write something" in body

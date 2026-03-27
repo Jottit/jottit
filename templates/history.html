@@ -7,17 +7,17 @@
     <a href="{{ url_prefix }}/{{ slug }}" class="panel-back">&larr; Back</a>
     <h1 class="title">Revision history</h1>
     <div class="panel panel--compact">
-        <ul class="sites-menu">
+        <ul class="menu-list">
             {% for rev in revisions %}
             <li>
-                <a href="{% if rev.current %}{{ url_prefix }}/{{ slug }}{% else %}{{ url_prefix }}/{{ slug }}/history/{{ rev.revision }}{% endif %}" class="sites-menu-link">
-                    <span class="sites-menu-name">
+                <a href="{% if rev.current %}{{ url_prefix }}/{{ slug }}{% else %}{{ url_prefix }}/{{ slug }}/history/{{ rev.revision }}{% endif %}" class="menu-list-link">
+                    <span class="menu-list-name">
                         {{ rev.created_at | relative_time }}
                         {% if rev.current %}<span class="provenance-pill">Current</span>{% endif %}
                         {% if rev.ai_assisted %}<span class="provenance-pill provenance-pill--ai">AI-assisted</span>{% endif %}
                         {% if rev.source != "web" %}<span class="provenance-pill">via {{ rev.source }}</span>{% endif %}
                     </span>
-                    <span class="sites-menu-url">{% if rev.delta is none %}Created{% elif rev.delta > 0 %}+{{ rev.delta }} words{% elif rev.delta < 0 %}{{ rev.delta }} words{% else %}edited{% endif %}</span>
+                    <span class="menu-list-url">{% if rev.delta is none %}Created{% elif rev.delta > 0 %}+{{ rev.delta }} words{% elif rev.delta < 0 %}{{ rev.delta }} words{% else %}edited{% endif %}</span>
                 </a>
             </li>
             {% endfor %}
