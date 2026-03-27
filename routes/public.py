@@ -1,5 +1,6 @@
 import json
 import os
+from collections import Counter
 from email.utils import format_datetime
 from xml.sax.saxutils import escape as xml_escape
 
@@ -64,6 +65,9 @@ def install_cli():
     return send_from_directory("static", "install-cli.sh", mimetype="text/plain")
 
 
+_VISIBILITY_TABS = ("all", "private", "unlisted", "listed", "pinned")
+
+
 @bp.route("/")
 def home():
     if "user_id" not in session:
@@ -71,12 +75,12 @@ def home():
 
     pages = get_pages_for_user(session["user_id"])
     all_items = [_build_page_item(p) for p in pages]
-    counts = {"all": len(all_items)}
-    for v in ("private", "unlisted", "listed", "pinned"):
-        counts[v] = sum(1 for i in all_items if i["visibility"] == v)
+
+    counts = Counter(i["visibility"] for i in all_items)
+    counts["all"] = len(all_items)
 
     tab = request.args.get("tab", "all")
-    if tab not in ("all", "private", "unlisted", "listed", "pinned"):
+    if tab not in _VISIBILITY_TABS:
         tab = "all"
 
     if tab == "all":

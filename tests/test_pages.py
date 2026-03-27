@@ -1,4 +1,10 @@
-from db import claim_page, find_or_create_user, get_page_meta
+from db import (
+    claim_page,
+    find_or_create_user,
+    get_page_meta,
+    save_page,
+    set_user_username,
+)
 
 # -- Homepage --
 
@@ -255,14 +261,6 @@ def test_wikilink_renders_as_text(client):
 
 
 def _setup_user_with_pages(client):
-    from db import (
-        claim_page,
-        find_or_create_user,
-        get_page_meta,
-        save_page,
-        set_user_username,
-    )
-
     user_id = find_or_create_user("tabs@example.com")
     set_user_username(user_id, "tabuser")
 

@@ -217,7 +217,6 @@
     }
 }
 
-
 .home-sites {
     margin-top: var(--space-8);
     text-align: left;
@@ -490,7 +489,6 @@
 .profile-bio a {
     text-decoration: underline;
 }
-
 
 /* Profile header variants — same centered structure, elements layer in */
 
