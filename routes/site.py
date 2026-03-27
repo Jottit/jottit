@@ -335,7 +335,7 @@ def _finish_claim(slug, page_meta, user_id, username):
     session.pop("claim_email", None)
     session.pop("claim_verified", None)
     session.pop("claim_name", None)
-    return redirect(profile_url(username))
+    return redirect("/")
 
 
 @bp.route("/<slug>/claim/setup", methods=["GET", "POST"])

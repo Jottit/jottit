@@ -4,7 +4,15 @@
   {% include "_admin_banner.html" %}
   <main class="home-pages">
     {% if display_name %}
-    <h1 class="home-pages-name">{{ display_name }}</h1>
+    <div class="home-pages-header">
+      {% if owner_avatar_url %}
+      <img src="{{ owner_avatar_url }}" alt="{{ display_name }}" class="home-pages-avatar">
+      {% endif %}
+      <div>
+        <h1 class="home-pages-name">{{ display_name }}</h1>
+        <a href="{{ profile_url }}" class="home-pages-profile-link">View profile</a>
+      </div>
+    </div>
     {% endif %}
     {% if counts %}
     <nav class="profile-tabs">

@@ -90,7 +90,7 @@ def user_settings():
     if not user:
         return redirect("/signin")
 
-    back_url = profile_url(user["username"]) if user.get("username") else "/"
+    back_url = "/"
     return render_template(
         "settings.html", user=user, back_url=back_url, licenses=LICENSES
     )
