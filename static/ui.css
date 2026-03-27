@@ -206,9 +206,12 @@
 }
 
 .user-content {
+    width: 100%;
     max-width: var(--site-max-width);
     margin: var(--space-8) auto 0;
     padding: var(--space-5) var(--space-5);
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 @media (min-width: 640px) {
