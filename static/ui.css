@@ -173,6 +173,14 @@
     color: var(--muted);
 }
 
+.home-pages-name {
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-5);
+}
+
 .home-pages {
     max-width: var(--site-max-width);
     margin: 0 auto;

@@ -84,11 +84,15 @@ def home():
     else:
         page_list = [i for i in all_items if i["visibility"] == tab]
 
+    user = g.current_user
+    display_name = (user.get("name") or user.get("username")) if user else None
+
     return render_template(
         "home.html",
         pages=page_list,
         tab=tab,
         counts=counts,
+        display_name=display_name,
         **account_link_vars(),
     )
 

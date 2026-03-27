@@ -3,6 +3,9 @@
   {% if signed_in %}
   {% include "_admin_banner.html" %}
   <main class="home-pages">
+    {% if display_name %}
+    <h1 class="home-pages-name">{{ display_name }}</h1>
+    {% endif %}
     {% if counts %}
     <nav class="profile-tabs">
       <a href="/" class="profile-tab{% if tab == 'all' %} profile-tab--active{% endif %}">All <span class="profile-tab-count">{{ counts.all }}</span></a>
