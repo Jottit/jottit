@@ -1,15 +1,52 @@
 {% extends "base.html" %} {% block body %}
 <div class="home">
+  {% if signed_in %}
+  {% include "_admin_banner.html" %}
+  <main class="home-pages">
+    {% if display_name %}
+    <div class="home-pages-header">
+      {% if owner_avatar_url %}
+      <img src="{{ owner_avatar_url }}" alt="{{ display_name }}" class="home-pages-avatar">
+      {% endif %}
+      <div>
+        <h1 class="home-pages-name">{{ display_name }}</h1>
+        <a href="{{ profile_url }}" class="home-pages-profile-link">View profile</a>
+      </div>
+    </div>
+    {% endif %}
+    {% if counts %}
+    <nav class="profile-tabs">
+      <a href="/" class="profile-tab{% if tab == 'all' %} profile-tab--active{% endif %}">All <span class="profile-tab-count">{{ counts.all }}</span></a>
+      <a href="/?tab=pinned" class="profile-tab{% if tab == 'pinned' %} profile-tab--active{% endif %}">Pinned <span class="profile-tab-count">{{ counts.pinned }}</span></a>
+      <a href="/?tab=listed" class="profile-tab{% if tab == 'listed' %} profile-tab--active{% endif %}">Listed <span class="profile-tab-count">{{ counts.listed }}</span></a>
+      <a href="/?tab=unlisted" class="profile-tab{% if tab == 'unlisted' %} profile-tab--active{% endif %}">Unlisted <span class="profile-tab-count">{{ counts.unlisted }}</span></a>
+      <a href="/?tab=private" class="profile-tab{% if tab == 'private' %} profile-tab--active{% endif %}">Private <span class="profile-tab-count">{{ counts.private }}</span></a>
+    </nav>
+    {% endif %}
+    <article class="page">
+      {% if pages %}
+      {% for page in pages %}
+      <div class="home-listing-item">
+        <a href="/{{ page.slug }}" class="page-listing-link">
+          <span class="home-listing-title">{{ page.title or page.description|truncate(60, true) or page.slug }}{% if tab == 'all' and page.visibility != 'listed' %} <span class="visibility-label visibility-label--{{ page.visibility }}">{{ page.visibility }}</span>{% endif %}</span>
+          <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">{{ page.updated_at | relative_time }} · {{ page.reading_time }} min read</time>
+        </a>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p>No pages yet.</p>
+      {% endif %}
+    </article>
+  </main>
+  {% else %}
   {% include "_account_link.html" %}
-
   <main class="home-main">
     <h1 class="logo">Jottit</h1>
     <p class="tagline">The fastest way to publish on the web</p>
     <a href="/new" class="btn btn-solid btn-lg">Write something</a>
-    {% if not signed_in %}
     <p class="home-hint">no sign-up required</p>
-    {% endif %}
   </main>
+  {% endif %}
 
   {% include "_footer.html" %}
 </div>

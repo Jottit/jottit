@@ -1,5 +1,6 @@
 import json
 import os
+from collections import Counter
 from email.utils import format_datetime
 from xml.sax.saxutils import escape as xml_escape
 
@@ -64,17 +65,53 @@ def install_cli():
     return send_from_directory("static", "install-cli.sh", mimetype="text/plain")
 
 
+_VISIBILITY_TABS = ("all", "private", "unlisted", "listed", "pinned")
+
+
 @bp.route("/")
 def home():
-    pages = []
-    if "user_id" in session:
-        pages = get_pages_for_user(session["user_id"])
+    if "user_id" not in session:
+        return render_template("home.html", **account_link_vars())
+
+    pages = get_pages_for_user(session["user_id"])
+    all_items = [_build_page_item(p) for p in pages]
+
+    counts = Counter(i["visibility"] for i in all_items)
+    counts["all"] = len(all_items)
+
+    tab = request.args.get("tab", "all")
+    if tab not in _VISIBILITY_TABS:
+        tab = "all"
+
+    if tab == "all":
+        page_list = all_items
+    else:
+        page_list = [i for i in all_items if i["visibility"] == tab]
+
+    user = g.current_user
+    display_name = (user.get("name") or user.get("username")) if user else None
+
     return render_template(
         "home.html",
-        pages=pages[:3],
-        has_more_pages=len(pages) > 3,
+        pages=page_list,
+        tab=tab,
+        counts=counts,
+        display_name=display_name,
         **account_link_vars(),
     )
+
+
+def _build_page_item(p):
+    title = get_title(p["content"]) if p["content"] else None
+    return {
+        "slug": p["slug"],
+        "title": title or "",
+        "description": get_description(p["content"], max_length=350),
+        "reading_time": reading_time(p["content"]),
+        "updated_at": p["updated_at"],
+        "visibility": p["visibility"],
+        "pinned": p["visibility"] == "pinned",
+    }
 
 
 def subdomain_home(user):
@@ -84,20 +121,13 @@ def subdomain_home(user):
     for p in pages:
         if p["visibility"] not in ("listed", "pinned"):
             continue
-        title = get_title(p["content"]) if p["content"] else None
-        item = {
-            "slug": p["slug"],
-            "title": title or "",
-            "description": get_description(p["content"], max_length=350),
-            "reading_time": reading_time(p["content"]),
-            "updated_at": p["updated_at"],
-            "pinned": p["visibility"] == "pinned",
-        }
+        item = _build_page_item(p)
         if p["visibility"] == "pinned":
             pinned.append(item)
         else:
             listed.append(item)
     page_list = pinned + listed
+
     site_title = user.get("name") or user.get("username")
     is_owner = session.get("user_id") == user["id"]
     owner_initials = None
@@ -122,6 +152,7 @@ def subdomain_home(user):
         avatar_url=user.get("avatar"),
         bio_html=bio_html,
         license_info=LICENSES.get(user.get("license") or ""),
+        profile_url=profile_url(user["username"]) if user.get("username") else None,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
     )
 
@@ -273,6 +304,7 @@ def view_page(slug):
     owner_initials = None
     owner_avatar_url = None
     profile_incomplete = False
+    owner_profile_url = None
     if is_owner:
         user = g.current_user
         if user:
@@ -280,6 +312,8 @@ def view_page(slug):
             owner_avatar_url = user.get("avatar")
             if not user.get("avatar") and not user.get("bio"):
                 profile_incomplete = True
+            if user.get("username"):
+                owner_profile_url = profile_url(user["username"])
 
     resp = render_template(
         "page.html",
@@ -292,6 +326,7 @@ def view_page(slug):
         owner_initials=owner_initials,
         owner_avatar_url=owner_avatar_url,
         profile_incomplete=profile_incomplete,
+        profile_url=owner_profile_url,
         avatar_url=avatar_url,
         bio_html=bio_html,
         updated_at=row["created_at"],

@@ -173,6 +173,50 @@
     color: var(--muted);
 }
 
+.home-pages-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
+.home-pages-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.home-pages-profile-link {
+    font-size: var(--font-size-xs);
+    color: var(--brand-2);
+    text-decoration: none;
+}
+
+.home-pages-profile-link:hover {
+    text-decoration: underline;
+}
+
+.home-pages-name {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin: 0;
+}
+
+.home-pages {
+    max-width: var(--site-max-width);
+    margin: var(--space-8) auto 0;
+    padding: var(--space-5) var(--space-5);
+}
+
+@media (min-width: 640px) {
+    .home-pages {
+        padding: var(--space-5) var(--space-10);
+    }
+}
+
 .home-sites {
     margin-top: var(--space-8);
     text-align: left;
@@ -595,6 +639,11 @@
     text-decoration: none;
 }
 
+.admin-banner-link {
+    color: var(--muted);
+    opacity: 0.65;
+}
+
 .admin-banner .btn-publish {
     color: #fff;
     padding-top: 5px;
@@ -917,6 +966,8 @@
 .auth-subdomain-row .auth-input {
     flex: 0 0 auto;
     width: 10ch;
+    text-align: left;
+    padding-left: var(--space-1);
     margin-bottom: 0;
     border-bottom: none;
 }
