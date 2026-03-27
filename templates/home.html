@@ -18,13 +18,10 @@
     <article class="page">
       {% if pages %}
       {% for page in pages %}
-      <div class="page-listing-item">
+      <div class="home-listing-item">
         <a href="/{{ page.slug }}" class="page-listing-link">
+          <span class="home-listing-title">{{ page.title or page.description|truncate(60, true) or page.slug }}{% if tab == 'all' and page.visibility != 'listed' %} <span class="visibility-label visibility-label--{{ page.visibility }}">{{ page.visibility }}</span>{% endif %}</span>
           <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">{{ page.updated_at | relative_time }} · {{ page.reading_time }} min read</time>
-          <h2 class="page-listing-title">{{ page.title }}</h2>
-          {% if page.description %}
-          <p class="page-listing-desc">{{ page.description }}</p>
-          {% endif %}
         </a>
       </div>
       {% endfor %}

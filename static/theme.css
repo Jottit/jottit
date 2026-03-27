@@ -154,6 +154,35 @@
     border-bottom: none;
 }
 
+/* Home page listing */
+
+.home-listing-item {
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.home-listing-item:last-child {
+    border-bottom: none;
+}
+
+.home-listing-title {
+    display: block;
+    font-family: var(--site-font-heading);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--site-color-heading);
+}
+
+.visibility-label {
+    display: inline-block;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--site-color-muted);
+    vertical-align: middle;
+}
+
 /* Profile tabs */
 
 .profile-tabs {
