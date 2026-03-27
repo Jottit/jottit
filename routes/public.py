@@ -66,13 +66,29 @@ def install_cli():
 
 @bp.route("/")
 def home():
-    pages = []
-    if "user_id" in session:
-        pages = get_pages_for_user(session["user_id"])
+    if "user_id" not in session:
+        return render_template("home.html", **account_link_vars())
+
+    pages = get_pages_for_user(session["user_id"])
+    all_items = [_build_page_item(p) for p in pages]
+    counts = {"all": len(all_items)}
+    for v in ("private", "unlisted", "listed", "pinned"):
+        counts[v] = sum(1 for i in all_items if i["visibility"] == v)
+
+    tab = request.args.get("tab", "all")
+    if tab not in ("all", "private", "unlisted", "listed", "pinned"):
+        tab = "all"
+
+    if tab == "all":
+        page_list = all_items
+    else:
+        page_list = [i for i in all_items if i["visibility"] == tab]
+
     return render_template(
         "home.html",
-        pages=pages[:3],
-        has_more_pages=len(pages) > 3,
+        pages=page_list,
+        tab=tab,
+        counts=counts,
         **account_link_vars(),
     )
 
@@ -92,38 +108,20 @@ def _build_page_item(p):
 
 def subdomain_home(user):
     pages = get_pages_for_user(user["id"])
-    is_owner = session.get("user_id") == user["id"]
-
-    if is_owner:
-        all_items = [_build_page_item(p) for p in pages]
-        counts = {"all": len(all_items)}
-        for v in ("private", "unlisted", "listed", "pinned"):
-            counts[v] = sum(1 for i in all_items if i["visibility"] == v)
-
-        tab = request.args.get("tab", "all")
-        if tab not in ("all", "private", "unlisted", "listed", "pinned"):
-            tab = "all"
-
-        if tab == "all":
-            page_list = all_items
+    pinned = []
+    listed = []
+    for p in pages:
+        if p["visibility"] not in ("listed", "pinned"):
+            continue
+        item = _build_page_item(p)
+        if p["visibility"] == "pinned":
+            pinned.append(item)
         else:
-            page_list = [i for i in all_items if i["visibility"] == tab]
-    else:
-        counts = None
-        tab = None
-        pinned = []
-        listed = []
-        for p in pages:
-            if p["visibility"] not in ("listed", "pinned"):
-                continue
-            item = _build_page_item(p)
-            if p["visibility"] == "pinned":
-                pinned.append(item)
-            else:
-                listed.append(item)
-        page_list = pinned + listed
+            listed.append(item)
+    page_list = pinned + listed
 
     site_title = user.get("name") or user.get("username")
+    is_owner = session.get("user_id") == user["id"]
     owner_initials = None
     owner_avatar_url = None
     profile_incomplete = False
@@ -146,9 +144,8 @@ def subdomain_home(user):
         avatar_url=user.get("avatar"),
         bio_html=bio_html,
         license_info=LICENSES.get(user.get("license") or ""),
+        profile_url=profile_url(user["username"]) if user.get("username") else None,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
-        tab=tab,
-        counts=counts,
     )
 
 
@@ -299,6 +296,7 @@ def view_page(slug):
     owner_initials = None
     owner_avatar_url = None
     profile_incomplete = False
+    owner_profile_url = None
     if is_owner:
         user = g.current_user
         if user:
@@ -306,6 +304,8 @@ def view_page(slug):
             owner_avatar_url = user.get("avatar")
             if not user.get("avatar") and not user.get("bio"):
                 profile_incomplete = True
+            if user.get("username"):
+                owner_profile_url = profile_url(user["username"])
 
     resp = render_template(
         "page.html",
@@ -318,6 +318,7 @@ def view_page(slug):
         owner_initials=owner_initials,
         owner_avatar_url=owner_avatar_url,
         profile_incomplete=profile_incomplete,
+        profile_url=owner_profile_url,
         avatar_url=avatar_url,
         bio_html=bio_html,
         updated_at=row["created_at"],

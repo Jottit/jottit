@@ -173,6 +173,19 @@
     color: var(--muted);
 }
 
+.home-pages {
+    max-width: var(--site-max-width);
+    margin: 0 auto;
+    padding: var(--space-5) var(--space-5);
+}
+
+@media (min-width: 640px) {
+    .home-pages {
+        padding: var(--space-5) var(--space-10);
+    }
+}
+
+
 .home-sites {
     margin-top: var(--space-8);
     text-align: left;
@@ -446,6 +459,7 @@
     text-decoration: underline;
 }
 
+
 /* Profile header variants — same centered structure, elements layer in */
 
 .profile-header--name,
@@ -593,6 +607,11 @@
     font-size: var(--font-size-sm);
     color: var(--text);
     text-decoration: none;
+}
+
+.admin-banner-link {
+    color: var(--muted);
+    opacity: 0.65;
 }
 
 .admin-banner .btn-publish {
