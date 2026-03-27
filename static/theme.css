@@ -154,6 +154,46 @@
     border-bottom: none;
 }
 
+/* Profile tabs */
+
+.profile-tabs {
+    display: flex;
+    gap: var(--space-6, 24px);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-4);
+}
+
+.profile-tab {
+    display: inline-block;
+    padding: var(--space-3) 0;
+    font-family: var(--site-font-heading);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--site-color-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.profile-tab:hover {
+    color: var(--site-color-heading);
+}
+
+.profile-tab--active {
+    color: var(--site-color-heading);
+    border-bottom-color: var(--site-color-heading);
+}
+
+.profile-tab-count {
+    font-size: var(--font-size-xs);
+    color: var(--site-color-muted);
+}
+
+.profile-tab--active .profile-tab-count {
+    color: var(--site-color-heading);
+}
+
 /* Subdomain page listing */
 
 .page-listing-item {

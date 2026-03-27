@@ -77,29 +77,53 @@ def home():
     )
 
 
+def _build_page_item(p):
+    title = get_title(p["content"]) if p["content"] else None
+    return {
+        "slug": p["slug"],
+        "title": title or "",
+        "description": get_description(p["content"], max_length=350),
+        "reading_time": reading_time(p["content"]),
+        "updated_at": p["updated_at"],
+        "visibility": p["visibility"],
+        "pinned": p["visibility"] == "pinned",
+    }
+
+
 def subdomain_home(user):
     pages = get_pages_for_user(user["id"])
-    pinned = []
-    listed = []
-    for p in pages:
-        if p["visibility"] not in ("listed", "pinned"):
-            continue
-        title = get_title(p["content"]) if p["content"] else None
-        item = {
-            "slug": p["slug"],
-            "title": title or "",
-            "description": get_description(p["content"], max_length=350),
-            "reading_time": reading_time(p["content"]),
-            "updated_at": p["updated_at"],
-            "pinned": p["visibility"] == "pinned",
-        }
-        if p["visibility"] == "pinned":
-            pinned.append(item)
-        else:
-            listed.append(item)
-    page_list = pinned + listed
-    site_title = user.get("name") or user.get("username")
     is_owner = session.get("user_id") == user["id"]
+
+    if is_owner:
+        all_items = [_build_page_item(p) for p in pages]
+        counts = {"all": len(all_items)}
+        for v in ("private", "unlisted", "listed", "pinned"):
+            counts[v] = sum(1 for i in all_items if i["visibility"] == v)
+
+        tab = request.args.get("tab", "all")
+        if tab not in ("all", "private", "unlisted", "listed", "pinned"):
+            tab = "all"
+
+        if tab == "all":
+            page_list = all_items
+        else:
+            page_list = [i for i in all_items if i["visibility"] == tab]
+    else:
+        counts = None
+        tab = None
+        pinned = []
+        listed = []
+        for p in pages:
+            if p["visibility"] not in ("listed", "pinned"):
+                continue
+            item = _build_page_item(p)
+            if p["visibility"] == "pinned":
+                pinned.append(item)
+            else:
+                listed.append(item)
+        page_list = pinned + listed
+
+    site_title = user.get("name") or user.get("username")
     owner_initials = None
     owner_avatar_url = None
     profile_incomplete = False
@@ -123,6 +147,8 @@ def subdomain_home(user):
         bio_html=bio_html,
         license_info=LICENSES.get(user.get("license") or ""),
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
+        tab=tab,
+        counts=counts,
     )
 
 

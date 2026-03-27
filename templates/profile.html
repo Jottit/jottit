@@ -39,6 +39,15 @@
 <div class="page-separator"></div>
 {% endif %}
 <main class="page-main">
+    {% if counts %}
+    <nav class="profile-tabs">
+        <a href="{{ url_prefix }}" class="profile-tab{% if tab == 'all' %} profile-tab--active{% endif %}">All <span class="profile-tab-count">{{ counts.all }}</span></a>
+        <a href="{{ url_prefix }}?tab=pinned" class="profile-tab{% if tab == 'pinned' %} profile-tab--active{% endif %}">Pinned <span class="profile-tab-count">{{ counts.pinned }}</span></a>
+        <a href="{{ url_prefix }}?tab=listed" class="profile-tab{% if tab == 'listed' %} profile-tab--active{% endif %}">Listed <span class="profile-tab-count">{{ counts.listed }}</span></a>
+        <a href="{{ url_prefix }}?tab=unlisted" class="profile-tab{% if tab == 'unlisted' %} profile-tab--active{% endif %}">Unlisted <span class="profile-tab-count">{{ counts.unlisted }}</span></a>
+        <a href="{{ url_prefix }}?tab=private" class="profile-tab{% if tab == 'private' %} profile-tab--active{% endif %}">Private <span class="profile-tab-count">{{ counts.private }}</span></a>
+    </nav>
+    {% endif %}
     <article class="page">
         {% if pages %}
         {% for page in pages %}
