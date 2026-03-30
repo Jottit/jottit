@@ -197,7 +197,7 @@ def test_create_page_without_auth(client):
     assert "page_secret" in data
 
 
-def test_update_page_with_secret(client):
+def test_update_page_requires_auth(client):
     # Create without auth
     r = _rpc(
         client,
@@ -207,24 +207,18 @@ def test_update_page_with_secret(client):
     text = r.get_json()["result"]["content"][0]["text"]
     data = json.loads(text)
     slug = data["slug"]
-    secret = data["page_secret"]
 
-    # Update with page_secret
+    # Update without auth should fail
     r = _rpc(
         client,
         "tools/call",
         {
             "name": "update_page",
-            "arguments": {
-                "slug": slug,
-                "content": "# Updated\n\nNew body",
-                "page_secret": secret,
-            },
+            "arguments": {"slug": slug, "content": "# Updated\n\nNew body"},
         },
     )
     text = r.get_json()["result"]["content"][0]["text"]
-    data = json.loads(text)
-    assert data["content"] == "# Updated\n\nNew body"
+    assert "authentication required" in text
 
 
 def test_list_pages_requires_auth(client):

@@ -72,13 +72,13 @@ def test_unclaimed_page_shows_claim_banner_to_creator(client):
     assert b"claim-banner" in r.data
 
 
-# Non-creator doesn't see the claim banner
-def test_unclaimed_page_hides_claim_banner_from_non_creator(client):
+# Any visitor sees the claim banner on unclaimed pages (so they can claim it)
+def test_unclaimed_page_shows_claim_banner_to_all_visitors(client):
     client.post("/uncl2/edit", data={"title": "T", "content": "X"})
     with client.session_transaction() as sess:
         sess.clear()
     r = client.get("/uncl2")
-    assert b"claim-banner" not in r.data
+    assert b"claim-banner" in r.data
 
 
 # Claimed pages don't show the claim banner

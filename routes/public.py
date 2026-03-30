@@ -321,7 +321,7 @@ def view_page(slug):
         content_body=content_body,
         slug=slug,
         show_actions=show_actions,
-        unclaimed=unclaimed and page_is_creator,
+        unclaimed=unclaimed,
         is_owner=is_owner,
         owner_initials=owner_initials,
         owner_avatar_url=owner_avatar_url,
