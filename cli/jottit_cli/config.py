@@ -81,7 +81,3 @@ def remove_page_secret(slug):
     pages = _load_pages()
     pages.pop(slug, None)
     _save_pages(pages)
-
-
-def list_page_secrets():
-    return _load_pages()

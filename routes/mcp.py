@@ -205,9 +205,7 @@ def _call_tool(name, args, user):
         if user:
             meta = get_page_meta(slug, user_id)
         if not meta and page_secret:
-            page_id = verify_page_secret(slug, page_secret)
-            if page_id:
-                meta = get_page_meta(slug)
+            meta = verify_page_secret(slug, page_secret)
         if not meta:
             return _text_result(f"Error: page '{slug}' not found")
 

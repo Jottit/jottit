@@ -74,7 +74,7 @@ class TestWhoami:
 
 
 class TestPublish:
-    @patch("jottit_cli.commands.publish.get_client_optional_auth")
+    @patch("jottit_cli.commands.publish.get_client")
     def test_publish_file(self, mock_gc, runner, tmp_path):
         md_file = tmp_path / "test.md"
         md_file.write_text("# Hello\n\nWorld")
@@ -94,7 +94,7 @@ class TestPublish:
         call_json = client.post.call_args[1]["json"]
         assert "# Hello" in call_json["content"]
 
-    @patch("jottit_cli.commands.publish.get_client_optional_auth")
+    @patch("jottit_cli.commands.publish.get_client")
     def test_publish_stdin(self, mock_gc, runner):
         client = MagicMock()
         client.post.return_value = _mock_response(201, {"slug": "stdin-page"})
@@ -109,7 +109,7 @@ class TestPublish:
         call_json = client.post.call_args[1]["json"]
         assert "From stdin" in call_json["content"]
 
-    @patch("jottit_cli.commands.publish.get_client_optional_auth")
+    @patch("jottit_cli.commands.publish.get_client")
     def test_publish_quiet(self, mock_gc, runner, tmp_path):
         md_file = tmp_path / "test.md"
         md_file.write_text("# Hello")
@@ -126,7 +126,7 @@ class TestPublish:
         assert result.exit_code == 0
         assert result.output.strip() == "hello"
 
-    @patch("jottit_cli.commands.publish.get_client_optional_auth")
+    @patch("jottit_cli.commands.publish.get_client")
     def test_publish_with_title(self, mock_gc, runner, tmp_path):
         md_file = tmp_path / "test.md"
         md_file.write_text("No heading here, just content.")

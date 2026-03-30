@@ -3,7 +3,7 @@ from pathlib import Path
 
 import click
 
-from jottit_cli.auth import get_client, get_client_optional_auth
+from jottit_cli.auth import get_client
 from jottit_cli.config import get_page_secret
 
 
@@ -28,10 +28,7 @@ def edit(ctx, slug, file_path, inline_content, visibility):
       echo "new content" | jottit edit my-page
     """
     secret = get_page_secret(slug)
-    if secret:
-        client, fmt = get_client_optional_auth(ctx)
-    else:
-        client, fmt = get_client(ctx)
+    client, fmt = get_client(ctx, require_auth=not secret)
 
     payload = {}
 
@@ -53,10 +50,7 @@ def edit(ctx, slug, file_path, inline_content, visibility):
             "or use --visibility to update metadata."
         )
 
-    headers = {}
-    if secret:
-        headers["X-Page-Secret"] = secret
-
+    headers = {"X-Page-Secret": secret} if secret else {}
     r = client.put(f"/pages/{slug}", json=payload, headers=headers)
     if r.status_code == 404:
         fmt.error(
@@ -68,10 +62,7 @@ def edit(ctx, slug, file_path, inline_content, visibility):
         fmt.error(error)
 
     data = r.json()
-    if secret:
-        url = client.page_url(slug)
-    else:
-        url = client.get_page_url(slug)
+    url = client.get_page_url(slug) if client.has_token else client.page_url(slug)
 
     fmt.success(
         data=data,

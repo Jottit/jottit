@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from jottit_cli.auth import get_client_optional_auth
+from jottit_cli.auth import get_client
 from jottit_cli.config import store_page_secret
 
 
@@ -44,7 +44,7 @@ def publish(ctx, file, slug, visibility, title, open_browser):
 
       cat notes.md | jottit publish
     """
-    client, fmt = get_client_optional_auth(ctx)
+    client, fmt = get_client(ctx, require_auth=False)
     content = _read_content(file, title)
 
     payload = {"content": content}
@@ -62,11 +62,13 @@ def publish(ctx, file, slug, visibility, title, open_browser):
     page_slug = data["slug"]
     page_secret = data.get("page_secret")
 
+    url = (
+        client.get_page_url(page_slug)
+        if client.has_token
+        else client.page_url(page_slug)
+    )
     if page_secret:
-        url = client.page_url(page_slug)
         store_page_secret(page_slug, page_secret, url)
-    else:
-        url = client.get_page_url(page_slug)
 
     if open_browser:
         webbrowser.open(url)

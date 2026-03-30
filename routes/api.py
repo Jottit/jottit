@@ -3,10 +3,9 @@ import hashlib
 from flask import Blueprint, jsonify, request
 
 from db import (
-    claim_page,
+    claim_page_with_secret,
     create_page_secret,
     delete_page,
-    delete_page_secret,
     get_page,
     get_page_meta,
     get_pages_for_user,
@@ -209,9 +208,7 @@ def update_page(slug):
     if user:
         meta = get_page_meta(slug, user["id"])
     if not meta and page_secret:
-        page_id = verify_page_secret(slug, page_secret)
-        if page_id:
-            meta = get_page_meta(slug)
+        meta = verify_page_secret(slug, page_secret)
 
     if not meta:
         return _error("Page not found", 404)
@@ -268,15 +265,12 @@ def claim_page_by_slug(slug):
     if not page_secret:
         return _error("Page secret is required", 400)
 
-    page_id = verify_page_secret(slug, page_secret)
-    if not page_id:
+    page_meta = verify_page_secret(slug, page_secret)
+    if not page_meta:
         return _error("Invalid page secret or page already claimed", 403)
 
-    if not claim_page(page_id, user["id"]):
+    if not claim_page_with_secret(page_meta["id"], user["id"]):
         return _error("Page already claimed", 409)
-
-    delete_page_secret(page_id)
-    update_page_visibility(page_id, "listed")
 
     meta = get_page_meta(slug, user["id"])
     page_data = get_page(meta["id"])
