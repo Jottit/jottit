@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS page_secrets (
+    page_id INTEGER PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE,
+    secret_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

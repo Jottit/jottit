@@ -3,6 +3,7 @@ import json
 from flask import Blueprint, Response, jsonify, request
 
 from db import (
+    create_page_secret,
     delete_page,
     get_page,
     get_page_meta,
@@ -12,6 +13,7 @@ from db import (
     get_user_by_username,
     save_page,
     update_page_visibility,
+    verify_page_secret,
 )
 from routes.api import _require_auth, _serialize_page
 from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
@@ -60,7 +62,7 @@ TOOLS = [
     },
     {
         "name": "update_page",
-        "description": "Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line.",
+        "description": "Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line. For unclaimed pages, provide the page_secret returned when the page was created.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -69,6 +71,10 @@ TOOLS = [
                 "visibility": {
                     "type": "string",
                     "enum": ["private", "unlisted", "listed", "pinned"],
+                },
+                "page_secret": {
+                    "type": "string",
+                    "description": "Page secret for editing unclaimed pages (returned by create_page when not authenticated)",
                 },
             },
             "required": ["slug"],
@@ -123,9 +129,11 @@ def _text_result(text):
 
 
 def _call_tool(name, args, user):
-    user_id = user["id"]
+    user_id = user["id"] if user else None
 
     if name == "list_pages":
+        if not user:
+            return _text_result("Error: authentication required")
         pages = get_pages_for_user(user_id)
         result = [
             {
@@ -139,6 +147,8 @@ def _call_tool(name, args, user):
         return _text_result(json.dumps({"pages": result}, indent=2))
 
     if name == "get_page":
+        if not user:
+            return _text_result("Error: authentication required")
         slug = args.get("slug", "")
         meta = get_page_meta(slug, user_id)
         if not meta:
@@ -155,29 +165,47 @@ def _call_tool(name, args, user):
                 f"Error: content exceeds {MAX_CONTENT_LENGTH} characters"
             )
 
-        visibility = args.get("visibility", "private")
-        if visibility not in VISIBILITY_OPTIONS:
-            return _text_result(
-                f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
-            )
-
         slug = slugify(args.get("slug", ""))
         if not slug:
             slug = slugify(get_title(content) or "")
         if not slug:
             slug = generate_slug()
 
-        slug = save_page(
-            slug, content, visibility, user_id, source="mcp", ai_assisted=True
-        )
+        if user:
+            visibility = args.get("visibility", "private")
+            if visibility not in VISIBILITY_OPTIONS:
+                return _text_result(
+                    f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
+                )
 
-        meta = get_page_meta(slug, user_id)
+            slug = save_page(
+                slug, content, visibility, user_id, source="mcp", ai_assisted=True
+            )
+
+            meta = get_page_meta(slug, user_id)
+            page_data = get_page(meta["id"])
+            return _text_result(json.dumps(_serialize_page(meta, page_data), indent=2))
+
+        # Unauthenticated: create unclaimed page
+        slug = save_page(
+            slug, content, "unlisted", None, source="mcp", ai_assisted=True
+        )
+        meta = get_page_meta(slug)
         page_data = get_page(meta["id"])
-        return _text_result(json.dumps(_serialize_page(meta, page_data), indent=2))
+        secret = create_page_secret(meta["id"])
+        result = _serialize_page(meta, page_data)
+        result["page_secret"] = secret
+        return _text_result(json.dumps(result, indent=2))
 
     if name == "update_page":
         slug = args.get("slug", "")
-        meta = get_page_meta(slug, user_id)
+        page_secret = args.get("page_secret", "")
+
+        meta = None
+        if user:
+            meta = get_page_meta(slug, user_id)
+        if not meta and page_secret:
+            meta = verify_page_secret(slug, page_secret)
         if not meta:
             return _text_result(f"Error: page '{slug}' not found")
 
@@ -190,24 +218,34 @@ def _call_tool(name, args, user):
                 f"Error: content exceeds {MAX_CONTENT_LENGTH} characters"
             )
 
-        visibility = args.get("visibility")
-        if visibility is not None:
-            if visibility not in VISIBILITY_OPTIONS:
-                return _text_result(
-                    f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
-                )
-            update_page_visibility(meta["id"], visibility)
+        if user and meta["user_id"] is not None:
+            visibility = args.get("visibility")
+            if visibility is not None:
+                if visibility not in VISIBILITY_OPTIONS:
+                    return _text_result(
+                        f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
+                    )
+                update_page_visibility(meta["id"], visibility)
+            current_visibility = visibility or meta["visibility"]
+        else:
+            current_visibility = meta["visibility"]
 
-        current_visibility = visibility or meta["visibility"]
         save_page(
-            slug, content, current_visibility, user_id, source="mcp", ai_assisted=True
+            slug,
+            content,
+            current_visibility,
+            meta["user_id"],
+            source="mcp",
+            ai_assisted=True,
         )
 
-        meta = get_page_meta(slug, user_id)
+        meta = get_page_meta(slug, meta["user_id"])
         page_data = get_page(meta["id"])
         return _text_result(json.dumps(_serialize_page(meta, page_data), indent=2))
 
     if name == "delete_page":
+        if not user:
+            return _text_result("Error: authentication required")
         slug = args.get("slug", "")
         meta = get_page_meta(slug, user_id)
         if not meta:
@@ -323,20 +361,26 @@ def handle_mcp():
     if method == "ping":
         return _jsonrpc_result(msg_id, {})
 
-    # All other methods require auth
-    if not user:
-        r = jsonify({"error": "Unauthorized"})
-        r.status_code = 401
-        r.headers["WWW-Authenticate"] = "Bearer"
-        return r
-
     if method == "tools/list":
         return _jsonrpc_result(msg_id, {"tools": TOOLS})
 
     if method == "tools/call":
         name = params.get("name", "")
         args = params.get("arguments", {})
+        # create_page and update_page work without auth
+        if name not in ("create_page", "update_page") and not user:
+            r = jsonify({"error": "Unauthorized"})
+            r.status_code = 401
+            r.headers["WWW-Authenticate"] = "Bearer"
+            return r
         result = _call_tool(name, args, user)
         return _jsonrpc_result(msg_id, result)
+
+    # All other methods require auth
+    if not user:
+        r = jsonify({"error": "Unauthorized"})
+        r.status_code = 401
+        r.headers["WWW-Authenticate"] = "Bearer"
+        return r
 
     return _jsonrpc_error(msg_id, -32601, f"Method not found: {method}")

@@ -5,6 +5,7 @@ from db import (
     get_revision,
     save_page,
     set_user_username,
+    verify_page_secret,
 )
 
 
@@ -356,3 +357,183 @@ def test_cannot_delete_other_users_pages(client):
 
     r = client.get("/api/v1/pages/owned", headers=_auth(token1))
     assert r.status_code == 200
+
+
+# --- Unauthenticated page creation ---
+
+
+def test_create_page_without_auth(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Anonymous\n\nHello world"},
+    )
+    assert r.status_code == 201
+    data = r.get_json()
+    assert data["title"] == "Anonymous"
+    assert data["visibility"] == "unlisted"
+    assert "page_secret" in data
+
+
+def test_create_page_without_auth_forces_unlisted(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Test\n\nBody", "visibility": "listed"},
+    )
+    assert r.status_code == 201
+    assert r.get_json()["visibility"] == "unlisted"
+
+
+def test_create_page_without_auth_no_secret_for_authed(client):
+    _, token = _setup_user_with_token()
+    r = client.post(
+        "/api/v1/pages",
+        headers=_auth(token),
+        json={"content": "# Authed\n\nBody"},
+    )
+    assert r.status_code == 201
+    assert "page_secret" not in r.get_json()
+
+
+def test_edit_unclaimed_page_with_secret(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Original\n\nBody"},
+    )
+    data = r.get_json()
+    slug = data["slug"]
+    secret = data["page_secret"]
+
+    r = client.put(
+        f"/api/v1/pages/{slug}",
+        headers={"X-Page-Secret": secret},
+        json={"content": "# Updated\n\nNew body"},
+    )
+    assert r.status_code == 200
+    assert r.get_json()["content"] == "# Updated\n\nNew body"
+
+
+def test_edit_unclaimed_page_wrong_secret(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Test\n\nBody"},
+    )
+    slug = r.get_json()["slug"]
+
+    r = client.put(
+        f"/api/v1/pages/{slug}",
+        headers={"X-Page-Secret": "wrong-secret"},
+        json={"content": "# Hacked\n\nBody"},
+    )
+    assert r.status_code == 404
+
+
+def test_edit_unclaimed_page_no_visibility_change(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Test\n\nBody"},
+    )
+    data = r.get_json()
+    slug = data["slug"]
+    secret = data["page_secret"]
+
+    r = client.put(
+        f"/api/v1/pages/{slug}",
+        headers={"X-Page-Secret": secret},
+        json={"content": "# Test\n\nBody", "visibility": "listed"},
+    )
+    assert r.status_code == 200
+    assert r.get_json()["visibility"] == "unlisted"
+
+
+def test_claim_page(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Claim Me\n\nBody"},
+    )
+    data = r.get_json()
+    slug = data["slug"]
+    secret = data["page_secret"]
+
+    _, token = _setup_user_with_token()
+
+    r = client.post(
+        f"/api/v1/pages/{slug}/claim",
+        headers={**_auth(token), "X-Page-Secret": secret},
+    )
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["slug"] == slug
+    assert data["visibility"] == "listed"
+
+    # Page now accessible via auth
+    r = client.get(f"/api/v1/pages/{slug}", headers=_auth(token))
+    assert r.status_code == 200
+
+    # Secret no longer works
+    assert verify_page_secret(slug, secret) is None
+
+
+def test_claim_page_wrong_secret(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Test\n\nBody"},
+    )
+    slug = r.get_json()["slug"]
+
+    _, token = _setup_user_with_token()
+
+    r = client.post(
+        f"/api/v1/pages/{slug}/claim",
+        headers={**_auth(token), "X-Page-Secret": "wrong"},
+    )
+    assert r.status_code == 403
+
+
+def test_claim_page_no_secret(client):
+    _, token = _setup_user_with_token()
+    r = client.post(
+        "/api/v1/pages/whatever/claim",
+        headers=_auth(token),
+    )
+    assert r.status_code == 400
+
+
+def test_claim_page_requires_auth(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Test\n\nBody"},
+    )
+    slug = r.get_json()["slug"]
+    secret = r.get_json()["page_secret"]
+
+    r = client.post(
+        f"/api/v1/pages/{slug}/claim",
+        headers={"X-Page-Secret": secret},
+    )
+    assert r.status_code == 401
+
+
+def test_claim_already_claimed_page(client):
+    r = client.post(
+        "/api/v1/pages",
+        json={"content": "# Test\n\nBody"},
+    )
+    data = r.get_json()
+    slug = data["slug"]
+    secret = data["page_secret"]
+
+    _, token = _setup_user_with_token()
+
+    # Claim once
+    r = client.post(
+        f"/api/v1/pages/{slug}/claim",
+        headers={**_auth(token), "X-Page-Secret": secret},
+    )
+    assert r.status_code == 200
+
+    # Claim again fails
+    r = client.post(
+        f"/api/v1/pages/{slug}/claim",
+        headers={**_auth(token), "X-Page-Secret": secret},
+    )
+    assert r.status_code == 403

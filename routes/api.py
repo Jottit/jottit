@@ -3,6 +3,8 @@ import hashlib
 from flask import Blueprint, jsonify, request
 
 from db import (
+    claim_page_with_secret,
+    create_page_secret,
     delete_page,
     get_page,
     get_page_meta,
@@ -13,6 +15,7 @@ from db import (
     get_user_by_username,
     save_page,
     update_page_visibility,
+    verify_page_secret,
 )
 from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
 
@@ -119,8 +122,6 @@ def list_pages():
 @api_bp.route("/pages", methods=["POST"])
 def create_page():
     user = _require_auth()
-    if not user:
-        return _error("Unauthorized", 401)
 
     data = request.get_json(silent=True)
     if not data:
@@ -142,24 +143,42 @@ def create_page():
     if not slug:
         slug = generate_slug()
 
-    visibility = data.get("visibility", "private")
-    if visibility not in VISIBILITY_OPTIONS:
-        return _error(
-            f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
+    if user:
+        visibility = data.get("visibility", "private")
+        if visibility not in VISIBILITY_OPTIONS:
+            return _error(
+                f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
+            )
+
+        slug = save_page(
+            slug,
+            content,
+            visibility,
+            user["id"],
+            source=_get_source(),
+            ai_assisted=ai_assisted,
         )
 
+        meta = get_page_meta(slug, user["id"])
+        page_data = get_page(meta["id"])
+        return jsonify(_serialize_page(meta, page_data)), 201
+
+    # Unauthenticated: create unclaimed page
     slug = save_page(
         slug,
         content,
-        visibility,
-        user["id"],
+        "unlisted",
+        None,
         source=_get_source(),
         ai_assisted=ai_assisted,
     )
 
-    meta = get_page_meta(slug, user["id"])
+    meta = get_page_meta(slug)
     page_data = get_page(meta["id"])
-    return jsonify(_serialize_page(meta, page_data)), 201
+    secret = create_page_secret(meta["id"])
+    result = _serialize_page(meta, page_data)
+    result["page_secret"] = secret
+    return jsonify(result), 201
 
 
 @api_bp.route("/pages/<slug>")
@@ -179,10 +198,18 @@ def get_page_by_slug(slug):
 @api_bp.route("/pages/<slug>", methods=["PUT"])
 def update_page(slug):
     user = _require_auth()
-    if not user:
+    page_secret = request.headers.get("X-Page-Secret", "")
+
+    if not user and not page_secret:
         return _error("Unauthorized", 401)
 
-    meta = get_page_meta(slug, user["id"])
+    # Resolve the page: via user auth or page secret
+    meta = None
+    if user:
+        meta = get_page_meta(slug, user["id"])
+    if not meta and page_secret:
+        meta = verify_page_secret(slug, page_secret)
+
     if not meta:
         return _error("Page not found", 404)
 
@@ -201,23 +228,49 @@ def update_page(slug):
 
     ai_assisted = data.get("ai_assisted", False)
 
-    visibility = data.get("visibility")
-    if visibility is not None:
-        if visibility not in VISIBILITY_OPTIONS:
-            return _error(
-                f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
-            )
-        update_page_visibility(meta["id"], visibility)
+    # Unclaimed pages edited via secret: no visibility changes allowed
+    if not user or meta["user_id"] is None:
+        current_visibility = meta["visibility"]
+    else:
+        visibility = data.get("visibility")
+        if visibility is not None:
+            if visibility not in VISIBILITY_OPTIONS:
+                return _error(
+                    f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
+                )
+            update_page_visibility(meta["id"], visibility)
+        current_visibility = visibility or meta["visibility"]
 
-    current_visibility = visibility or meta["visibility"]
     save_page(
         slug,
         content,
         current_visibility,
-        user["id"],
+        meta["user_id"],
         source=_get_source(),
         ai_assisted=ai_assisted,
     )
+
+    meta = get_page_meta(slug, meta["user_id"])
+    page_data = get_page(meta["id"])
+    return jsonify(_serialize_page(meta, page_data))
+
+
+@api_bp.route("/pages/<slug>/claim", methods=["POST"])
+def claim_page_by_slug(slug):
+    user = _require_auth()
+    if not user:
+        return _error("Unauthorized", 401)
+
+    page_secret = request.headers.get("X-Page-Secret", "")
+    if not page_secret:
+        return _error("Page secret is required", 400)
+
+    page_meta = verify_page_secret(slug, page_secret)
+    if not page_meta:
+        return _error("Invalid page secret or page already claimed", 403)
+
+    if not claim_page_with_secret(page_meta["id"], user["id"]):
+        return _error("Page already claimed", 409)
 
     meta = get_page_meta(slug, user["id"])
     page_data = get_page(meta["id"])

@@ -577,6 +577,43 @@ def consume_oauth_code(code, client_id, redirect_uri):
         return row
 
 
+def create_page_secret(page_id):
+    secret = secrets.token_urlsafe(32)
+    secret_hash = hashlib.sha256(secret.encode()).hexdigest()
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO page_secrets (page_id, secret_hash) VALUES (%s, %s)",
+            (page_id, secret_hash),
+        )
+        conn.commit()
+    return secret
+
+
+def verify_page_secret(slug, secret):
+    secret_hash = hashlib.sha256(secret.encode()).hexdigest()
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT p.id, p.slug, p.user_id, p.visibility FROM page_secrets ps
+               JOIN pages p ON ps.page_id = p.id
+               WHERE p.slug = %s AND p.user_id IS NULL AND ps.secret_hash = %s""",
+            (slug, secret_hash),
+        ).fetchone()
+
+
+def claim_page_with_secret(page_id, user_id):
+    with get_db() as conn:
+        result = conn.execute(
+            "UPDATE pages SET user_id = %s, visibility = 'listed' WHERE id = %s AND user_id IS NULL",
+            (user_id, page_id),
+        )
+        if result.rowcount == 0:
+            conn.rollback()
+            return False
+        conn.execute("DELETE FROM page_secrets WHERE page_id = %s", (page_id,))
+        conn.commit()
+        return True
+
+
 def get_user_by_token_hash(token_hash):
     with get_db() as conn:
         row = conn.execute(

@@ -1,9 +1,11 @@
+import json
 import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
 CONFIG_PATH = Path.home() / ".jottitrc"
+PAGES_PATH = Path.home() / ".jottit" / "pages.json"
 DEFAULT_BASE_URL = "https://jottit.org"
 
 
@@ -49,3 +51,33 @@ def save_config(token, base_url=None):
         lines.append(f"base_url = {base_url}")
     CONFIG_PATH.write_text("\n".join(lines) + "\n")
     CONFIG_PATH.chmod(0o600)
+
+
+def _load_pages():
+    if PAGES_PATH.exists():
+        return json.loads(PAGES_PATH.read_text())
+    return {}
+
+
+def _save_pages(pages):
+    PAGES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    PAGES_PATH.write_text(json.dumps(pages, indent=2) + "\n")
+    PAGES_PATH.chmod(0o600)
+
+
+def store_page_secret(slug, secret, url):
+    pages = _load_pages()
+    pages[slug] = {"secret": secret, "url": url}
+    _save_pages(pages)
+
+
+def get_page_secret(slug):
+    pages = _load_pages()
+    entry = pages.get(slug)
+    return entry["secret"] if entry else None
+
+
+def remove_page_secret(slug):
+    pages = _load_pages()
+    pages.pop(slug, None)
+    _save_pages(pages)

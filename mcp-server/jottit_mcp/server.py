@@ -13,9 +13,12 @@ WRITE_HEADERS = {"X-Jottit-Source": "mcp"}
 
 
 def _client():
+    headers = {}
+    if API_TOKEN:
+        headers["Authorization"] = f"Bearer {API_TOKEN}"
     return httpx.Client(
         base_url=BASE_URL,
-        headers={"Authorization": f"Bearer {API_TOKEN}"},
+        headers=headers,
         timeout=30,
     )
 
@@ -51,7 +54,7 @@ def create_page(
     slug: str = "",
     visibility: str = "private",
 ) -> str:
-    """Create a new Jottit page. Content should be markdown — start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Visibility can be 'private', 'unlisted', 'listed', or 'pinned'."""
+    """Create a new Jottit page. Content should be markdown — start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Visibility can be 'private', 'unlisted', 'listed', or 'pinned'. Works without authentication — the page will be unlisted and a page_secret is returned for editing and claiming later."""
     body = {
         "content": content,
         "visibility": visibility,
@@ -69,15 +72,19 @@ def update_page(
     slug: str,
     content: str = "",
     visibility: str = "",
+    page_secret: str = "",
 ) -> str:
-    """Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line."""
+    """Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line. For unclaimed pages, provide the page_secret returned by create_page."""
     body: dict = {"ai_assisted": True}
     if content:
         body["content"] = content
     if visibility:
         body["visibility"] = visibility
+    headers = dict(WRITE_HEADERS)
+    if page_secret:
+        headers["X-Page-Secret"] = page_secret
     with _client() as client:
-        resp = client.put(f"/api/v1/pages/{slug}", headers=WRITE_HEADERS, json=body)
+        resp = client.put(f"/api/v1/pages/{slug}", headers=headers, json=body)
     return _format_response(resp)
 
 
