@@ -9,6 +9,8 @@ from psycopg import errors as pg_errors
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+from utils import generate_slug
+
 DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
 
 _pool = None
@@ -140,22 +142,20 @@ def save_page(
                 (visibility, page["id"]),
             )
         else:
-            try:
-                cursor = conn.execute(
-                    "INSERT INTO pages (slug, original_slug, visibility, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
-                    (slug, slug, visibility, user_id),
-                )
-                page_id = cursor.fetchone()["id"]
-            except pg_errors.UniqueViolation:
-                conn.rollback()
-                from utils import generate_slug
-
-                slug = generate_slug()
-                cursor = conn.execute(
-                    "INSERT INTO pages (slug, original_slug, visibility, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
-                    (slug, slug, visibility, user_id),
-                )
-                page_id = cursor.fetchone()["id"]
+            original_slug = slug
+            for _attempt in range(3):
+                try:
+                    cursor = conn.execute(
+                        "INSERT INTO pages (slug, original_slug, visibility, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
+                        (slug, original_slug, visibility, user_id),
+                    )
+                    page_id = cursor.fetchone()["id"]
+                    break
+                except pg_errors.UniqueViolation:
+                    conn.rollback()
+                    slug = generate_slug()
+            else:
+                raise RuntimeError("Failed to generate unique slug after 3 attempts")
             conn.execute(
                 "INSERT INTO revisions (page_id, revision, content, source, ai_assisted) VALUES (%s, 1, %s, %s, %s)",
                 (page_id, content, source, ai_assisted),
@@ -595,7 +595,8 @@ def verify_page_secret(slug, secret):
         return conn.execute(
             """SELECT p.id, p.slug, p.user_id, p.visibility FROM page_secrets ps
                JOIN pages p ON ps.page_id = p.id
-               WHERE p.slug = %s AND p.user_id IS NULL AND ps.secret_hash = %s""",
+               WHERE p.slug = %s AND p.user_id IS NULL AND ps.secret_hash = %s
+               AND ps.created_at > NOW() - INTERVAL '30 days'""",
             (slug, secret_hash),
         ).fetchone()
 

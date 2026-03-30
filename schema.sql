@@ -93,6 +93,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WH
 CREATE INDEX IF NOT EXISTS pages_visibility_updated_idx ON pages (visibility, updated_at DESC);
 CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens (user_id);
 CREATE INDEX IF NOT EXISTS oauth_codes_expires_idx ON oauth_codes (expires_at);
+CREATE INDEX IF NOT EXISTS page_secrets_hash_idx ON page_secrets (secret_hash);
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
@@ -113,7 +114,8 @@ DO $$ BEGIN
             ('013_add_revision_ai_assisted.sql'),
             ('014_add_oauth.sql'),
             ('015_unify_visibility.sql'),
-            ('016_add_page_secrets.sql')
+            ('016_add_page_secrets.sql'),
+            ('017_page_secret_expiry_and_index.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

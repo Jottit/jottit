@@ -1,5 +1,6 @@
 from db import (
     claim_page,
+    create_page_secret,
     create_verification_code,
     find_or_create_user,
     get_page_meta,
@@ -8,6 +9,15 @@ from db import (
     set_user_username,
     update_user_settings,
 )
+
+
+def _set_page_token(client, slug):
+    """Create a page secret and set the token cookie so the claim flow is accessible."""
+    page_meta = get_page_meta(slug)
+    secret = create_page_secret(page_meta["id"])
+    client.set_cookie(f"page_token_{slug}", secret)
+    return secret
+
 
 # -- Session-based edit protection --
 
@@ -65,20 +75,21 @@ def test_owner_can_edit(client):
 # -- Claim banner --
 
 
-# Creator sees the claim banner on their unclaimed page
+# Creator with page token sees the claim banner on their unclaimed page
 def test_unclaimed_page_shows_claim_banner_to_creator(client):
     client.post("/uncl/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "uncl")
     r = client.get("/uncl")
     assert b"claim-banner" in r.data
 
 
-# Any visitor sees the claim banner on unclaimed pages (so they can claim it)
-def test_unclaimed_page_shows_claim_banner_to_all_visitors(client):
+# Visitor without page token does NOT see the claim banner
+def test_unclaimed_page_hides_claim_banner_without_token(client):
     client.post("/uncl2/edit", data={"title": "T", "content": "X"})
     with client.session_transaction() as sess:
         sess.clear()
     r = client.get("/uncl2")
-    assert b"claim-banner" in r.data
+    assert b"claim-banner" not in r.data
 
 
 # Claimed pages don't show the claim banner
@@ -97,6 +108,7 @@ def test_claimed_page_hides_claim_banner(client):
 # Claim page shows an email input form
 def test_claim_page_shows_email_form(client):
     client.post("/cf1/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf1")
     r = client.get("/cf1/claim")
     assert r.status_code == 200
     assert b"email" in r.data
@@ -116,6 +128,7 @@ def test_claim_already_claimed_redirects(client):
 # Full claim flow: email, verify code, set name, set username; slug gets renamed from title
 def test_claim_full_flow(client):
     client.post("/cf3/edit", data={"title": "My Great Page", "content": "X"})
+    _set_page_token(client, "cf3")
 
     # Step 1: email
     r = client.post("/cf3/claim", data={"email": "user@example.com"})
@@ -152,6 +165,7 @@ def test_claim_full_flow(client):
 # Claim flow persists the user's name and username
 def test_claim_sets_name_and_username(client):
     client.post("/cfun/edit", data={"title": "Unique Title", "content": "X"})
+    _set_page_token(client, "cfun")
 
     client.post("/cfun/claim", data={"email": "newuser@example.com"})
     code = create_verification_code("newuser@example.com", "claim")
@@ -171,6 +185,7 @@ def test_claim_sets_name_and_username(client):
 # Invalid verification code shows an error
 def test_claim_invalid_code_rejected(client):
     client.post("/cf4/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf4")
     client.post("/cf4/claim", data={"email": "user@example.com"})
     r = client.post(
         "/cf4/claim/verify", data={"code": "000000", "email": "user@example.com"}
@@ -182,6 +197,7 @@ def test_claim_invalid_code_rejected(client):
 # Submitting email during claim stores it in the session
 def test_claim_stores_email_in_session(client):
     client.post("/cf5/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf5")
     client.post("/cf5/claim", data={"email": "session@example.com"})
     with client.session_transaction() as sess:
         assert sess.get("claim_email") == "session@example.com"
@@ -190,6 +206,7 @@ def test_claim_stores_email_in_session(client):
 # Submitting a different email in verification than in the session is rejected
 def test_claim_rejects_email_substitution(client):
     client.post("/cf6/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf6")
     client.post("/cf6/claim", data={"email": "real@example.com"})
     code = create_verification_code("real@example.com", "claim")
     r = client.post(
@@ -210,6 +227,7 @@ def test_signin_stores_email_in_session(client):
 # After completing the claim flow, claim-related session keys are removed
 def test_claim_cleans_up_session(client):
     client.post("/cf7/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf7")
     client.post("/cf7/claim", data={"email": "clean@example.com"})
     code = create_verification_code("clean@example.com", "claim")
     client.post("/cf7/claim/verify", data={"code": code, "email": "clean@example.com"})
@@ -224,6 +242,7 @@ def test_claim_cleans_up_session(client):
 # Accessing the setup step without verifying redirects back to claim
 def test_claim_setup_requires_verification(client):
     client.post("/cf8/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf8")
     r = client.get("/cf8/claim/setup")
     assert r.status_code == 302
     assert "/cf8/claim" in r.headers["Location"]
@@ -232,6 +251,7 @@ def test_claim_setup_requires_verification(client):
 # Empty name is rejected with a validation error
 def test_claim_setup_validates_name(client):
     client.post("/cf10/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf10")
     client.post("/cf10/claim", data={"email": "nameval@example.com"})
     code = create_verification_code("nameval@example.com", "claim")
     client.post(
@@ -246,6 +266,7 @@ def test_claim_setup_validates_name(client):
 # Invalid or empty username is rejected with validation errors
 def test_claim_address_validates_username(client):
     client.post("/cf9/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf9")
     client.post("/cf9/claim", data={"email": "val@example.com"})
     code = create_verification_code("val@example.com", "claim")
     client.post("/cf9/claim/verify", data={"code": code, "email": "val@example.com"})
@@ -266,6 +287,7 @@ def test_claim_address_rejects_taken_username(client):
     set_user_username(user_id, "takensetup")
 
     client.post("/cf11/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf11")
     client.post("/cf11/claim", data={"email": "setup@example.com"})
     code = create_verification_code("setup@example.com", "claim")
     client.post("/cf11/claim/verify", data={"code": code, "email": "setup@example.com"})
@@ -279,6 +301,7 @@ def test_claim_address_rejects_taken_username(client):
 # Accessing the address step without verifying redirects back
 def test_claim_address_requires_verification(client):
     client.post("/cf12/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf12")
     r = client.get("/cf12/claim/address")
     assert r.status_code == 302
     assert "/cf12/claim" in r.headers["Location"]
@@ -288,6 +311,7 @@ def test_claim_address_requires_verification(client):
 def test_returning_user_skips_setup(client):
     # First claim: set up name and username
     client.post("/ret1/edit", data={"title": "First Page", "content": "X"})
+    _set_page_token(client, "ret1")
     client.post("/ret1/claim", data={"email": "returning@example.com"})
     code = create_verification_code("returning@example.com", "claim")
     client.post(
@@ -300,6 +324,7 @@ def test_returning_user_skips_setup(client):
     with client.session_transaction() as sess:
         sess.pop("user_id", None)
     client.post("/ret2/edit", data={"title": "Second Page", "content": "Y"})
+    _set_page_token(client, "ret2")
     client.post("/ret2/claim", data={"email": "returning@example.com"})
     code = create_verification_code("returning@example.com", "claim")
     r = client.post(
@@ -324,6 +349,7 @@ def test_returning_user_preserves_profile(client):
 
     # Create a page and claim it as this returning user
     client.post("/pres1/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "pres1")
     client.post("/pres1/claim", data={"email": "preserve@example.com"})
     code = create_verification_code("preserve@example.com", "claim")
     client.post(
@@ -340,6 +366,7 @@ def test_returning_user_preserves_profile(client):
 # Accessing the address step without setting a name redirects to setup
 def test_claim_address_requires_name(client):
     client.post("/cf13/edit", data={"title": "T", "content": "X"})
+    _set_page_token(client, "cf13")
     client.post("/cf13/claim", data={"email": "noname@example.com"})
     code = create_verification_code("noname@example.com", "claim")
     client.post(
@@ -503,6 +530,7 @@ def test_auto_claim_no_rename_on_slug_conflict(client):
 # Completing the claim flow renames the random slug to one derived from the page title
 def test_claim_renames_slug_from_title(client):
     client.post("/cf3b/edit", data={"title": "The Brand Age", "content": "Essay"})
+    _set_page_token(client, "cf3b")
     client.post("/cf3b/claim", data={"email": "slugtest@example.com"})
     code = create_verification_code("slugtest@example.com", "claim")
     client.post(

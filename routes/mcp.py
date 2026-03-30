@@ -14,6 +14,7 @@ from db import (
     save_page,
     update_page_visibility,
 )
+from routes import VISIBILITY_OPTIONS
 from routes.api import _require_auth, _serialize_page
 from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
 
@@ -21,7 +22,6 @@ mcp_bp = Blueprint("mcp", __name__)
 
 PROTOCOL_VERSION = "2025-03-26"
 SERVER_INFO = {"name": "Jottit", "version": "1.0.0"}
-VISIBILITY_OPTIONS = ("private", "unlisted", "listed", "pinned")
 
 TOOLS = [
     {

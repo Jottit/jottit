@@ -268,7 +268,18 @@ def view_page(slug):
         abort(404)
 
     unclaimed = page_meta["user_id"] is None
-    is_owner = session.get("user_id") == page_meta["user_id"] and not unclaimed
+    # Only show claim banner if the visitor holds a valid page token cookie
+    if unclaimed:
+        from db import verify_page_secret
+
+        _claim_token = request.cookies.get(f"page_token_{slug}", "")
+        unclaimed = (
+            bool(_claim_token) and verify_page_secret(slug, _claim_token) is not None
+        )
+    is_owner = (
+        session.get("user_id") == page_meta["user_id"]
+        and page_meta["user_id"] is not None
+    )
     page_is_creator = is_creator(page_meta)
 
     if row["visibility"] == "private" and not is_owner and not page_is_creator:
