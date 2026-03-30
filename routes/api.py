@@ -137,11 +137,14 @@ def create_page():
 
     ai_assisted = data.get("ai_assisted", False)
 
-    slug = slugify(data.get("slug", ""))
-    if not slug:
-        slug = slugify(get_title(content) or "")
-    if not slug:
-        slug = generate_slug()
+    if user:
+        slug = slugify(data.get("slug", ""))
+        if not slug:
+            slug = slugify(get_title(content) or "")
+        if not slug:
+            slug = generate_slug()
+    else:
+        slug = slugify(data.get("slug", "")) or generate_slug()
 
     if user:
         visibility = data.get("visibility", "private")
@@ -198,18 +201,10 @@ def get_page_by_slug(slug):
 @api_bp.route("/pages/<slug>", methods=["PUT"])
 def update_page(slug):
     user = _require_auth()
-    page_secret = request.headers.get("X-Page-Secret", "")
-
-    if not user and not page_secret:
+    if not user:
         return _error("Unauthorized", 401)
 
-    # Resolve the page: via user auth or page secret
-    meta = None
-    if user:
-        meta = get_page_meta(slug, user["id"])
-    if not meta and page_secret:
-        meta = verify_page_secret(slug, page_secret)
-
+    meta = get_page_meta(slug, user["id"])
     if not meta:
         return _error("Page not found", 404)
 
@@ -228,29 +223,25 @@ def update_page(slug):
 
     ai_assisted = data.get("ai_assisted", False)
 
-    # Unclaimed pages edited via secret: no visibility changes allowed
-    if not user or meta["user_id"] is None:
-        current_visibility = meta["visibility"]
-    else:
-        visibility = data.get("visibility")
-        if visibility is not None:
-            if visibility not in VISIBILITY_OPTIONS:
-                return _error(
-                    f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
-                )
-            update_page_visibility(meta["id"], visibility)
-        current_visibility = visibility or meta["visibility"]
+    visibility = data.get("visibility")
+    if visibility is not None:
+        if visibility not in VISIBILITY_OPTIONS:
+            return _error(
+                f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
+            )
+        update_page_visibility(meta["id"], visibility)
+    current_visibility = visibility or meta["visibility"]
 
     save_page(
         slug,
         content,
         current_visibility,
-        meta["user_id"],
+        user["id"],
         source=_get_source(),
         ai_assisted=ai_assisted,
     )
 
-    meta = get_page_meta(slug, meta["user_id"])
+    meta = get_page_meta(slug, user["id"])
     page_data = get_page(meta["id"])
     return jsonify(_serialize_page(meta, page_data))
 

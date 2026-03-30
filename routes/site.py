@@ -21,6 +21,7 @@ from db import (
     update_page_visibility,
     update_user_settings,
     verify_code,
+    verify_page_secret,
 )
 from utils import (
     MAX_CONTENT_LENGTH,
@@ -42,7 +43,6 @@ from routes import (
     base_url,
     can_edit,
     find_page,
-    is_creator,
     profile_url,
     send_verification,
 )
@@ -187,7 +187,16 @@ def edit_page(slug):
                 return redirect(profile_url(user["username"], f"/{slug}/edit"))
             return redirect(f"/{slug}")
 
-    if not can_edit(page_meta):
+    # Allow editing unclaimed pages via token (e.g. from CLI publish output URL)
+    token = request.args.get("token") or request.form.get("token", "")
+    token_valid = (
+        bool(token)
+        and page_meta is not None
+        and page_meta["user_id"] is None
+        and verify_page_secret(slug, token) is not None
+    )
+
+    if not can_edit(page_meta) and not token_valid:
         return redirect(f"{g.url_prefix}/{slug}")
 
     if request.method == "GET":
@@ -202,6 +211,7 @@ def edit_page(slug):
             content=content,
             is_new=page_meta is None,
             is_subdomain=subdomain_user is not None,
+            edit_token=token if token_valid else None,
         )
 
     title = request.form.get("title", "").strip()
@@ -252,9 +262,6 @@ def edit_page(slug):
 def claim_page_route(slug):
     page_meta = get_page_meta(slug)
     if not page_meta or page_meta["user_id"] is not None:
-        return redirect(f"/{slug}")
-
-    if not is_creator(page_meta):
         return redirect(f"/{slug}")
 
     if request.method == "GET":

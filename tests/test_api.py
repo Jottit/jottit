@@ -394,25 +394,7 @@ def test_create_page_without_auth_no_secret_for_authed(client):
     assert "page_secret" not in r.get_json()
 
 
-def test_edit_unclaimed_page_with_secret(client):
-    r = client.post(
-        "/api/v1/pages",
-        json={"content": "# Original\n\nBody"},
-    )
-    data = r.get_json()
-    slug = data["slug"]
-    secret = data["page_secret"]
-
-    r = client.put(
-        f"/api/v1/pages/{slug}",
-        headers={"X-Page-Secret": secret},
-        json={"content": "# Updated\n\nNew body"},
-    )
-    assert r.status_code == 200
-    assert r.get_json()["content"] == "# Updated\n\nNew body"
-
-
-def test_edit_unclaimed_page_wrong_secret(client):
+def test_edit_unclaimed_page_requires_auth(client):
     r = client.post(
         "/api/v1/pages",
         json={"content": "# Test\n\nBody"},
@@ -421,28 +403,9 @@ def test_edit_unclaimed_page_wrong_secret(client):
 
     r = client.put(
         f"/api/v1/pages/{slug}",
-        headers={"X-Page-Secret": "wrong-secret"},
         json={"content": "# Hacked\n\nBody"},
     )
-    assert r.status_code == 404
-
-
-def test_edit_unclaimed_page_no_visibility_change(client):
-    r = client.post(
-        "/api/v1/pages",
-        json={"content": "# Test\n\nBody"},
-    )
-    data = r.get_json()
-    slug = data["slug"]
-    secret = data["page_secret"]
-
-    r = client.put(
-        f"/api/v1/pages/{slug}",
-        headers={"X-Page-Secret": secret},
-        json={"content": "# Test\n\nBody", "visibility": "listed"},
-    )
-    assert r.status_code == 200
-    assert r.get_json()["visibility"] == "unlisted"
+    assert r.status_code == 401
 
 
 def test_claim_page(client):

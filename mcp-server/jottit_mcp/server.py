@@ -72,19 +72,15 @@ def update_page(
     slug: str,
     content: str = "",
     visibility: str = "",
-    page_secret: str = "",
 ) -> str:
-    """Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line. For unclaimed pages, provide the page_secret returned by create_page."""
+    """Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line. Requires authentication."""
     body: dict = {"ai_assisted": True}
     if content:
         body["content"] = content
     if visibility:
         body["visibility"] = visibility
-    headers = dict(WRITE_HEADERS)
-    if page_secret:
-        headers["X-Page-Secret"] = page_secret
     with _client() as client:
-        resp = client.put(f"/api/v1/pages/{slug}", headers=headers, json=body)
+        resp = client.put(f"/api/v1/pages/{slug}", headers=WRITE_HEADERS, json=body)
     return _format_response(resp)
 
 

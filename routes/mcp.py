@@ -13,7 +13,6 @@ from db import (
     get_user_by_username,
     save_page,
     update_page_visibility,
-    verify_page_secret,
 )
 from routes.api import _require_auth, _serialize_page
 from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
@@ -62,7 +61,7 @@ TOOLS = [
     },
     {
         "name": "update_page",
-        "description": "Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line. For unclaimed pages, provide the page_secret returned when the page was created.",
+        "description": "Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line. Requires authentication.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -71,10 +70,6 @@ TOOLS = [
                 "visibility": {
                     "type": "string",
                     "enum": ["private", "unlisted", "listed", "pinned"],
-                },
-                "page_secret": {
-                    "type": "string",
-                    "description": "Page secret for editing unclaimed pages (returned by create_page when not authenticated)",
                 },
             },
             "required": ["slug"],
@@ -198,14 +193,11 @@ def _call_tool(name, args, user):
         return _text_result(json.dumps(result, indent=2))
 
     if name == "update_page":
+        if not user:
+            return _text_result("Error: authentication required to update a page")
         slug = args.get("slug", "")
-        page_secret = args.get("page_secret", "")
 
-        meta = None
-        if user:
-            meta = get_page_meta(slug, user_id)
-        if not meta and page_secret:
-            meta = verify_page_secret(slug, page_secret)
+        meta = get_page_meta(slug, user_id)
         if not meta:
             return _text_result(f"Error: page '{slug}' not found")
 
@@ -218,28 +210,25 @@ def _call_tool(name, args, user):
                 f"Error: content exceeds {MAX_CONTENT_LENGTH} characters"
             )
 
-        if user and meta["user_id"] is not None:
-            visibility = args.get("visibility")
-            if visibility is not None:
-                if visibility not in VISIBILITY_OPTIONS:
-                    return _text_result(
-                        f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
-                    )
-                update_page_visibility(meta["id"], visibility)
-            current_visibility = visibility or meta["visibility"]
-        else:
-            current_visibility = meta["visibility"]
+        visibility = args.get("visibility")
+        if visibility is not None:
+            if visibility not in VISIBILITY_OPTIONS:
+                return _text_result(
+                    f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
+                )
+            update_page_visibility(meta["id"], visibility)
+        current_visibility = visibility or meta["visibility"]
 
         save_page(
             slug,
             content,
             current_visibility,
-            meta["user_id"],
+            user_id,
             source="mcp",
             ai_assisted=True,
         )
 
-        meta = get_page_meta(slug, meta["user_id"])
+        meta = get_page_meta(slug, user_id)
         page_data = get_page(meta["id"])
         return _text_result(json.dumps(_serialize_page(meta, page_data), indent=2))
 

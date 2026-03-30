@@ -29,7 +29,7 @@ class TestVersion:
     def test_version(self, runner):
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        assert "0.2.0" in result.output
 
 
 class TestWhoami:
@@ -201,16 +201,15 @@ class TestList:
 
 
 class TestEdit:
-    @patch("jottit_cli.commands.edit.get_page_secret", return_value=None)
     @patch("jottit_cli.commands.edit.get_client")
-    def test_edit_with_file(self, mock_gc, mock_gps, runner, tmp_path):
+    def test_edit_with_file(self, mock_gc, runner, tmp_path):
         md_file = tmp_path / "updated.md"
         md_file.write_text("# Updated\n\nNew content")
 
         client = MagicMock()
         client.put.return_value = _mock_response(200, {"slug": "my-page"})
         client.get.return_value = _mock_response(200, {"username": "simon"})
-        client.page_url.return_value = "http://localhost:5000/@simon/my-page"
+        client.get_page_url.return_value = "http://localhost:5000/@simon/my-page"
         from jottit_cli.output import Formatter
 
         mock_gc.return_value = (client, Formatter())
@@ -219,13 +218,12 @@ class TestEdit:
         assert result.exit_code == 0
         assert "Updated" in result.output
 
-    @patch("jottit_cli.commands.edit.get_page_secret", return_value=None)
     @patch("jottit_cli.commands.edit.get_client")
-    def test_edit_metadata_only(self, mock_gc, mock_gps, runner):
+    def test_edit_metadata_only(self, mock_gc, runner):
         client = MagicMock()
         client.put.return_value = _mock_response(200, {"slug": "my-page"})
         client.get.return_value = _mock_response(200, {"username": "simon"})
-        client.page_url.return_value = "http://localhost:5000/@simon/my-page"
+        client.get_page_url.return_value = "http://localhost:5000/@simon/my-page"
         from jottit_cli.output import Formatter
 
         mock_gc.return_value = (client, Formatter())

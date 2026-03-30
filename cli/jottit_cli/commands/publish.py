@@ -73,8 +73,13 @@ def publish(ctx, file, slug, visibility, title, open_browser):
     if open_browser:
         webbrowser.open(url)
 
+    edit_url = (
+        f"{url.rstrip('/')}/edit?token={page_secret}"
+        if page_secret
+        else f"{url.rstrip('/')}/edit"
+    )
     breadcrumbs = [
-        {"label": "Edit page", "command": f"jottit edit {page_slug} --json"},
+        {"label": "Edit in browser", "url": edit_url},
         {"label": "Open in browser", "url": url},
     ]
     if page_secret:
