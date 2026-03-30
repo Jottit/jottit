@@ -152,7 +152,8 @@ def new_page():
     if not slug:
         slug = generate_slug()
 
-    slug = save_page(slug, content, "listed", subdomain_user_id)
+    visibility = "listed" if owner_id else "unlisted"
+    slug = save_page(slug, content, visibility, subdomain_user_id)
     _track_new_page(slug, subdomain_user_id)
 
     return redirect(f"{g.url_prefix}/{slug}")
@@ -317,6 +318,7 @@ def claim_verify(slug):
 
 def _finish_claim(slug, page_meta, user_id, username):
     claim_page(page_meta["id"], user_id)
+    update_page_visibility(page_meta["id"], "listed")
 
     row = get_page(page_meta["id"])
     if row:

@@ -4,7 +4,8 @@ from pathlib import Path
 
 import click
 
-from jottit_cli.auth import get_client
+from jottit_cli.auth import get_client_optional_auth
+from jottit_cli.config import store_page_secret
 
 
 def _read_content(file, title):
@@ -26,7 +27,7 @@ def _read_content(file, title):
     "--visibility",
     type=click.Choice(["private", "unlisted", "listed", "pinned"]),
     default=None,
-    help="Page visibility (default: private)",
+    help="Page visibility (default: private, or unlisted if not signed in)",
 )
 @click.option("--title", help="Page title (prepended as # heading if missing)")
 @click.option(
@@ -36,13 +37,14 @@ def _read_content(file, title):
 def publish(ctx, file, slug, visibility, title, open_browser):
     """Publish a new page.
 
-    Reads from FILE or stdin:
+    Reads from FILE or stdin. Works without signing in — page will be
+    unlisted and you can claim it later with 'jottit claim'.
 
       jottit publish notes.md
 
       cat notes.md | jottit publish
     """
-    client, fmt = get_client(ctx)
+    client, fmt = get_client_optional_auth(ctx)
     content = _read_content(file, title)
 
     payload = {"content": content}
@@ -58,18 +60,31 @@ def publish(ctx, file, slug, visibility, title, open_browser):
 
     data = r.json()
     page_slug = data["slug"]
-    url = client.get_page_url(page_slug)
+    page_secret = data.get("page_secret")
+
+    if page_secret:
+        url = client.page_url(page_slug)
+        store_page_secret(page_slug, page_secret, url)
+    else:
+        url = client.get_page_url(page_slug)
 
     if open_browser:
         webbrowser.open(url)
+
+    breadcrumbs = [
+        {"label": "Edit page", "command": f"jottit edit {page_slug} --json"},
+        {"label": "Open in browser", "url": url},
+    ]
+    if page_secret:
+        breadcrumbs.append(
+            {"label": "Claim page", "command": f"jottit claim {page_slug}"}
+        )
+    else:
+        breadcrumbs.append({"label": "List pages", "command": "jottit list --json"})
 
     fmt.success(
         data=data,
         message=f"Published: {url}",
         quiet_value=page_slug,
-        breadcrumbs=[
-            {"label": "Edit page", "command": f"jottit edit {page_slug} --json"},
-            {"label": "Open in browser", "url": url},
-            {"label": "List pages", "command": "jottit list --json"},
-        ],
+        breadcrumbs=breadcrumbs,
     )

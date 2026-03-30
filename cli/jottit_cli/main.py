@@ -1,6 +1,7 @@
 import click
 
 from jottit_cli import __version__
+from jottit_cli.commands.claim import claim
 from jottit_cli.commands.delete import delete
 from jottit_cli.commands.edit import edit
 from jottit_cli.commands.list import list_pages
@@ -48,6 +49,7 @@ cli.add_command(publish)
 cli.add_command(list_pages, "list")
 cli.add_command(edit)
 cli.add_command(delete)
+cli.add_command(claim)
 cli.add_command(login)
 cli.add_command(setup)
 

@@ -14,3 +14,12 @@ def get_client(ctx):
             breadcrumbs=[{"label": "Login", "command": "jottit login"}],
         )
     return JottitClient(config), fmt
+
+
+def get_client_optional_auth(ctx):
+    config = load_config(
+        token_override=ctx.obj.get("token_override"),
+        base_url_override=ctx.obj.get("base_url_override"),
+    )
+    fmt = ctx.obj["formatter"]
+    return JottitClient(config), fmt

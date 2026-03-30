@@ -9,13 +9,16 @@ from jottit_cli.config import Config
 class JottitClient:
     def __init__(self, config: Config):
         self.base_url = config.base_url.rstrip("/")
+        self.has_token = bool(config.token)
+        headers = {
+            "X-Jottit-Source": "cli",
+            "Accept": "application/json",
+        }
+        if config.token:
+            headers["Authorization"] = f"Bearer {config.token}"
         self.client = httpx.Client(
             base_url=self.base_url + "/api/v1",
-            headers={
-                "Authorization": f"Bearer {config.token}",
-                "X-Jottit-Source": "cli",
-                "Accept": "application/json",
-            },
+            headers=headers,
             timeout=30,
         )
 

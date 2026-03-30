@@ -68,6 +68,12 @@ CREATE TABLE IF NOT EXISTS oauth_codes (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS page_secrets (
+    page_id INTEGER PRIMARY KEY REFERENCES pages(id) ON DELETE CASCADE,
+    secret_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
     filename TEXT PRIMARY KEY,
     applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -106,7 +112,8 @@ DO $$ BEGIN
             ('012_add_revision_source.sql'),
             ('013_add_revision_ai_assisted.sql'),
             ('014_add_oauth.sql'),
-            ('015_unify_visibility.sql')
+            ('015_unify_visibility.sql'),
+            ('016_add_page_secrets.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

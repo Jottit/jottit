@@ -28,14 +28,8 @@ def test_initialize_no_auth_required(client):
     assert "tools" in result["capabilities"]
 
 
-def test_tools_list_requires_auth(client):
+def test_tools_list_no_auth(client):
     r = _rpc(client, "tools/list")
-    assert r.status_code == 401
-
-
-def test_tools_list(client):
-    _, token = _setup_user()
-    r = _rpc(client, "tools/list", token=token)
     assert r.status_code == 200
     tools = r.get_json()["result"]["tools"]
     names = [t["name"] for t in tools]
@@ -187,6 +181,59 @@ def test_get_user_profile(client):
 def test_ping(client):
     r = _rpc(client, "ping")
     assert r.status_code == 200
+
+
+def test_create_page_without_auth(client):
+    r = _rpc(
+        client,
+        "tools/call",
+        {"name": "create_page", "arguments": {"content": "# Anonymous MCP\n\nHello"}},
+    )
+    assert r.status_code == 200
+    text = r.get_json()["result"]["content"][0]["text"]
+    data = json.loads(text)
+    assert data["title"] == "Anonymous MCP"
+    assert data["visibility"] == "unlisted"
+    assert "page_secret" in data
+
+
+def test_update_page_with_secret(client):
+    # Create without auth
+    r = _rpc(
+        client,
+        "tools/call",
+        {"name": "create_page", "arguments": {"content": "# Original\n\nBody"}},
+    )
+    text = r.get_json()["result"]["content"][0]["text"]
+    data = json.loads(text)
+    slug = data["slug"]
+    secret = data["page_secret"]
+
+    # Update with page_secret
+    r = _rpc(
+        client,
+        "tools/call",
+        {
+            "name": "update_page",
+            "arguments": {
+                "slug": slug,
+                "content": "# Updated\n\nNew body",
+                "page_secret": secret,
+            },
+        },
+    )
+    text = r.get_json()["result"]["content"][0]["text"]
+    data = json.loads(text)
+    assert data["content"] == "# Updated\n\nNew body"
+
+
+def test_list_pages_requires_auth(client):
+    r = _rpc(
+        client,
+        "tools/call",
+        {"name": "list_pages", "arguments": {}},
+    )
+    assert r.status_code == 401
 
 
 def test_unknown_method(client):
