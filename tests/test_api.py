@@ -194,6 +194,31 @@ def test_delete_page_not_found(client):
     assert r.status_code == 404
 
 
+def test_update_page_with_secret(client):
+    from db import create_page_secret
+
+    save_page("anonpage", "# Old\n\nOld content", "unlisted")
+    meta = get_page_meta("anonpage")
+    secret = create_page_secret(meta["id"])
+    r = client.put(
+        "/api/v1/pages/anonpage",
+        headers={"X-Page-Secret": secret},
+        json={"content": "# New\n\nNew content"},
+    )
+    assert r.status_code == 200
+    assert r.get_json()["content"] == "# New\n\nNew content"
+
+
+def test_update_page_with_wrong_secret_returns_404(client):
+    save_page("anonpage2", "# Old\n\nOld content", "unlisted")
+    r = client.put(
+        "/api/v1/pages/anonpage2",
+        headers={"X-Page-Secret": "wrongsecret"},
+        json={"content": "# New\n\nNew content"},
+    )
+    assert r.status_code == 404
+
+
 def test_list_revisions(client):
     user_id, token = _setup_user_with_token()
     save_page("revpage", "# V1\n\nFirst", "listed", user_id)
