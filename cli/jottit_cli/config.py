@@ -71,6 +71,10 @@ def store_page_secret(slug, secret, url):
     _save_pages(pages)
 
 
+def list_page_secrets():
+    return _load_pages()
+
+
 def get_page_secret(slug):
     pages = _load_pages()
     entry = pages.get(slug)

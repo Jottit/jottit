@@ -4,10 +4,11 @@ from pathlib import Path
 import click
 
 from jottit_cli.auth import get_client
+from jottit_cli.config import get_page_secret, list_page_secrets
 
 
 @click.command()
-@click.argument("slug")
+@click.argument("slug", required=False)
 @click.option("--file", "file_path", help="Read new content from file")
 @click.option("--content", "inline_content", help="Content string")
 @click.option(
@@ -26,7 +27,18 @@ def edit(ctx, slug, file_path, inline_content, visibility):
 
       echo "new content" | jottit edit my-page
     """
-    client, fmt = get_client(ctx)
+    client, fmt = get_client(ctx, require_auth=False)
+
+    if not slug:
+        stored = list_page_secrets()
+        if not stored:
+            raise click.UsageError("No unclaimed pages found. Provide a SLUG argument.")
+        if len(stored) > 1:
+            slugs = ", ".join(stored.keys())
+            raise click.UsageError(
+                f"Multiple unclaimed pages found: {slugs}. Provide a SLUG argument."
+            )
+        slug = next(iter(stored))
 
     payload = {}
 
@@ -48,7 +60,13 @@ def edit(ctx, slug, file_path, inline_content, visibility):
             "or use --visibility to update metadata."
         )
 
-    r = client.put(f"/pages/{slug}", json=payload)
+    headers = {}
+    if not client.has_token:
+        secret = get_page_secret(slug)
+        if secret:
+            headers["X-Page-Secret"] = secret
+
+    r = client.put(f"/pages/{slug}", json=payload, headers=headers)
     if r.status_code == 404:
         fmt.error(
             f"Page '{slug}' not found.",

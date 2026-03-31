@@ -200,10 +200,16 @@ def get_page_by_slug(slug):
 @api_bp.route("/pages/<slug>", methods=["PUT"])
 def update_page(slug):
     user = _require_auth()
-    if not user:
+    page_secret = request.headers.get("X-Page-Secret", "")
+
+    if not user and not page_secret:
         return _error("Unauthorized", 401)
 
-    meta = get_page_meta(slug, user["id"])
+    if user:
+        meta = get_page_meta(slug, user["id"])
+    else:
+        meta = verify_page_secret(slug, page_secret)
+
     if not meta:
         return _error("Page not found", 404)
 
@@ -231,16 +237,17 @@ def update_page(slug):
         update_page_visibility(meta["id"], visibility)
     current_visibility = visibility or meta["visibility"]
 
+    user_id = user["id"] if user else None
     save_page(
         slug,
         content,
         current_visibility,
-        user["id"],
+        user_id,
         source=_get_source(),
         ai_assisted=ai_assisted,
     )
 
-    meta = get_page_meta(slug, user["id"])
+    meta = get_page_meta(slug, user_id)
     page_data = get_page(meta["id"])
     return jsonify(_serialize_page(meta, page_data))
 
