@@ -9,6 +9,7 @@ from flask import (
     abort,
     current_app,
     g,
+    make_response,
     redirect,
     render_template,
     request,
@@ -220,6 +221,26 @@ def talk():
 
 @bp.route("/<slug>")
 def view_page(slug):
+    query_token = request.args.get("token", "")
+    if query_token:
+        from db import verify_page_secret
+
+        page = verify_page_secret(slug, query_token)
+        if page:
+            created_pages = session.get("created_pages", [])
+            if page["id"] not in created_pages:
+                created_pages.append(page["id"])
+                session["created_pages"] = created_pages
+            resp = make_response(redirect(f"{g.url_prefix}/{slug}"))
+            resp.set_cookie(
+                f"page_token_{slug}",
+                query_token,
+                httponly=True,
+                samesite="Lax",
+                max_age=30 * 24 * 3600,
+            )
+            return resp
+
     subdomain_user = g.subdomain_user
 
     if subdomain_user:
