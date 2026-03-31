@@ -220,6 +220,10 @@ def talk():
 
 @bp.route("/<slug>")
 def view_page(slug):
+    query_token = request.args.get("token", "")
+    if query_token:
+        return redirect(f"{g.url_prefix}/{slug}/edit?token={query_token}")
+
     subdomain_user = g.subdomain_user
 
     if subdomain_user:
