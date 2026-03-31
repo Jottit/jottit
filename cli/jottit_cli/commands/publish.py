@@ -91,7 +91,7 @@ def publish(ctx, file, slug, visibility, title, open_browser):
 
     fmt.success(
         data=data,
-        message=f"Published: {url}",
+        message=f"Published: {url}\nEdit:      jottit edit {page_slug}",
         quiet_value=page_slug,
         breadcrumbs=breadcrumbs,
     )
