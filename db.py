@@ -85,32 +85,39 @@ def run_migrations():
         """)
         conn.commit()
 
-        applied = {
-            row["filename"]
-            for row in conn.execute("SELECT filename FROM schema_migrations").fetchall()
-        }
+        # Advisory lock prevents concurrent workers from running migrations simultaneously
+        conn.execute("SELECT pg_advisory_lock(1)")
+        try:
+            applied = {
+                row["filename"]
+                for row in conn.execute(
+                    "SELECT filename FROM schema_migrations"
+                ).fetchall()
+            }
 
-        files = sorted(
-            f for f in os.listdir(migrations_dir) if f.endswith((".sql", ".py"))
-        )
-        for filename in files:
-            if filename in applied:
-                continue
-            path = os.path.join(migrations_dir, filename)
-            if filename.endswith(".sql"):
-                with open(path) as f:
-                    sql = f.read()
-                conn.execute(sql, prepare=False)
-            else:
-                spec = importlib.util.spec_from_file_location(filename, path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-                mod.migrate(conn)
-            conn.execute(
-                "INSERT INTO schema_migrations (filename) VALUES (%s) ON CONFLICT DO NOTHING",
-                (filename,),
+            files = sorted(
+                f for f in os.listdir(migrations_dir) if f.endswith((".sql", ".py"))
             )
-            conn.commit()
+            for filename in files:
+                if filename in applied:
+                    continue
+                path = os.path.join(migrations_dir, filename)
+                if filename.endswith(".sql"):
+                    with open(path) as f:
+                        sql = f.read()
+                    conn.execute(sql, prepare=False)
+                else:
+                    spec = importlib.util.spec_from_file_location(filename, path)
+                    mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)
+                    mod.migrate(conn)
+                conn.execute(
+                    "INSERT INTO schema_migrations (filename) VALUES (%s) ON CONFLICT DO NOTHING",
+                    (filename,),
+                )
+                conn.commit()
+        finally:
+            conn.execute("SELECT pg_advisory_unlock(1)")
 
 
 def _find_page_by_slug(conn, slug, user_id=None):
