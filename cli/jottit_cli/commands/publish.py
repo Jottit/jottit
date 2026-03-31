@@ -69,14 +69,14 @@ def publish(ctx, file, slug, visibility, title, open_browser):
     )
     if page_secret:
         store_page_secret(page_slug, page_secret, url)
+        url = f"{url}?token={page_secret}"
 
     if open_browser:
         webbrowser.open(url)
 
+    base_url = url.split("?")[0]
     edit_url = (
-        f"{url.rstrip('/')}/edit?token={page_secret}"
-        if page_secret
-        else f"{url.rstrip('/')}/edit"
+        f"{base_url}/edit?token={page_secret}" if page_secret else f"{base_url}/edit"
     )
     breadcrumbs = [
         {"label": "Edit in browser", "url": edit_url},
