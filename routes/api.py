@@ -17,11 +17,10 @@ from db import (
     update_page_visibility,
     verify_page_secret,
 )
+from routes import VISIBILITY_OPTIONS
 from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
-
-VISIBILITY_OPTIONS = ("private", "unlisted", "listed", "pinned")
 
 
 def _require_auth():

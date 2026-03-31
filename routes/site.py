@@ -1,7 +1,16 @@
 import io
 import zipfile
 
-from flask import Response, abort, g, redirect, render_template, request, session
+from flask import (
+    Response,
+    abort,
+    g,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session,
+)
 
 from db import (
     check_username_available,
@@ -187,8 +196,23 @@ def edit_page(slug):
                 return redirect(profile_url(user["username"], f"/{slug}/edit"))
             return redirect(f"/{slug}")
 
-    # Allow editing unclaimed pages via token (e.g. from CLI publish output URL)
-    token = request.args.get("token") or request.form.get("token", "")
+    # Allow editing unclaimed pages via token (e.g. from CLI publish output URL).
+    # On first visit with ?token=, validate and move to a httponly cookie to avoid
+    # leaking the secret in Referer headers, browser history, and server logs.
+    query_token = request.args.get("token", "")
+    if query_token and page_meta and page_meta["user_id"] is None:
+        if verify_page_secret(slug, query_token) is not None:
+            resp = make_response(redirect(f"{g.url_prefix}/{slug}/edit"))
+            resp.set_cookie(
+                f"page_token_{slug}",
+                query_token,
+                httponly=True,
+                samesite="Lax",
+                max_age=30 * 24 * 3600,
+            )
+            return resp
+
+    token = request.cookies.get(f"page_token_{slug}", "")
     token_valid = (
         bool(token)
         and page_meta is not None
@@ -211,7 +235,6 @@ def edit_page(slug):
             content=content,
             is_new=page_meta is None,
             is_subdomain=subdomain_user is not None,
-            edit_token=token if token_valid else None,
         )
 
     title = request.form.get("title", "").strip()
@@ -262,6 +285,11 @@ def edit_page(slug):
 def claim_page_route(slug):
     page_meta = get_page_meta(slug)
     if not page_meta or page_meta["user_id"] is not None:
+        return redirect(f"/{slug}")
+
+    # Only allow claiming if the visitor has a valid page token cookie
+    token = request.cookies.get(f"page_token_{slug}", "")
+    if not token or verify_page_secret(slug, token) is None:
         return redirect(f"/{slug}")
 
     if request.method == "GET":

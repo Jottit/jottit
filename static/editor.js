@@ -28,7 +28,7 @@ function updatePreview() {
     var html = '';
     if (title) html += '<h1>' + title.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</h1>';
     if (body) html += smartypants(marked.parse(body));
-    preview.innerHTML = html;
+    preview.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
 }
 
 var storageKey = 'jottit-draft:' + window.location.pathname;
@@ -69,7 +69,7 @@ function restoreCursor() {
         el.setSelectionRange(pos.start, pos.end);
         el.blur();
         el.focus();
-    } catch (e) {}
+    } catch (e) { localStorage.removeItem(cursorKey); }
 }
 
 var saved = localStorage.getItem(storageKey);
@@ -84,7 +84,7 @@ if (saved) {
         } else {
             clearDraft();
         }
-    } catch (e) {}
+    } catch (e) { clearDraft(); }
 }
 
 function onInput() {

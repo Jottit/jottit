@@ -30,11 +30,14 @@ def claim(ctx, slug):
 
     if r.status_code == 403:
         fmt.error("Invalid page secret or page already claimed.")
+        return
     elif r.status_code == 409:
         fmt.error("Page already claimed.")
+        return
     elif r.status_code != 200:
         error = r.json().get("error", "Failed to claim page")
         fmt.error(error)
+        return
 
     remove_page_secret(slug)
 

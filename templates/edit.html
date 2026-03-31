@@ -4,6 +4,7 @@
 
 {% block head %}
 <script src="/static/marked.min.js?v={{ asset_v }}"></script>
+<script src="/static/purify.min.js?v={{ asset_v }}"></script>
 {% endblock %}
 
 {% block body %}
@@ -12,7 +13,6 @@
         <div class="editor-pane">
             <form id="editor-form" class="editor-form" method="post" action="{% if slug %}{{ url_prefix }}/{{ slug }}/edit{% else %}{{ url_prefix }}/new{% endif %}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                {% if edit_token %}<input type="hidden" name="token" value="{{ edit_token }}">{% endif %}
                 <label for="title" class="sr-only">Title</label>
                 <input class="editor-title" id="title" type="text" name="title" placeholder="Title" value="{{ title }}" {% if not title %}autofocus{% endif %}>
                 <label for="content" class="sr-only">Content</label>
