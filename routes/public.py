@@ -31,6 +31,7 @@ from db import (
     get_user,
     find_page_by_original_slug,
     find_page_owner_for_redirect,
+    verify_page_secret,
 )
 from utils import (
     get_body,
@@ -223,8 +224,6 @@ def talk():
 def view_page(slug):
     query_token = request.args.get("token", "")
     if query_token:
-        from db import verify_page_secret
-
         page = verify_page_secret(slug, query_token)
         if page:
             created_pages = session.get("created_pages", [])
@@ -291,8 +290,6 @@ def view_page(slug):
     unclaimed = page_meta["user_id"] is None
     # Only show claim banner if the visitor holds a valid page token cookie
     if unclaimed:
-        from db import verify_page_secret
-
         _claim_token = request.cookies.get(f"page_token_{slug}", "")
         unclaimed = (
             bool(_claim_token) and verify_page_secret(slug, _claim_token) is not None
