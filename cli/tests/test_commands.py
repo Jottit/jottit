@@ -144,6 +144,28 @@ class TestPublish:
         call_json = client.post.call_args[1]["json"]
         assert call_json["content"].startswith("# My Title\n\n")
 
+    @patch("jottit_cli.commands.publish.store_page_secret")
+    @patch("jottit_cli.commands.publish.get_client")
+    def test_publish_anon_includes_token_in_url(
+        self, mock_gc, mock_store, runner, tmp_path
+    ):
+        md_file = tmp_path / "test.md"
+        md_file.write_text("# Hello")
+
+        client = MagicMock()
+        client.has_token = False
+        client.post.return_value = _mock_response(
+            201, {"slug": "abc123", "page_secret": "secret-tok"}
+        )
+        client.page_url.return_value = "http://localhost:5000/abc123"
+        from jottit_cli.output import Formatter
+
+        mock_gc.return_value = (client, Formatter())
+
+        result = runner.invoke(cli, ["publish", str(md_file)])
+        assert result.exit_code == 0
+        assert "http://localhost:5000/abc123?token=secret-tok" in result.output
+
 
 class TestList:
     @patch("jottit_cli.commands.list.get_client")
