@@ -1,14 +1,18 @@
 /* Published page styling */
 
+.page-content {
+    padding-top: var(--space-12);
+}
+
 .page-main {
     max-width: var(--site-max-width);
     margin: 0 auto;
-    padding: var(--space-12) var(--space-5);
+    padding: var(--space-5) var(--space-5) var(--space-12);
 }
 
 @media (min-width: 640px) {
     .page-main {
-        padding: var(--space-12) var(--space-10);
+        padding: var(--space-5) var(--space-10) var(--space-12);
     }
 }
 

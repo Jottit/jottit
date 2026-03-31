@@ -16,6 +16,7 @@
 {% if is_owner %}
 {% include "_admin_banner.html" %}
 {% endif %}
+<div class="page-content">
 {% if site_title %}
 <header class="page-byline h-card">
     {% if avatar_url %}
@@ -61,5 +62,6 @@
     {% endif %}
     {% include "_page_footer.html" %}
 </main>
+</div>
 {% if is_owner %}<script src="/static/listing.js?v={{ asset_v }}"></script>{% endif %}
 {% endblock %}
