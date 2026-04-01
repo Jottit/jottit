@@ -4,7 +4,13 @@ from flask import Blueprint, abort, g, redirect, request, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from db import create_verification_code, get_page_meta, get_user, get_user_by_username
+from db import (
+    create_verification_code,
+    get_page_meta,
+    get_site_by_subdomain,
+    get_user,
+    get_user_by_username,
+)
 from mail import send_verification_email
 
 limiter = Limiter(get_remote_address, storage_uri="memory://")
@@ -38,6 +44,7 @@ LICENSES = {
 }
 
 VISIBILITY_OPTIONS = ("private", "unlisted", "listed", "pinned")
+SITE_VISIBILITY_OPTIONS = ("private", "public", "open")
 
 
 def _get_subdomain():
@@ -60,6 +67,10 @@ def base_url(path=""):
     return f"{request.scheme}://{BASE_DOMAIN}{path}"
 
 
+def site_url(subdomain, path=""):
+    return f"{request.scheme}://{subdomain}.{BASE_DOMAIN}{path}"
+
+
 def profile_url(username, path=""):
     return f"/@{username}{path}"
 
@@ -74,6 +85,9 @@ def _set_profile_user(username):
 
 
 def find_page(slug):
+    current_site = getattr(g, "current_site", None)
+    if current_site:
+        return get_page_meta(slug, site_id=current_site["id"])
     subdomain_user = g.subdomain_user
     if subdomain_user:
         return get_page_meta(slug, subdomain_user["id"])
@@ -149,10 +163,14 @@ def resolve_subdomain():
     if subdomain == "www":
         return redirect(f"{request.scheme}://{BASE_DOMAIN}{request.full_path}", 301)
     if subdomain:
-        path = request.full_path.rstrip("?")
-        if path == "/":
-            path = ""
-        return redirect(f"{request.scheme}://{BASE_DOMAIN}/@{subdomain}{path}", 301)
+        site = get_site_by_subdomain(subdomain)
+        if site:
+            g.current_site = site
+            g.subdomain_user = get_user(site["user_id"])
+            g.url_prefix = ""
+            return
+        abort(404)
+    g.current_site = None
     g.subdomain_user = None
     g.url_prefix = ""
 

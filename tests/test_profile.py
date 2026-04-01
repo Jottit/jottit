@@ -3,7 +3,10 @@ from unittest.mock import patch
 
 from conftest import create_user_with_username
 from db import (
+    create_site,
     find_or_create_user,
+    get_db,
+    get_page_meta,
     get_user,
     set_user_username,
     update_user_avatar,
@@ -178,7 +181,16 @@ def test_profile_page_shows_profile_header(client):
     update_user_settings(user_id, "Prof Page", "profpage", "Writer")
     update_user_avatar(user_id, "/uploads/test/avatar.jpg")
 
-    r = client.get("/@profpage/pp1")
+    site_id = create_site(user_id, "profpage")
+    page_meta = get_page_meta("pp1", user_id=user_id)
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE pages SET site_id = %s WHERE id = %s",
+            (site_id, page_meta["id"]),
+        )
+        conn.commit()
+
+    r = client.get("/pp1", headers={"Host": "profpage.jottit.localhost:8000"})
     assert r.status_code == 200
     assert b"page-byline" in r.data
     assert b"u-photo" in r.data

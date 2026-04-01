@@ -330,16 +330,16 @@ def test_homepage_pinned_tab_filters(client):
     assert "Private Post" not in body
 
 
-# Public visitor sees no tabs on profile, only listed and pinned
+# Public visitor sees no tabs on profile — profile shows site directory now
 def test_public_profile_shows_no_tabs(client):
-    _setup_user_with_pages(client)
+    from db import create_site
+    user_id = _setup_user_with_pages(client)
+    create_site(user_id, "tabuser")
     r = client.get("/@tabuser")
     body = r.data.decode()
     assert "tab--active" not in body
-    assert "Public One" in body
-    assert "Pinned Post" in body
-    assert "Unlisted Post" not in body
-    assert "Private Post" not in body
+    # Profile now shows sites directory, not individual pages
+    assert "tabuser" in body
 
 
 # Logged-out homepage shows landing page, no tabs
