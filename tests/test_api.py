@@ -47,20 +47,22 @@ def test_get_current_user(client):
 
 def test_get_user_profile(client):
     user_id, token = _setup_user_with_token()
-    slug = save_page("mypage", "# Hello\n\nWorld", "listed", user_id)
+    from db import create_site
+    create_site(user_id, "testuser")
     r = client.get("/api/v1/users/testuser", headers=_auth(token))
     assert r.status_code == 200
     data = r.get_json()
     assert data["username"] == "testuser"
-    assert len(data["pages"]) == 1
-    assert data["pages"][0]["slug"] == slug
+    assert len(data["sites"]) == 1
+    assert data["sites"][0]["subdomain"] == "testuser"
 
 
-def test_get_user_profile_excludes_private(client):
+def test_get_user_profile_excludes_private_sites(client):
     user_id, token = _setup_user_with_token()
-    save_page("private-page", "# Private\n\nContent", "private", user_id)
+    from db import create_site
+    create_site(user_id, "testuser", visibility="private")
     r = client.get("/api/v1/users/testuser", headers=_auth(token))
-    assert r.get_json()["pages"] == []
+    assert r.get_json()["sites"] == []
 
 
 def test_get_user_profile_not_found(client):
