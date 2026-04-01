@@ -14,15 +14,32 @@
       </div>
     </div>
     {% endif %}
+    {% if sites %}
+    <div class="site-switcher">
+      <a href="/" class="site-switcher-item{% if not active_site %} site-switcher-item--active{% endif %}">All sites</a>
+      {% for site in sites %}
+      <a href="/?site={{ site.subdomain }}" class="site-switcher-item{% if active_site == site.subdomain %} site-switcher-item--active{% endif %}">{{ site.title }}</a>
+      {% endfor %}
+      <a href="/settings/sites/new" class="site-switcher-item site-switcher-new">+ New wiki</a>
+      {% if active_site %}
+      {% for site in sites %}
+      {% if site.subdomain == active_site %}
+      <a href="{{ site.url }}" class="site-switcher-view">View site &rarr;</a>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+    </div>
+    {% endif %}
     {% if counts %}
     <div class="tabs-container">
       <button class="tabs-fade tabs-fade--left" aria-label="Scroll left">‹</button>
       <nav class="tabs">
-        <a href="/" class="tab{% if tab == 'all' %} tab--active{% endif %}">All <span class="tab-count">{{ counts.all }}</span></a>
-        <a href="/?tab=listed" class="tab{% if tab == 'listed' %} tab--active{% endif %}">Listed <span class="tab-count">{{ counts.listed }}</span></a>
-        <a href="/?tab=unlisted" class="tab{% if tab == 'unlisted' %} tab--active{% endif %}">Unlisted <span class="tab-count">{{ counts.unlisted }}</span></a>
-        <a href="/?tab=private" class="tab{% if tab == 'private' %} tab--active{% endif %}">Private <span class="tab-count">{{ counts.private }}</span></a>
-        <a href="/?tab=pinned" class="tab{% if tab == 'pinned' %} tab--active{% endif %}">Pinned <span class="tab-count">{{ counts.pinned }}</span></a>
+        {% set site_param = '&site=' + active_site if active_site else '' %}
+        <a href="/?{{ site_param }}" class="tab{% if tab == 'all' %} tab--active{% endif %}">All <span class="tab-count">{{ counts.all }}</span></a>
+        <a href="/?tab=listed{{ site_param }}" class="tab{% if tab == 'listed' %} tab--active{% endif %}">Listed <span class="tab-count">{{ counts.listed }}</span></a>
+        <a href="/?tab=unlisted{{ site_param }}" class="tab{% if tab == 'unlisted' %} tab--active{% endif %}">Unlisted <span class="tab-count">{{ counts.unlisted }}</span></a>
+        <a href="/?tab=private{{ site_param }}" class="tab{% if tab == 'private' %} tab--active{% endif %}">Private <span class="tab-count">{{ counts.private }}</span></a>
+        <a href="/?tab=pinned{{ site_param }}" class="tab{% if tab == 'pinned' %} tab--active{% endif %}">Pinned <span class="tab-count">{{ counts.pinned }}</span></a>
       </nav>
       <button class="tabs-fade tabs-fade--right" aria-label="Scroll right">›</button>
     </div>

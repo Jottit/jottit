@@ -83,7 +83,22 @@ def home():
     if "user_id" not in session:
         return render_template("home.html", **account_link_vars())
 
-    pages = get_pages_for_user(session["user_id"])
+    user_id = session["user_id"]
+    sites = get_sites_for_user(user_id)
+
+    # Site filter
+    site_filter = request.args.get("site", "")
+    active_site = None
+    if site_filter:
+        for s in sites:
+            if s["subdomain"] == site_filter:
+                active_site = s
+                break
+
+    if active_site:
+        pages = get_pages_for_user(user_id, site_id=active_site["id"])
+    else:
+        pages = get_pages_for_user(user_id)
     all_items = [_build_page_item(p) for p in pages]
 
     counts = Counter(i["visibility"] for i in all_items)
@@ -101,12 +116,23 @@ def home():
     user = g.current_user
     display_name = (user.get("name") or user.get("username")) if user else None
 
+    site_items = [
+        {
+            "subdomain": s["subdomain"],
+            "title": s.get("title") or s["subdomain"],
+            "url": site_url(s["subdomain"]),
+        }
+        for s in sites
+    ]
+
     return render_template(
         "home.html",
         pages=page_list,
         tab=tab,
         counts=counts,
         display_name=display_name,
+        sites=site_items,
+        active_site=site_filter,
         **account_link_vars(),
     )
 
