@@ -18,6 +18,7 @@ from flask import (
 )
 
 from db import (
+    get_default_site,
     get_feed_entries,
     get_feed_entries_for_user,
     get_page,
@@ -152,7 +153,9 @@ def subdomain_home(user):
         profile_incomplete=profile_incomplete,
         avatar_url=user.get("avatar"),
         bio_html=bio_html,
-        license_info=LICENSES.get(user.get("license") or ""),
+        license_info=LICENSES.get(
+            (get_default_site(user["id"]) or {}).get("license") or ""
+        ),
         profile_url=profile_url(user["username"]) if user.get("username") else None,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
     )
@@ -331,7 +334,8 @@ def view_page(slug):
         avatar_url = subdomain_user.get("avatar")
         bio = subdomain_user.get("bio")
         bio_html = render_bio(bio, g.url_prefix) if bio else ""
-        license_info = LICENSES.get(subdomain_user.get("license") or "")
+        site = get_default_site(subdomain_user["id"])
+        license_info = LICENSES.get((site or {}).get("license") or "")
 
     owner_initials = None
     owner_avatar_url = None

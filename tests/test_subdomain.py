@@ -1,12 +1,14 @@
 from conftest import create_user_with_username
 from db import (
     claim_page,
+    create_site,
     create_verification_code,
     find_or_create_user,
     get_page_meta,
     rename_page,
     save_page,
     set_user_username,
+    update_site,
     update_user_settings,
 )
 
@@ -270,7 +272,8 @@ def test_main_domain_slug_redirects_to_owner(client):
 # License appears in the page footer on profiles
 def test_license_shows_in_page_footer(client):
     user_id = create_user_with_username(client, "licfoot@example.com", "licfoot", "lf1")
-    update_user_settings(user_id, "Lic Footer", "licfoot", license="cc-by-sa-4.0")
+    site_id = create_site(user_id, "licfoot")
+    update_site(site_id, license="cc-by-sa-4.0")
 
     r = client.get("/@licfoot/lf1")
     assert r.status_code == 200

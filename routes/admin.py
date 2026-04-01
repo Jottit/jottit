@@ -9,7 +9,9 @@ from db import (
     delete_user,
     find_or_create_user,
     get_api_tokens,
+    get_default_site,
     get_user,
+    update_site,
     update_user_avatar,
     update_user_email,
     update_user_settings,
@@ -91,8 +93,9 @@ def user_settings():
         return redirect("/signin")
 
     back_url = "/"
+    site = get_default_site(user_id)
     return render_template(
-        "settings.html", user=user, back_url=back_url, licenses=LICENSES
+        "settings.html", user=user, site=site, back_url=back_url, licenses=LICENSES
     )
 
 
@@ -114,9 +117,7 @@ def settings_profile():
         name = request.form.get("name", "").strip()[:100]
         bio = request.form.get("bio", "").strip()[:500]
 
-    update_user_settings(
-        user_id, name, user.get("username") or "", bio, user.get("license")
-    )
+    update_user_settings(user_id, name, user.get("username") or "", bio)
 
     if is_ajax:
         return {"ok": True}
@@ -130,15 +131,18 @@ def settings_license():
     if not user:
         return redirect("/signin")
 
+    site = get_default_site(user_id)
+
     if request.method == "GET":
-        return render_template("settings_license.html", user=user, licenses=LICENSES)
+        return render_template(
+            "settings_license.html", user=user, site=site, licenses=LICENSES
+        )
 
     license = request.form.get("license", "").strip()
     if license and license not in LICENSES:
         license = ""
-    update_user_settings(
-        user_id, user.get("name"), user.get("username") or "", user.get("bio"), license
-    )
+    if site:
+        update_site(site["id"], license=license or None)
     if request.headers.get("X-Requested-With") == "fetch":
         return {"ok": True}
     flash("License saved")
@@ -193,7 +197,6 @@ def settings_username():
         user.get("name") or "",
         username,
         user.get("bio") or "",
-        user.get("license"),
     )
     flash("Saved")
     return redirect("/settings/username")

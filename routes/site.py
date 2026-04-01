@@ -440,7 +440,7 @@ def claim_address(slug):
     user_id = session["user_id"]
     name = session["claim_name"]
     set_user_username(user_id, username)
-    update_user_settings(user_id, name=name, username=username, bio="", license=None)
+    update_user_settings(user_id, name=name, username=username, bio="")
     return _finish_claim(slug, page_meta, user_id, username)
 
 

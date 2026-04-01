@@ -4,9 +4,20 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE,
     name TEXT,
     bio TEXT,
-    license TEXT,
     avatar TEXT,
-    subdomain TEXT UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sites (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    subdomain TEXT NOT NULL UNIQUE,
+    title TEXT,
+    license TEXT,
+    visibility TEXT NOT NULL DEFAULT 'public'
+        CHECK (visibility IN ('private', 'public', 'open')),
+    home_page_slug TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -16,6 +27,7 @@ CREATE TABLE IF NOT EXISTS pages (
     slug TEXT NOT NULL,
     original_slug TEXT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,
     visibility TEXT NOT NULL DEFAULT 'private',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -88,34 +100,33 @@ CREATE INDEX IF NOT EXISTS revisions_page_id_idx ON revisions (page_id);
 CREATE INDEX IF NOT EXISTS revisions_page_revision_idx ON revisions (page_id, revision DESC);
 CREATE INDEX IF NOT EXISTS pages_visibility_idx ON pages (visibility);
 CREATE INDEX IF NOT EXISTS pages_original_slug ON pages (original_slug);
-CREATE UNIQUE INDEX IF NOT EXISTS pages_user_slug_unique ON pages (user_id, slug) WHERE user_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS pages_site_slug_unique ON pages (site_id, slug) WHERE site_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL;
 CREATE INDEX IF NOT EXISTS pages_visibility_updated_idx ON pages (visibility, updated_at DESC);
+CREATE INDEX IF NOT EXISTS pages_site_id_idx ON pages (site_id);
+CREATE INDEX IF NOT EXISTS sites_user_id_idx ON sites (user_id);
 CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens (user_id);
 CREATE INDEX IF NOT EXISTS oauth_codes_expires_idx ON oauth_codes (expires_at);
 CREATE INDEX IF NOT EXISTS page_secrets_hash_idx ON page_secrets (secret_hash);
 
--- On fresh DBs (no sites table), seed historical migrations as already applied
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'sites') THEN
-        INSERT INTO schema_migrations (filename) VALUES
-            ('001_drop_sites.sql'),
-            ('002_add_avatar_bio.sql'),
-            ('003_add_license.sql'),
-            ('004_add_listing.sql'),
-            ('005_per_user_slugs.sql'),
-            ('006_backfill_usernames.py'),
-            ('007_add_original_slug.sql'),
-            ('008_add_pages_draft_updated_idx.sql'),
-            ('009_add_subdomain.sql'),
-            ('010_add_email_change_purpose.sql'),
-            ('011_add_api_tokens.sql'),
-            ('012_add_revision_source.sql'),
-            ('013_add_revision_ai_assisted.sql'),
-            ('014_add_oauth.sql'),
-            ('015_unify_visibility.sql'),
-            ('016_add_page_secrets.sql'),
-            ('017_page_secret_expiry_and_index.sql')
-        ON CONFLICT DO NOTHING;
-    END IF;
-END $$;
+-- Seed all migrations as already applied on fresh DBs
+INSERT INTO schema_migrations (filename) VALUES
+    ('001_drop_sites.sql'),
+    ('002_add_avatar_bio.sql'),
+    ('003_add_license.sql'),
+    ('004_add_listing.sql'),
+    ('005_per_user_slugs.sql'),
+    ('006_backfill_usernames.py'),
+    ('007_add_original_slug.sql'),
+    ('008_add_pages_draft_updated_idx.sql'),
+    ('009_add_subdomain.sql'),
+    ('010_add_email_change_purpose.sql'),
+    ('011_add_api_tokens.sql'),
+    ('012_add_revision_source.sql'),
+    ('013_add_revision_ai_assisted.sql'),
+    ('014_add_oauth.sql'),
+    ('015_unify_visibility.sql'),
+    ('016_add_page_secrets.sql'),
+    ('017_page_secret_expiry_and_index.sql'),
+    ('018_add_sites.py')
+ON CONFLICT DO NOTHING;

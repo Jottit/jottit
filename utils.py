@@ -106,6 +106,13 @@ def valid_username(s):
     return bool(re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", s))
 
 
+RESERVED_SUBDOMAINS = RESERVED_USERNAMES | {"www", "jottit"}
+
+
+def valid_subdomain(s):
+    return bool(re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", s))
+
+
 def render_bio(text, url_prefix=""):
     def replace_md_link(m):
         display = html_escape(m.group(1))

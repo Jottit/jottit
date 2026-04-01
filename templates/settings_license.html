@@ -15,7 +15,7 @@
                     <select id="license" name="license">
                         <option value="">No license</option>
                         {% for key, info in licenses.items() %}
-                        <option value="{{ key }}"{{ ' selected' if user.license == key }}>{{ info.name }}</option>
+                        <option value="{{ key }}"{{ ' selected' if site and site.license == key }}>{{ info.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
