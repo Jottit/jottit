@@ -3,13 +3,16 @@ import re
 from flask import flash, redirect, render_template, request, session
 
 from db import (
+    check_subdomain_available,
     check_username_available,
     create_api_token,
+    create_site,
     delete_api_token,
     delete_user,
     find_or_create_user,
     get_api_tokens,
     get_default_site,
+    get_sites_for_user,
     get_user,
     update_site,
     update_user_avatar,
@@ -25,8 +28,8 @@ from storage import (
     upload_image,
     validate_image,
 )
-from utils import RESERVED_USERNAMES, valid_email, valid_username
-from routes import bp, limiter, LICENSES, profile_url, require_user, send_verification
+from utils import RESERVED_SUBDOMAINS, RESERVED_USERNAMES, valid_email, valid_subdomain, valid_username
+from routes import bp, limiter, LICENSES, SITE_VISIBILITY_OPTIONS, profile_url, require_user, send_verification
 
 
 @bp.route("/signin", methods=["GET", "POST"])
@@ -76,6 +79,11 @@ def signin_verify():
     session["user_id"] = user_id
     user = get_user(user_id)
     if user and user.get("username"):
+        # Ensure user has a default site
+        if not get_sites_for_user(user_id):
+            username = user["username"]
+            if check_subdomain_available(username):
+                create_site(user_id, username, title=user.get("name"))
         return redirect(profile_url(user["username"]))
     return redirect("/")
 
@@ -374,3 +382,45 @@ def settings_avatar_delete():
             delete_image(key)
         update_user_avatar(user_id, None)
     return redirect("/settings/profile")
+
+
+# --- Site settings ---
+
+
+@bp.route("/settings/sites")
+def settings_sites():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+    sites = get_sites_for_user(user_id)
+    return render_template("settings_sites.html", sites=sites)
+
+
+@bp.route("/settings/sites/new", methods=["GET", "POST"])
+@limiter.limit("5 per 5 minutes", methods=["POST"])
+def settings_sites_new():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    if request.method == "GET":
+        return render_template("settings_sites_new.html")
+
+    subdomain = request.form.get("subdomain", "").strip().lower()
+    title = request.form.get("title", "").strip()
+    visibility = request.form.get("visibility", "public")
+
+    if not subdomain:
+        return render_template("settings_sites_new.html", error="Subdomain is required.", subdomain=subdomain, title=title)
+    if not valid_subdomain(subdomain):
+        return render_template("settings_sites_new.html", error="Subdomain must be lowercase letters, numbers, and hyphens only.", subdomain=subdomain, title=title)
+    if subdomain in RESERVED_SUBDOMAINS:
+        return render_template("settings_sites_new.html", error="That subdomain is reserved.", subdomain=subdomain, title=title)
+    if not check_subdomain_available(subdomain):
+        return render_template("settings_sites_new.html", error="That subdomain is already taken.", subdomain=subdomain, title=title)
+    if visibility not in SITE_VISIBILITY_OPTIONS:
+        visibility = "public"
+
+    create_site(user_id, subdomain, title=title or None, visibility=visibility)
+    flash("Wiki created")
+    return redirect("/settings/sites")

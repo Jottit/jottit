@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}New wiki — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/settings/sites" class="panel-back">&larr; Wikis</a>
+    <h1 class="title">New wiki</h1>
+    <div class="panel">
+        <form method="post" action="/settings/sites/new">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label class="label" for="subdomain">Subdomain</label>
+                <div class="auth-subdomain-row">
+                    <input class="auth-input" type="text" id="subdomain" name="subdomain" value="{{ subdomain or '' }}" required autofocus>
+                    <span class="auth-subdomain-suffix">.jottit.org</span>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="title">Title (optional)</label>
+                <input class="input" type="text" id="title" name="title" value="{{ title or '' }}">
+            </div>
+            <div class="field">
+                <label class="label" for="visibility">Visibility</label>
+                <div class="field-select">
+                    <select id="visibility" name="visibility">
+                        <option value="public">Public</option>
+                        <option value="private">Private</option>
+                    </select>
+                </div>
+            </div>
+            {% if error %}
+            <p class="field-error">{{ error }}</p>
+            {% endif %}
+            <button class="btn btn-solid" type="submit">Create wiki</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

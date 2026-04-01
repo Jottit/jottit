@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Wikis — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/settings" class="panel-back">&larr; Settings</a>
+    <h1 class="title">Wikis</h1>
+    <div class="panel">
+        {% for site in sites %}
+        <div class="settings-row">
+            <span class="settings-row-label">{{ site.title or site.subdomain }}</span>
+            <span class="settings-row-right">
+                <span class="settings-row-value">{{ site.subdomain }}.jottit.org</span>
+                <span class="visibility-label visibility-label--{{ site.visibility }}">{{ site.visibility }}</span>
+            </span>
+        </div>
+        {% endfor %}
+        {% if not sites %}
+        <p class="panel-empty">No wikis yet.</p>
+        {% endif %}
+    </div>
+    <a href="/settings/sites/new" class="btn btn-solid">New wiki</a>
+</div>
+{% endblock %}
