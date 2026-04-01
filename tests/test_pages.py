@@ -333,6 +333,7 @@ def test_homepage_pinned_tab_filters(client):
 # Public visitor sees no tabs on profile — profile shows site directory now
 def test_public_profile_shows_no_tabs(client):
     from db import create_site
+
     user_id = _setup_user_with_pages(client)
     create_site(user_id, "tabuser")
     r = client.get("/@tabuser")

@@ -27,7 +27,14 @@ from db import (
     verify_page_secret,
 )
 from routes import SITE_VISIBILITY_OPTIONS, VISIBILITY_OPTIONS
-from utils import generate_slug, get_title, slugify, valid_subdomain, RESERVED_SUBDOMAINS, MAX_CONTENT_LENGTH
+from utils import (
+    generate_slug,
+    get_title,
+    slugify,
+    valid_subdomain,
+    RESERVED_SUBDOMAINS,
+    MAX_CONTENT_LENGTH,
+)
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -113,9 +120,7 @@ def get_user_profile(username):
     if not profile:
         return _error("User not found", 404)
     sites = get_sites_for_user(profile["id"])
-    public_sites = [
-        _serialize_site(s) for s in sites if s["visibility"] != "private"
-    ]
+    public_sites = [_serialize_site(s) for s in sites if s["visibility"] != "private"]
     return jsonify(
         {
             "username": profile.get("username"),
@@ -153,7 +158,9 @@ def create_site_route():
     if not subdomain:
         return _error("Subdomain is required", 400)
     if not valid_subdomain(subdomain):
-        return _error("Subdomain must be lowercase letters, numbers, and hyphens only", 400)
+        return _error(
+            "Subdomain must be lowercase letters, numbers, and hyphens only", 400
+        )
     if subdomain in RESERVED_SUBDOMAINS:
         return _error("That subdomain is reserved", 400)
     if not check_subdomain_available(subdomain):
@@ -162,10 +169,14 @@ def create_site_route():
     title = data.get("title", "").strip() or None
     visibility = data.get("visibility", "public")
     if visibility not in SITE_VISIBILITY_OPTIONS:
-        return _error(f"Visibility must be one of: {', '.join(SITE_VISIBILITY_OPTIONS)}", 400)
+        return _error(
+            f"Visibility must be one of: {', '.join(SITE_VISIBILITY_OPTIONS)}", 400
+        )
     license = data.get("license", "").strip() or None
 
-    site_id = create_site(user["id"], subdomain, title=title, visibility=visibility, license=license)
+    site_id = create_site(
+        user["id"], subdomain, title=title, visibility=visibility, license=license
+    )
     site = get_site(site_id)
     return jsonify(_serialize_site(site)), 201
 
@@ -201,7 +212,9 @@ def update_site_route(subdomain):
         kwargs["license"] = data["license"].strip() or None
     if "visibility" in data:
         if data["visibility"] not in SITE_VISIBILITY_OPTIONS:
-            return _error(f"Visibility must be one of: {', '.join(SITE_VISIBILITY_OPTIONS)}", 400)
+            return _error(
+                f"Visibility must be one of: {', '.join(SITE_VISIBILITY_OPTIONS)}", 400
+            )
         kwargs["visibility"] = data["visibility"]
     if "home_page_slug" in data:
         kwargs["home_page_slug"] = data["home_page_slug"].strip() or None
@@ -209,7 +222,10 @@ def update_site_route(subdomain):
         new_sub = data["subdomain"].strip().lower()
         if new_sub != subdomain:
             if not valid_subdomain(new_sub):
-                return _error("Subdomain must be lowercase letters, numbers, and hyphens only", 400)
+                return _error(
+                    "Subdomain must be lowercase letters, numbers, and hyphens only",
+                    400,
+                )
             if new_sub in RESERVED_SUBDOMAINS:
                 return _error("That subdomain is reserved", 400)
             if not check_subdomain_available(new_sub):
@@ -278,7 +294,9 @@ def create_site_page(subdomain):
     if not content:
         return _error("Content is required", 400)
     if len(content) > MAX_CONTENT_LENGTH:
-        return _error(f"Content exceeds maximum length of {MAX_CONTENT_LENGTH} characters", 400)
+        return _error(
+            f"Content exceeds maximum length of {MAX_CONTENT_LENGTH} characters", 400
+        )
 
     ai_assisted = data.get("ai_assisted", False)
     slug = slugify(data.get("slug", ""))
@@ -289,9 +307,19 @@ def create_site_page(subdomain):
 
     visibility = data.get("visibility", "private")
     if visibility not in VISIBILITY_OPTIONS:
-        return _error(f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400)
+        return _error(
+            f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
+        )
 
-    slug = save_page(slug, content, visibility, user["id"], source=_get_source(), ai_assisted=ai_assisted, site_id=site["id"])
+    slug = save_page(
+        slug,
+        content,
+        visibility,
+        user["id"],
+        source=_get_source(),
+        ai_assisted=ai_assisted,
+        site_id=site["id"],
+    )
     meta = get_page_meta(slug, site_id=site["id"])
     page_data = get_page(meta["id"])
     return jsonify(_serialize_page(meta, page_data, site)), 201
@@ -333,17 +361,29 @@ def update_site_page(subdomain, slug):
     if not content:
         return _error("Content cannot be empty", 400)
     if len(content) > MAX_CONTENT_LENGTH:
-        return _error(f"Content exceeds maximum length of {MAX_CONTENT_LENGTH} characters", 400)
+        return _error(
+            f"Content exceeds maximum length of {MAX_CONTENT_LENGTH} characters", 400
+        )
 
     ai_assisted = data.get("ai_assisted", False)
     visibility = data.get("visibility")
     if visibility is not None:
         if visibility not in VISIBILITY_OPTIONS:
-            return _error(f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400)
+            return _error(
+                f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
+            )
         update_page_visibility(meta["id"], visibility)
     current_visibility = visibility or meta["visibility"]
 
-    save_page(slug, content, current_visibility, user["id"], source=_get_source(), ai_assisted=ai_assisted, site_id=site["id"])
+    save_page(
+        slug,
+        content,
+        current_visibility,
+        user["id"],
+        source=_get_source(),
+        ai_assisted=ai_assisted,
+        site_id=site["id"],
+    )
     meta = get_page_meta(slug, site_id=site["id"])
     page_data = get_page(meta["id"])
     return jsonify(_serialize_page(meta, page_data, site))

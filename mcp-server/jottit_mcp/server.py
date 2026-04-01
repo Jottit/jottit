@@ -88,7 +88,9 @@ def update_page(
     if visibility:
         body["visibility"] = visibility
     with _client() as client:
-        resp = client.put(f"{_pages_base(site)}/{slug}", headers=WRITE_HEADERS, json=body)
+        resp = client.put(
+            f"{_pages_base(site)}/{slug}", headers=WRITE_HEADERS, json=body
+        )
     return _format_response(resp)
 
 
@@ -174,7 +176,9 @@ def update_site(
     if home_page_slug:
         body["home_page_slug"] = home_page_slug
     with _client() as client:
-        resp = client.put(f"/api/v1/sites/{subdomain}", headers=WRITE_HEADERS, json=body)
+        resp = client.put(
+            f"/api/v1/sites/{subdomain}", headers=WRITE_HEADERS, json=body
+        )
     return _format_response(resp)
 
 

@@ -264,12 +264,12 @@ def edit_page(slug):
             if owner_id and title:
                 nice_slug = slugify(title)
                 reserved = RESERVED_SLUGS if not current_site else set()
-                if (
-                    nice_slug
-                    and nice_slug != slug
-                    and nice_slug not in reserved
-                ):
-                    conflict = get_page_meta(nice_slug, site_id=site_id) if site_id else get_page_meta(nice_slug, owner_id)
+                if nice_slug and nice_slug != slug and nice_slug not in reserved:
+                    conflict = (
+                        get_page_meta(nice_slug, site_id=site_id)
+                        if site_id
+                        else get_page_meta(nice_slug, owner_id)
+                    )
                     if not conflict:
                         rename_page(new_page_meta["id"], nice_slug)
                         slug = nice_slug
@@ -278,7 +278,11 @@ def edit_page(slug):
             nice_slug = slugify(title)
             reserved = RESERVED_SLUGS if not current_site else set()
             if nice_slug and nice_slug not in reserved:
-                conflict = get_page_meta(nice_slug, site_id=site_id) if site_id else get_page_meta(nice_slug, owner_id)
+                conflict = (
+                    get_page_meta(nice_slug, site_id=site_id)
+                    if site_id
+                    else get_page_meta(nice_slug, owner_id)
+                )
                 if not conflict:
                     rename_page(page_meta["id"], nice_slug)
                     slug = nice_slug
@@ -449,6 +453,7 @@ def claim_address(slug):
     update_user_settings(user_id, name=name, username=username, bio="")
     # Create default site for the new user
     from db import check_subdomain_available
+
     if check_subdomain_available(username):
         create_site(user_id, username, title=name)
     return _finish_claim(slug, page_meta, user_id, username)

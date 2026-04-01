@@ -48,6 +48,7 @@ def test_get_current_user(client):
 def test_get_user_profile(client):
     user_id, token = _setup_user_with_token()
     from db import create_site
+
     create_site(user_id, "testuser")
     r = client.get("/api/v1/users/testuser", headers=_auth(token))
     assert r.status_code == 200
@@ -60,6 +61,7 @@ def test_get_user_profile(client):
 def test_get_user_profile_excludes_private_sites(client):
     user_id, token = _setup_user_with_token()
     from db import create_site
+
     create_site(user_id, "testuser", visibility="private")
     r = client.get("/api/v1/users/testuser", headers=_auth(token))
     assert r.get_json()["sites"] == []

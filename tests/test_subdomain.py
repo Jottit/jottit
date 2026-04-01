@@ -43,7 +43,9 @@ def _setup_site(user_id, username, *page_slugs):
 
 # Subdomain serves site home directly (no redirect)
 def test_subdomain_serves_site_home(client):
-    user_id = create_user_with_username(client, "legacy@example.com", "legacyuser", "lp1")
+    user_id = create_user_with_username(
+        client, "legacy@example.com", "legacyuser", "lp1"
+    )
     _setup_site(user_id, "legacyuser", "lp1")
     r = _sub(client, "legacyuser")
     assert r.status_code == 200
@@ -123,7 +125,7 @@ def test_old_slug_redirects_on_subdomain(client):
     update_user_settings(user_id, "Sub Redir", "subredir")
     save_page("old-slug", "# New Title\n\nContent", "listed", user_id)
     page = get_page_meta("old-slug", user_id)
-    site_id = _setup_site(user_id, "subredir", "old-slug")
+    _setup_site(user_id, "subredir", "old-slug")
 
     rename_page(page["id"], "new-title")
     r = _sub(client, "subredir", "/old-slug")
@@ -161,10 +163,16 @@ def test_visibility_default_is_listed(client):
 # Owner can change a page's visibility to "unlisted"
 def test_update_visibility(client):
     user_id = create_user_with_username(client, "list2@example.com", "listuser2", "lp2")
-    site_id = _setup_site(user_id, "listuser2", "lp2")
+    _setup_site(user_id, "listuser2", "lp2")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = _sub(client, "listuser2", "/lp2/visibility", method="post", data={"visibility": "unlisted"})
+    r = _sub(
+        client,
+        "listuser2",
+        "/lp2/visibility",
+        method="post",
+        data={"visibility": "unlisted"},
+    )
     assert r.status_code in (302, 204)
     page_meta = get_page_meta("lp2", user_id)
     assert page_meta["visibility"] == "unlisted"
@@ -173,10 +181,16 @@ def test_update_visibility(client):
 # Unlisted pages don't appear on the subdomain home for non-owners
 def test_unlisted_page_hidden_from_subdomain(client):
     user_id = create_user_with_username(client, "list3@example.com", "listuser3", "lp3")
-    site_id = _setup_site(user_id, "listuser3", "lp3")
+    _setup_site(user_id, "listuser3", "lp3")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    _sub(client, "listuser3", "/lp3/visibility", method="post", data={"visibility": "unlisted"})
+    _sub(
+        client,
+        "listuser3",
+        "/lp3/visibility",
+        method="post",
+        data={"visibility": "unlisted"},
+    )
     # Clear session to view as non-owner
     with client.session_transaction() as sess:
         sess.pop("user_id", None)
@@ -194,13 +208,21 @@ def test_pinned_page_shown_first(client):
     # Also assign lp4b to the site
     page_meta2 = get_page_meta("lp4b", user_id)
     with get_db() as conn:
-        conn.execute("UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta2["id"]))
+        conn.execute(
+            "UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta2["id"])
+        )
         conn.commit()
 
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     # Pin lp4a so it appears before lp4b
-    _sub(client, "listuser4", "/lp4a/visibility", method="post", data={"visibility": "pinned"})
+    _sub(
+        client,
+        "listuser4",
+        "/lp4a/visibility",
+        method="post",
+        data={"visibility": "pinned"},
+    )
     r = _sub(client, "listuser4")
     body = r.data.decode()
     assert "lp4a" in body
@@ -217,12 +239,20 @@ def test_pinned_page_shows_pin_icon(client):
     site_id = _setup_site(user_id, "pinicon", "pip1")
     page_meta2 = get_page_meta("pip2", user_id)
     with get_db() as conn:
-        conn.execute("UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta2["id"]))
+        conn.execute(
+            "UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta2["id"])
+        )
         conn.commit()
 
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    _sub(client, "pinicon", "/pip1/visibility", method="post", data={"visibility": "pinned"})
+    _sub(
+        client,
+        "pinicon",
+        "/pip1/visibility",
+        method="post",
+        data={"visibility": "pinned"},
+    )
     r = _sub(client, "pinicon")
     body = r.data.decode()
     assert 'class="pin-icon"' in body
@@ -233,7 +263,13 @@ def test_pinned_page_shows_pin_icon(client):
 def test_non_owner_cannot_update_visibility(client):
     user_id = create_user_with_username(client, "list5@example.com", "listuser5", "lp5")
     _setup_site(user_id, "listuser5", "lp5")
-    r = _sub(client, "listuser5", "/lp5/visibility", method="post", data={"visibility": "unlisted"})
+    r = _sub(
+        client,
+        "listuser5",
+        "/lp5/visibility",
+        method="post",
+        data={"visibility": "unlisted"},
+    )
     assert r.status_code == 403
 
 
@@ -268,7 +304,10 @@ def test_subdomain_new_page_gets_nice_slug(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     r = _sub(
-        client, "niceslug", "/randomslug/edit", method="post",
+        client,
+        "niceslug",
+        "/randomslug/edit",
+        method="post",
         data={"title": "About", "content": "My about page"},
     )
     assert r.status_code == 302
@@ -284,7 +323,10 @@ def test_subdomain_new_page_gets_about_slug(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     r = _sub(
-        client, "aboutuser", "/new", method="post",
+        client,
+        "aboutuser",
+        "/new",
+        method="post",
         data={"title": "About", "content": "My about page"},
     )
     assert r.status_code == 302
@@ -308,7 +350,9 @@ def test_owner_visiting_nonexistent_page_redirects_to_edit(client):
 
 # Non-owner visiting a nonexistent slug on a subdomain gets 404
 def test_nonowner_visiting_nonexistent_page_gets_404(client):
-    user_id = create_user_with_username(client, "vis404@example.com", "vis404", "exists2")
+    user_id = create_user_with_username(
+        client, "vis404@example.com", "vis404", "exists2"
+    )
     _setup_site(user_id, "vis404", "exists2")
     r = _sub(client, "vis404", "/nope")
     assert r.status_code == 404
@@ -338,7 +382,9 @@ def test_license_shows_in_page_footer(client):
 
 # /@username/slug returns 301 redirect to subdomain (backward compat)
 def test_at_username_slug_redirects_to_subdomain(client):
-    user_id = create_user_with_username(client, "compat@example.com", "compatuser", "cp1")
+    user_id = create_user_with_username(
+        client, "compat@example.com", "compatuser", "cp1"
+    )
     _setup_site(user_id, "compatuser", "cp1")
     r = client.get("/@compatuser/cp1")
     assert r.status_code == 301

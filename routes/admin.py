@@ -28,8 +28,22 @@ from storage import (
     upload_image,
     validate_image,
 )
-from utils import RESERVED_SUBDOMAINS, RESERVED_USERNAMES, valid_email, valid_subdomain, valid_username
-from routes import bp, limiter, LICENSES, SITE_VISIBILITY_OPTIONS, profile_url, require_user, send_verification
+from utils import (
+    RESERVED_SUBDOMAINS,
+    RESERVED_USERNAMES,
+    valid_email,
+    valid_subdomain,
+    valid_username,
+)
+from routes import (
+    bp,
+    limiter,
+    LICENSES,
+    SITE_VISIBILITY_OPTIONS,
+    profile_url,
+    require_user,
+    send_verification,
+)
 
 
 @bp.route("/signin", methods=["GET", "POST"])
@@ -411,13 +425,33 @@ def settings_sites_new():
     visibility = request.form.get("visibility", "public")
 
     if not subdomain:
-        return render_template("settings_sites_new.html", error="Subdomain is required.", subdomain=subdomain, title=title)
+        return render_template(
+            "settings_sites_new.html",
+            error="Subdomain is required.",
+            subdomain=subdomain,
+            title=title,
+        )
     if not valid_subdomain(subdomain):
-        return render_template("settings_sites_new.html", error="Subdomain must be lowercase letters, numbers, and hyphens only.", subdomain=subdomain, title=title)
+        return render_template(
+            "settings_sites_new.html",
+            error="Subdomain must be lowercase letters, numbers, and hyphens only.",
+            subdomain=subdomain,
+            title=title,
+        )
     if subdomain in RESERVED_SUBDOMAINS:
-        return render_template("settings_sites_new.html", error="That subdomain is reserved.", subdomain=subdomain, title=title)
+        return render_template(
+            "settings_sites_new.html",
+            error="That subdomain is reserved.",
+            subdomain=subdomain,
+            title=title,
+        )
     if not check_subdomain_available(subdomain):
-        return render_template("settings_sites_new.html", error="That subdomain is already taken.", subdomain=subdomain, title=title)
+        return render_template(
+            "settings_sites_new.html",
+            error="That subdomain is already taken.",
+            subdomain=subdomain,
+            title=title,
+        )
     if visibility not in SITE_VISIBILITY_OPTIONS:
         visibility = "public"
 

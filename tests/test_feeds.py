@@ -10,7 +10,6 @@ from db import (
     update_page_visibility,
 )
 
-
 # -- RSS Feed --
 
 
@@ -99,8 +98,11 @@ def test_site_rss_feed(client):
     # Assign first page to site
     page_meta = get_page_meta("rp1", user_id)
     from db import get_db
+
     with get_db() as conn:
-        conn.execute("UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta["id"]))
+        conn.execute(
+            "UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta["id"])
+        )
         conn.commit()
     save_page("rp2", "# Second Post\n\n**bold**", "listed", user_id, site_id=site_id)
 
@@ -122,8 +124,11 @@ def test_site_json_feed(client):
     site_id = create_site(user_id, "jsonsite")
     page_meta = get_page_meta("jp1", user_id)
     from db import get_db
+
     with get_db() as conn:
-        conn.execute("UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta["id"]))
+        conn.execute(
+            "UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta["id"])
+        )
         conn.commit()
     save_page("jp2", "# Page Two\n\nsome text", "listed", user_id, site_id=site_id)
 
@@ -141,7 +146,9 @@ def test_site_json_feed(client):
 
 # Site homepage includes feed discovery links
 def test_site_feed_discovery_links(client):
-    user_id = create_user_with_username(client, "discsite@example.com", "discsite", "dp1")
+    user_id = create_user_with_username(
+        client, "discsite@example.com", "discsite", "dp1"
+    )
     create_site(user_id, "discsite")
     r = _sub(client, "discsite", "/")
     assert b'type="application/rss+xml"' in r.data
@@ -158,8 +165,11 @@ def test_site_feed_excludes_unlisted(client):
     site_id = create_site(user_id, "feedlist")
     page_meta = get_page_meta("flp1", user_id)
     from db import get_db
+
     with get_db() as conn:
-        conn.execute("UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta["id"]))
+        conn.execute(
+            "UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta["id"])
+        )
         conn.commit()
     save_page("flp2", "# Unlisted\n\nHidden", "listed", user_id, site_id=site_id)
     page_meta2 = get_page_meta("flp2", site_id=site_id)
@@ -183,8 +193,11 @@ def test_site_feed_includes_pinned(client):
     site_id = create_site(user_id, "feedpin")
     page_meta = get_page_meta("fpp1", user_id)
     from db import get_db
+
     with get_db() as conn:
-        conn.execute("UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta["id"]))
+        conn.execute(
+            "UPDATE pages SET site_id = %s WHERE id = %s", (site_id, page_meta["id"])
+        )
         conn.commit()
     update_page_visibility(page_meta["id"], "pinned")
 

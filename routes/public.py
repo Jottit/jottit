@@ -157,7 +157,14 @@ def _site_home(site):
 
     # Private site: only owner can see
     if site["visibility"] == "private" and not is_owner:
-        return render_template("site_private.html", site=site, base_url=f"{request.scheme}://{BASE_DOMAIN}"), 403
+        return (
+            render_template(
+                "site_private.html",
+                site=site,
+                base_url=f"{request.scheme}://{BASE_DOMAIN}",
+            ),
+            403,
+        )
 
     # If site has a home page, render it
     if site.get("home_page_slug"):
@@ -234,13 +241,15 @@ def subdomain_home(user):
     # Build site items for display
     site_items = []
     for s in public_sites:
-        site_items.append({
-            "subdomain": s["subdomain"],
-            "title": s.get("title") or s["subdomain"],
-            "visibility": s["visibility"],
-            "url": site_url(s["subdomain"]),
-            "updated_at": s["updated_at"],
-        })
+        site_items.append(
+            {
+                "subdomain": s["subdomain"],
+                "title": s.get("title") or s["subdomain"],
+                "visibility": s["visibility"],
+                "url": site_url(s["subdomain"]),
+                "updated_at": s["updated_at"],
+            }
+        )
 
     return render_template(
         "profile.html",
@@ -365,7 +374,14 @@ def view_page(slug):
         # Check site visibility
         is_owner = session.get("user_id") == current_site["user_id"]
         if current_site["visibility"] == "private" and not is_owner:
-            return render_template("site_private.html", site=current_site, base_url=f"{request.scheme}://{BASE_DOMAIN}"), 403
+            return (
+                render_template(
+                    "site_private.html",
+                    site=current_site,
+                    base_url=f"{request.scheme}://{BASE_DOMAIN}",
+                ),
+                403,
+            )
 
     elif subdomain_user:
         # Legacy /@username context (shouldn't normally reach here for page views)
@@ -452,7 +468,11 @@ def view_page(slug):
     bio_html = ""
     license_info = None
     if current_site:
-        site_title = current_site.get("title") or subdomain_user.get("name") or subdomain_user.get("username")
+        site_title = (
+            current_site.get("title")
+            or subdomain_user.get("name")
+            or subdomain_user.get("username")
+        )
         avatar_url = subdomain_user.get("avatar")
         bio = subdomain_user.get("bio")
         bio_html = render_bio(bio, "") if bio else ""
@@ -551,7 +571,8 @@ def page_history(slug):
         revisions=paginated,
         page=page,
         total_pages=total_pages,
-        is_subdomain=getattr(g, "current_site", None) is not None or g.subdomain_user is not None,
+        is_subdomain=getattr(g, "current_site", None) is not None
+        or g.subdomain_user is not None,
     )
 
 
@@ -574,7 +595,8 @@ def view_revision(slug, revision):
         created_at=row["created_at"],
         source=row["source"],
         ai_assisted=row["ai_assisted"],
-        is_subdomain=getattr(g, "current_site", None) is not None or g.subdomain_user is not None,
+        is_subdomain=getattr(g, "current_site", None) is not None
+        or g.subdomain_user is not None,
     )
 
 
@@ -707,7 +729,9 @@ def site_rss_feed():
         abort(404)
 
     if current_site:
-        site_title = current_site.get("title") or user.get("name") or user.get("username")
+        site_title = (
+            current_site.get("title") or user.get("name") or user.get("username")
+        )
         items = _build_site_feed_entries_for_site(current_site["id"])
     else:
         site_title = user.get("name") or user.get("username")
@@ -751,7 +775,9 @@ def site_json_feed():
         abort(404)
 
     if current_site:
-        site_title = current_site.get("title") or user.get("name") or user.get("username")
+        site_title = (
+            current_site.get("title") or user.get("name") or user.get("username")
+        )
         items = _build_site_feed_entries_for_site(current_site["id"])
     else:
         site_title = user.get("name") or user.get("username")

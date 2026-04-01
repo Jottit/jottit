@@ -30,7 +30,16 @@
 {% endif %}
 <main class="page-main">
     <article class="page">
-        {% if pages %}
+        {% if sites is defined and sites %}
+        {% for site in sites %}
+        <div class="page-listing-item">
+            <a href="{{ site.url }}" class="page-listing-link">
+                <h2 class="page-listing-title">{{ site.title }}</h2>
+                <span class="page-listing-date">{{ site.subdomain }}.jottit.org{% if is_owner %} · {{ site.visibility }}{% endif %}</span>
+            </a>
+        </div>
+        {% endfor %}
+        {% elif pages %}
         {% for page in pages %}
         <div class="page-listing-item">
             <a href="{{ url_prefix }}/{{ page.slug }}" class="page-listing-link">
