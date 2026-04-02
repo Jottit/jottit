@@ -302,7 +302,7 @@ def _render_page(page_meta, row, site_user, site, is_owner):
     page_is_creator = is_creator(page_meta)
     unclaimed = page_meta["user_id"] is None
 
-    if unclaimed:
+    if unclaimed and not page_is_creator:
         from db import verify_page_secret
         _claim_token = request.cookies.get(f"page_token_{slug}", "")
         unclaimed = (
@@ -493,6 +493,15 @@ def view_page(slug):
         and page_meta["user_id"] is not None
     )
     page_is_creator = is_creator(page_meta)
+
+    # Show claim banner if the visitor is the session creator or holds a valid page token cookie
+    if unclaimed:
+        if not page_is_creator:
+            from db import verify_page_secret
+            _claim_token = request.cookies.get(f"page_token_{slug}", "")
+            unclaimed = (
+                bool(_claim_token) and verify_page_secret(slug, _claim_token) is not None
+            )
 
     if row["visibility"] == "private" and not is_owner and not page_is_creator:
         abort(404)

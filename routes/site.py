@@ -320,10 +320,12 @@ def claim_page_route(slug):
     if not page_meta or page_meta["user_id"] is not None:
         return redirect(f"/{slug}")
 
-    # Only allow claiming if the visitor has a valid page token cookie
-    token = request.cookies.get(f"page_token_{slug}", "")
-    if not token or verify_page_secret(slug, token) is None:
-        return redirect(f"/{slug}")
+    # Only allow claiming if the visitor is the session creator or has a valid page token cookie
+    from routes import is_creator
+    if not is_creator(page_meta):
+        token = request.cookies.get(f"page_token_{slug}", "")
+        if not token or verify_page_secret(slug, token) is None:
+            return redirect(f"/{slug}")
 
     if request.method == "GET":
         return render_template("claim.html", slug=slug)

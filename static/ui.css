@@ -1055,6 +1055,7 @@
     text-align: center;
     padding: var(--space-3) var(--space-5);
     text-decoration: none;
+    margin-top: calc(-1 * var(--space-12));
     margin-bottom: var(--space-10);
     transition: opacity 0.15s;
 }
