@@ -10,6 +10,7 @@ from db import (
     get_site_by_subdomain,
     get_user,
     get_user_by_username,
+    verify_page_secret,
 )
 from mail import send_verification_email
 
@@ -100,7 +101,6 @@ def find_page(slug):
 def has_page_token(page_meta):
     if not page_meta or page_meta["user_id"] is not None:
         return False
-    from db import verify_page_secret
     token = request.cookies.get(f"page_token_{page_meta['slug']}", "")
     return bool(token) and verify_page_secret(page_meta["slug"], token) is not None
 

@@ -56,6 +56,7 @@ from routes import (
     base_url,
     can_edit,
     find_page,
+    has_page_token,
     profile_url,
     send_verification,
     subdomain_url,
@@ -199,6 +200,21 @@ def new_page():
     return redirect(f"{g.url_prefix}/{slug}")
 
 
+def _try_nice_slug(page_id, current_slug, title, user_id, site_id, is_subdomain):
+    """Attempt to rename a page to a human-readable slug derived from the title."""
+    if not user_id or not title:
+        return current_slug
+    nice_slug = slugify(title)
+    reserved = RESERVED_SLUGS if not is_subdomain else set()
+    if not nice_slug or nice_slug == current_slug or nice_slug in reserved:
+        return current_slug
+    conflict = get_page_meta(nice_slug, site_id=site_id) if site_id else get_page_meta(nice_slug, user_id)
+    if conflict:
+        return current_slug
+    rename_page(page_id, nice_slug)
+    return nice_slug
+
+
 def _track_new_page(slug, owner_id, site_id=None):
     new_page_meta = get_page_meta(slug, site_id=site_id) if site_id else get_page_meta(slug, owner_id)
     if not new_page_meta:
@@ -283,33 +299,14 @@ def edit_page(slug):
         new_page_meta = _track_new_page(slug, owner_id, site_id)
         if new_page_meta:
             effective_user_id = owner_id or session.get("user_id")
-            if effective_user_id and title:
-                nice_slug = slugify(title)
-                reserved = RESERVED_SLUGS if not is_subdomain else set()
-                if (
-                    nice_slug
-                    and nice_slug != slug
-                    and nice_slug not in reserved
-                ):
-                    conflict = get_page_meta(nice_slug, site_id=site_id) if site_id else get_page_meta(nice_slug, effective_user_id)
-                    if not conflict:
-                        rename_page(new_page_meta["id"], nice_slug)
-                        slug = nice_slug
+            slug = _try_nice_slug(new_page_meta["id"], slug, title, effective_user_id, site_id, is_subdomain)
 
-            # For anonymous pages, create a page secret and redirect with token
             if not effective_user_id:
                 secret = create_page_secret(new_page_meta["id"])
                 return redirect(f"{g.url_prefix}/{slug}?token={secret}")
     elif title and is_random_slug(slug):
         effective_user_id = owner_id or session.get("user_id")
-        if effective_user_id:
-            nice_slug = slugify(title)
-            reserved = RESERVED_SLUGS if not is_subdomain else set()
-            if nice_slug and nice_slug not in reserved:
-                conflict = get_page_meta(nice_slug, site_id=site_id) if site_id else get_page_meta(nice_slug, effective_user_id)
-                if not conflict:
-                    rename_page(page_meta["id"], nice_slug)
-                    slug = nice_slug
+        slug = _try_nice_slug(page_meta["id"], slug, title, effective_user_id, site_id, is_subdomain)
 
     return redirect(f"{g.url_prefix}/{slug}")
 
@@ -321,8 +318,6 @@ def claim_page_route(slug):
     if not page_meta or page_meta["user_id"] is not None:
         return redirect(f"/{slug}")
 
-    # Only allow claiming if the visitor has a valid page token cookie
-    from routes import has_page_token
     if not has_page_token(page_meta):
         return redirect(f"/{slug}")
 
