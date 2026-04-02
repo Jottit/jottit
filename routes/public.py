@@ -410,10 +410,7 @@ def view_page(slug):
                 return redirect(f"/{slug}/edit")
             abort(404)
 
-        is_owner = (
-            session.get("user_id") == page_meta["user_id"]
-            and page_meta["user_id"] is not None
-        )
+        is_owner = session.get("user_id") == site["user_id"]
 
         # Private site: non-owners can't see pages
         if site["visibility"] == "private" and not is_owner:
