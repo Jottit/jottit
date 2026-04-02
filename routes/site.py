@@ -16,6 +16,7 @@ from db import (
     assign_page_to_site,
     check_username_available,
     claim_page,
+    create_page_secret,
     create_site,
     delete_page,
     find_or_create_user,
@@ -187,7 +188,13 @@ def new_page():
     visibility = "listed" if owner_id else "unlisted"
     slug = save_page(slug, content, visibility, owner_id if not site_id else None,
                      site_id=site_id)
-    _track_new_page(slug, owner_id, site_id)
+    new_page_meta = _track_new_page(slug, owner_id, site_id)
+
+    # For anonymous pages, create a page secret and redirect with token
+    # so the cookie-based auth flow kicks in on the view page
+    if new_page_meta and not owner_id:
+        secret = create_page_secret(new_page_meta["id"])
+        return redirect(f"{g.url_prefix}/{slug}?token={secret}")
 
     return redirect(f"{g.url_prefix}/{slug}")
 
@@ -198,9 +205,6 @@ def _track_new_page(slug, owner_id, site_id=None):
         new_page_meta = get_page_meta(slug)
     if not new_page_meta:
         return
-    created_pages = session.get("created_pages", [])
-    created_pages.append(new_page_meta["id"])
-    session["created_pages"] = created_pages
     if session.get("user_id") and not site_id:
         claim_page(new_page_meta["id"], session["user_id"])
     return new_page_meta
@@ -239,15 +243,7 @@ def edit_page(slug):
             )
             return resp
 
-    token = request.cookies.get(f"page_token_{slug}", "")
-    token_valid = (
-        bool(token)
-        and page_meta is not None
-        and page_meta["user_id"] is None
-        and verify_page_secret(slug, token) is not None
-    )
-
-    if not can_edit(page_meta) and not token_valid:
+    if not can_edit(page_meta):
         return redirect(f"{g.url_prefix}/{slug}")
 
     if request.method == "GET":
@@ -299,6 +295,11 @@ def edit_page(slug):
                     if not conflict:
                         rename_page(new_page_meta["id"], nice_slug)
                         slug = nice_slug
+
+            # For anonymous pages, create a page secret and redirect with token
+            if not effective_user_id:
+                secret = create_page_secret(new_page_meta["id"])
+                return redirect(f"{g.url_prefix}/{slug}?token={secret}")
     elif title and is_random_slug(slug):
         effective_user_id = owner_id or session.get("user_id")
         if effective_user_id:
@@ -320,12 +321,10 @@ def claim_page_route(slug):
     if not page_meta or page_meta["user_id"] is not None:
         return redirect(f"/{slug}")
 
-    # Only allow claiming if the visitor is the session creator or has a valid page token cookie
-    from routes import is_creator
-    if not is_creator(page_meta):
-        token = request.cookies.get(f"page_token_{slug}", "")
-        if not token or verify_page_secret(slug, token) is None:
-            return redirect(f"/{slug}")
+    # Only allow claiming if the visitor has a valid page token cookie
+    from routes import has_page_token
+    if not has_page_token(page_meta):
+        return redirect(f"/{slug}")
 
     if request.method == "GET":
         return render_template("claim.html", slug=slug)

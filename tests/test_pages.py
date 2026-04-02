@@ -6,6 +6,20 @@ from db import (
     set_user_username,
 )
 
+
+def _create_anonymous_page(client, slug, title="T", content="C"):
+    """Create an anonymous page and follow the token redirect to set the cookie."""
+    r = client.post(f"/{slug}/edit", data={"title": title, "content": content})
+    assert r.status_code == 302
+    # Follow the ?token= redirect to set the page_token cookie
+    location = r.headers["Location"]
+    if "?token=" in location:
+        r = client.get(location)
+        # That redirects to the bare slug after setting the cookie
+        assert r.status_code == 302
+    return r
+
+
 # -- Homepage --
 
 
@@ -30,7 +44,8 @@ def test_new_shows_editor(client):
 def test_new_anonymous_gets_random_slug(client):
     r = client.post("/new", data={"title": "Hello World", "content": "Body"})
     assert r.status_code == 302
-    slug = r.headers["Location"].lstrip("/")
+    location = r.headers["Location"].lstrip("/")
+    slug = location.split("?")[0]
     assert slug != "hello-world"
     assert len(slug) == 6
 
@@ -53,30 +68,31 @@ def test_edit_cancel_new_page_goes_home(client):
 
 # Cancel link on an existing page points back to that page
 def test_edit_cancel_existing_page_goes_to_page(client):
-    client.post("/existslug/edit", data={"title": "T", "content": "C"})
+    _create_anonymous_page(client, "existslug", "T", "C")
     r = client.get("/existslug/edit")
     assert b'href="/existslug"' in r.data
 
 
 # Editing an existing page pre-fills the title and content
 def test_edit_get_existing_page(client):
-    client.post("/abc12/edit", data={"title": "Hello", "content": "World"})
+    _create_anonymous_page(client, "abc12", "Hello", "World")
     r = client.get("/abc12/edit")
     assert r.status_code == 200
     assert b"Hello" in r.data
     assert b"World" in r.data
 
 
-# Saving an edit creates the page and redirects to its slug
+# Saving an edit creates the page and redirects to its slug (with token for anon)
 def test_publish_creates_page(client):
     r = client.post("/mypage/edit", data={"title": "Test", "content": "Body"})
     assert r.status_code == 302
-    assert r.headers["Location"] == "/mypage"
+    location = r.headers["Location"]
+    assert location.startswith("/mypage")
 
 
 # Viewing a page with a trailing slash redirects to canonical URL
 def test_trailing_slash_redirects(client):
-    client.post("/tslash/edit", data={"title": "Hi", "content": "There"})
+    _create_anonymous_page(client, "tslash", "Hi", "There")
     r = client.get("/tslash/")
     assert r.status_code == 301
     assert r.headers["Location"] == "/tslash"
@@ -87,7 +103,7 @@ def test_trailing_slash_redirects(client):
 
 # Published page renders its title and content
 def test_view_page(client):
-    client.post("/viewme/edit", data={"title": "Hello", "content": "World"})
+    _create_anonymous_page(client, "viewme", "Hello", "World")
     r = client.get("/viewme")
     assert r.status_code == 200
     assert b"Hello" in r.data
@@ -96,7 +112,7 @@ def test_view_page(client):
 
 # Markdown content is rendered to HTML on the published page
 def test_view_page_renders_markdown(client):
-    client.post("/mdpage/edit", data={"title": "", "content": "**bold**"})
+    _create_anonymous_page(client, "mdpage", "", "**bold**")
     r = client.get("/mdpage")
     assert b"<strong>bold</strong>" in r.data
 
@@ -104,7 +120,7 @@ def test_view_page_renders_markdown(client):
 # Markdown tables render as HTML tables
 def test_view_page_renders_table(client):
     table_md = "| A | B |\n|---|---|\n| 1 | 2 |"
-    client.post("/tablepage/edit", data={"title": "", "content": table_md})
+    _create_anonymous_page(client, "tablepage", "", table_md)
     r = client.get("/tablepage")
     assert b"<table>" in r.data
     assert b"<th>A</th>" in r.data
@@ -113,9 +129,7 @@ def test_view_page_renders_table(client):
 
 # Bare URLs in content are auto-linked on the published page
 def test_view_page_autolinks_urls(client):
-    client.post(
-        "/linkpage/edit", data={"title": "", "content": "Visit https://jottit.org"}
-    )
+    _create_anonymous_page(client, "linkpage", "", "Visit https://jottit.org")
     r = client.get("/linkpage")
     assert b'<a href="https://jottit.org">https://jottit.org</a>' in r.data
 
@@ -128,7 +142,7 @@ def test_view_nonexistent_page(client):
 
 # Page creator sees Edit and History action links
 def test_view_page_shows_actions_for_creator(client):
-    client.post("/owned/edit", data={"title": "Mine", "content": "Content"})
+    _create_anonymous_page(client, "owned", "Mine", "Content")
     client.post("/owned/edit", data={"title": "Mine", "content": "Updated"})
     r = client.get("/owned")
     assert b"Edit" in r.data
@@ -137,7 +151,7 @@ def test_view_page_shows_actions_for_creator(client):
 
 # After editing, the page shows the most recent content
 def test_view_page_shows_latest_content(client):
-    client.post("/evolve/edit", data={"title": "V1", "content": "First"})
+    _create_anonymous_page(client, "evolve", "V1", "First")
     client.post("/evolve/edit", data={"title": "V2", "content": "Second"})
     r = client.get("/evolve")
     assert b"V2" in r.data
@@ -147,11 +161,11 @@ def test_view_page_shows_latest_content(client):
 # -- Private visibility --
 
 
-# Private pages are visible to their creator
+# Private pages are visible to their creator (via token cookie)
 def test_private_visible_to_creator(client):
     from db import get_page_meta, update_page_visibility
 
-    client.post("/dv1/edit", data={"title": "Secret", "content": "Private content"})
+    _create_anonymous_page(client, "dv1", "Secret", "Private content")
     page_meta = get_page_meta("dv1")
     update_page_visibility(page_meta["id"], "private")
     r = client.get("/dv1")
@@ -163,11 +177,13 @@ def test_private_visible_to_creator(client):
 def test_private_hidden_from_non_creator(client):
     from db import get_page_meta, update_page_visibility
 
-    client.post("/dv2/edit", data={"title": "Secret", "content": "Private content"})
+    _create_anonymous_page(client, "dv2", "Secret", "Private content")
     page_meta = get_page_meta("dv2")
     update_page_visibility(page_meta["id"], "private")
     with client.session_transaction() as sess:
         sess.clear()
+    # Clear the page token cookie too
+    client.delete_cookie(f"page_token_dv2")
     r = client.get("/dv2")
     assert r.status_code == 404
 
@@ -211,7 +227,7 @@ def test_non_owner_cannot_delete(client):
 
 # Exporting a page returns a zip file with the correct filename
 def test_export_zip(client):
-    client.post("/exp1/edit", data={"title": "T", "content": "X"})
+    _create_anonymous_page(client, "exp1", "T", "X")
     r = client.get("/exp1/export")
     assert r.status_code == 200
     assert r.content_type == "application/zip"
@@ -223,7 +239,7 @@ def test_export_zip(client):
 
 # Published pages include h-entry, p-name, e-content, dt-published, and u-url microformat classes
 def test_page_has_h_entry_markup(client):
-    client.post("/mf1/edit", data={"title": "Hello", "content": "World"})
+    _create_anonymous_page(client, "mf1", "Hello", "World")
     r = client.get("/mf1")
     body = r.data.decode()
     assert 'class="page h-entry"' in body
@@ -251,7 +267,7 @@ def test_slugify():
 
 # Wikilinks are not supported — render as literal text
 def test_wikilink_renders_as_text(client):
-    client.post("/wl1/edit", data={"title": "", "content": "See [[About]]"})
+    _create_anonymous_page(client, "wl1", "", "See [[About]]")
     r = client.get("/wl1")
     assert b"[[About]]" in r.data
     assert b'<a href="/about">' not in r.data

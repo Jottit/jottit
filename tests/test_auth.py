@@ -22,9 +22,13 @@ def _set_page_token(client, slug):
 # -- Session-based edit protection --
 
 
-# The session that created a page can edit it
+# The session that created a page can edit it (via page token cookie)
 def test_creator_can_edit_unclaimed_page(client):
-    client.post("/prot1/edit", data={"title": "T", "content": "X"})
+    r = client.post("/prot1/edit", data={"title": "T", "content": "X"})
+    # Follow the ?token= redirect to set the cookie
+    location = r.headers["Location"]
+    if "?token=" in location:
+        client.get(location)
     r = client.get("/prot1/edit")
     assert r.status_code == 200
 

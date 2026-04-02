@@ -97,9 +97,12 @@ def find_page(slug):
     return get_page_meta(slug)
 
 
-def is_creator(page_meta):
-    created_pages = session.get("created_pages", [])
-    return page_meta and page_meta["id"] in created_pages
+def has_page_token(page_meta):
+    if not page_meta or page_meta["user_id"] is not None:
+        return False
+    from db import verify_page_secret
+    token = request.cookies.get(f"page_token_{page_meta['slug']}", "")
+    return bool(token) and verify_page_secret(page_meta["slug"], token) is not None
 
 
 def can_edit(page_meta):
@@ -107,7 +110,7 @@ def can_edit(page_meta):
         return True
     if page_meta["user_id"] is not None:
         return session.get("user_id") == page_meta["user_id"]
-    return is_creator(page_meta)
+    return has_page_token(page_meta)
 
 
 def send_verification(email, purpose):

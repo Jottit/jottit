@@ -51,7 +51,7 @@ from routes import (
     account_link_vars,
     compute_initials,
     find_page,
-    is_creator,
+    has_page_token,
     can_edit,
     profile_url,
     subdomain_url,
@@ -299,21 +299,14 @@ def talk():
 def _render_page(page_meta, row, site_user, site, is_owner):
     """Render a page view, shared between subdomain and non-subdomain paths."""
     slug = page_meta["slug"]
-    page_is_creator = is_creator(page_meta)
-    unclaimed = page_meta["user_id"] is None
+    has_token = has_page_token(page_meta)
+    unclaimed = page_meta["user_id"] is None and has_token
 
-    if unclaimed and not page_is_creator:
-        from db import verify_page_secret
-        _claim_token = request.cookies.get(f"page_token_{slug}", "")
-        unclaimed = (
-            bool(_claim_token) and verify_page_secret(slug, _claim_token) is not None
-        )
-
-    if row["visibility"] == "private" and not is_owner and not page_is_creator:
+    if row["visibility"] == "private" and not is_owner and not has_token:
         abort(404)
 
     page_can_edit = can_edit(page_meta)
-    show_actions = is_owner or (page_is_creator and page_can_edit)
+    show_actions = is_owner or (has_token and page_can_edit)
 
     page_title = get_title(row["content"])
     page_description = get_description(row["content"])
@@ -392,10 +385,6 @@ def view_page(slug):
     if query_token:
         page = verify_page_secret(slug, query_token)
         if page:
-            created_pages = session.get("created_pages", [])
-            if page["id"] not in created_pages:
-                created_pages.append(page["id"])
-                session["created_pages"] = created_pages
             resp = make_response(redirect(f"{g.url_prefix}/{slug}"))
             resp.set_cookie(
                 f"page_token_{slug}",
@@ -481,33 +470,18 @@ def view_page(slug):
     if not row:
         abort(404)
 
-    unclaimed = page_meta["user_id"] is None
-    # Only show claim banner if the visitor holds a valid page token cookie
-    if unclaimed:
-        _claim_token = request.cookies.get(f"page_token_{slug}", "")
-        unclaimed = (
-            bool(_claim_token) and verify_page_secret(slug, _claim_token) is not None
-        )
     is_owner = (
         session.get("user_id") == page_meta["user_id"]
         and page_meta["user_id"] is not None
     )
-    page_is_creator = is_creator(page_meta)
+    has_token = has_page_token(page_meta)
+    unclaimed = page_meta["user_id"] is None and has_token
 
-    # Show claim banner if the visitor is the session creator or holds a valid page token cookie
-    if unclaimed:
-        if not page_is_creator:
-            from db import verify_page_secret
-            _claim_token = request.cookies.get(f"page_token_{slug}", "")
-            unclaimed = (
-                bool(_claim_token) and verify_page_secret(slug, _claim_token) is not None
-            )
-
-    if row["visibility"] == "private" and not is_owner and not page_is_creator:
+    if row["visibility"] == "private" and not is_owner and not has_token:
         abort(404)
 
     page_can_edit = can_edit(page_meta)
-    show_actions = is_owner or (page_is_creator and page_can_edit)
+    show_actions = is_owner or (has_token and page_can_edit)
 
     page_title = get_title(row["content"])
     page_description = get_description(row["content"])

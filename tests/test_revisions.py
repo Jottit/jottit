@@ -1,12 +1,21 @@
 from db import save_page
 from utils import describe_change
 
+
+def _create_anonymous_page(client, slug, title="T", content="C"):
+    """Create an anonymous page and follow the token redirect to set the cookie."""
+    r = client.post(f"/{slug}/edit", data={"title": title, "content": content})
+    location = r.headers["Location"]
+    if "?token=" in location:
+        client.get(location)
+
+
 # -- Revisions --
 
 
 # Multiple edits create numbered revision entries in history
 def test_edit_creates_revisions(client):
-    client.post("/revtest/edit", data={"title": "R1", "content": "A"})
+    _create_anonymous_page(client, "revtest", "R1", "A")
     client.post("/revtest/edit", data={"title": "R1", "content": "B"})
     client.post("/revtest/edit", data={"title": "R1", "content": "C"})
     r = client.get("/revtest/history")
@@ -31,7 +40,7 @@ def test_history_nonexistent_page(client):
 
 # Revisions are listed newest-first
 def test_history_newest_first(client):
-    client.post("/order/edit", data={"title": "T", "content": "A"})
+    _create_anonymous_page(client, "order", "T", "A")
     client.post("/order/edit", data={"title": "T", "content": "A B"})
     client.post("/order/edit", data={"title": "T", "content": "A B C"})
     r = client.get("/order/history")
@@ -95,7 +104,7 @@ def test_describe_same_content():
 
 # History link appears even with a single revision
 def test_history_link_with_single_revision(client):
-    client.post("/single/edit", data={"title": "T", "content": "Only one"})
+    _create_anonymous_page(client, "single", "T", "Only one")
     r = client.get("/single")
     assert b"/single/history" in r.data
     assert b"History" in r.data
