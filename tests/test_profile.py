@@ -170,15 +170,16 @@ def test_profile_home_no_avatar_graceful(client):
     assert b"No Avatar" in r.data
 
 
-# Profile pages show a profile header with avatar and bio
+# Profile pages show a profile header with avatar and bio (via subdomain)
 def test_profile_page_shows_profile_header(client):
+    from routes import BASE_DOMAIN
     user_id = create_user_with_username(
         client, "profpage@example.com", "profpage", "pp1"
     )
     update_user_settings(user_id, "Prof Page", "profpage", "Writer")
     update_user_avatar(user_id, "/uploads/test/avatar.jpg")
 
-    r = client.get("/@profpage/pp1")
+    r = client.get("/pp1", headers={"Host": f"profpage.{BASE_DOMAIN}"})
     assert r.status_code == 200
     assert b"page-byline" in r.data
     assert b"u-photo" in r.data

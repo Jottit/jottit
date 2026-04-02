@@ -56,8 +56,8 @@
             <a href="/settings/license" class="settings-row">
                 <span class="settings-row-label">License</span>
                 <span class="settings-row-right">
-                    {% if user.license %}
-                    <span class="settings-row-value">{{ licenses[user.license].name if user.license in licenses else user.license }}</span>
+                    {% if site_license %}
+                    <span class="settings-row-value">{{ licenses[site_license].name if site_license in licenses else site_license }}</span>
                     {% endif %}
                     <span class="settings-chevron">&rsaquo;</span>
                 </span>

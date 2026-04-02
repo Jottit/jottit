@@ -2,13 +2,22 @@ import json
 
 from conftest import create_user_with_username
 from db import (
+    assign_page_to_site,
     claim_page,
+    create_site,
     find_or_create_user,
+    get_default_site_for_user,
     get_page_meta,
     save_page,
     set_user_username,
     update_page_visibility,
 )
+from routes import BASE_DOMAIN
+
+
+def _subdomain_host(username):
+    return {"Host": f"{username}.{BASE_DOMAIN}"}
+
 
 # -- RSS Feed --
 
@@ -16,8 +25,9 @@ from db import (
 def _create_claimed_page(slug, title, content):
     user_id = find_or_create_user(f"{slug}@example.com")
     set_user_username(user_id, slug)
-    save_page(slug, f"# {title}\n\n{content}", "listed")
-    page_meta = get_page_meta(slug)
+    site_id = create_site(user_id, slug)
+    save_page(slug, f"# {title}\n\n{content}", "listed", site_id=site_id)
+    page_meta = get_page_meta(slug, site_id=site_id)
     claim_page(page_meta["id"], user_id)
     return user_id
 
@@ -25,7 +35,7 @@ def _create_claimed_page(slug, title, content):
 # Single-page RSS feed returns valid RSS XML with title and content
 def test_rss_feed(client):
     _create_claimed_page("feed1", "Hello", "World")
-    r = client.get("/@feed1/feed1/feed.xml")
+    r = client.get("/feed1/feed.xml", headers=_subdomain_host("feed1"))
     assert r.status_code == 200
     assert r.content_type == "application/rss+xml; charset=utf-8"
     assert b"<title>Hello</title>" in r.data
@@ -42,7 +52,7 @@ def test_rss_feed_nonexistent(client):
 # RSS feed includes source markdown in a custom element
 def test_rss_feed_has_source_markdown(client):
     _create_claimed_page("feed5", "T", "**bold**")
-    r = client.get("/@feed5/feed5/feed.xml")
+    r = client.get("/feed5/feed.xml", headers=_subdomain_host("feed5"))
     assert b"<source:markdown>" in r.data
     assert b"**bold**" in r.data
 
@@ -53,7 +63,7 @@ def test_rss_feed_has_source_markdown(client):
 # Single-page JSON feed returns valid JSON Feed 1.1 with content and source markdown
 def test_json_feed(client):
     _create_claimed_page("jf1", "Hello", "World")
-    r = client.get("/@jf1/jf1/feed.json")
+    r = client.get("/jf1/feed.json", headers=_subdomain_host("jf1"))
     assert r.status_code == 200
     assert r.content_type == "application/feed+json; charset=utf-8"
     feed = json.loads(r.data)
@@ -74,10 +84,10 @@ def test_json_feed_nonexistent(client):
 # -- Feed discovery --
 
 
-# Published pages on profiles include RSS and JSON feed discovery link tags
+# Published pages on subdomains include RSS and JSON feed discovery link tags
 def test_page_has_feed_discovery_links(client):
     _create_claimed_page("disc1", "T", "X")
-    r = client.get("/@disc1/disc1")
+    r = client.get("/disc1", headers=_subdomain_host("disc1"))
     assert b'type="application/rss+xml"' in r.data
     assert b"/feed.xml" in r.data
     assert b'type="application/feed+json"' in r.data
@@ -87,14 +97,15 @@ def test_page_has_feed_discovery_links(client):
 # -- Site-level feeds --
 
 
-# Profile RSS feed includes all the user's pages with source markdown
+# Subdomain RSS feed includes all the site's pages with source markdown
 def test_site_rss_feed(client):
     user_id = create_user_with_username(client, "rsssite@example.com", "rsssite", "rp1")
-    save_page("rp2", "# Second Post\n\n**bold**", "listed")
-    page_meta = get_page_meta("rp2")
+    site = get_default_site_for_user(user_id)
+    save_page("rp2", "# Second Post\n\n**bold**", "listed", site_id=site["id"])
+    page_meta = get_page_meta("rp2", site_id=site["id"])
     claim_page(page_meta["id"], user_id)
 
-    r = client.get("/@rsssite/feed.xml")
+    r = client.get("/feed.xml", headers=_subdomain_host("rsssite"))
     assert r.status_code == 200
     assert r.content_type == "application/rss+xml; charset=utf-8"
     assert b'<rss version="2.0"' in r.data
@@ -104,16 +115,17 @@ def test_site_rss_feed(client):
     assert b"<title>Test</title>" in r.data
 
 
-# Profile JSON feed includes all the user's pages
+# Subdomain JSON feed includes all the site's pages
 def test_site_json_feed(client):
     user_id = create_user_with_username(
         client, "jsonsite@example.com", "jsonsite", "jp1"
     )
-    save_page("jp2", "# Page Two\n\nsome text", "listed")
-    page_meta = get_page_meta("jp2")
+    site = get_default_site_for_user(user_id)
+    save_page("jp2", "# Page Two\n\nsome text", "listed", site_id=site["id"])
+    page_meta = get_page_meta("jp2", site_id=site["id"])
     claim_page(page_meta["id"], user_id)
 
-    r = client.get("/@jsonsite/feed.json")
+    r = client.get("/feed.json", headers=_subdomain_host("jsonsite"))
     assert r.status_code == 200
     assert r.content_type == "application/feed+json; charset=utf-8"
     feed = json.loads(r.data)
@@ -125,10 +137,10 @@ def test_site_json_feed(client):
     assert feed["items"][0]["_source_markdown"]
 
 
-# Profile homepage includes feed discovery links
+# Subdomain homepage includes feed discovery links
 def test_site_feed_discovery_links(client):
     create_user_with_username(client, "discsite@example.com", "discsite", "dp1")
-    r = client.get("/@discsite")
+    r = client.get("/", headers=_subdomain_host("discsite"))
     assert b'type="application/rss+xml"' in r.data
     assert b"/feed.xml" in r.data
     assert b'type="application/feed+json"' in r.data
@@ -140,16 +152,17 @@ def test_site_feed_excludes_unlisted(client):
     user_id = create_user_with_username(
         client, "feedlist@example.com", "feedlist", "flp1"
     )
-    save_page("flp2", "# Unlisted\n\nHidden", "listed")
-    page_meta = get_page_meta("flp2")
+    site = get_default_site_for_user(user_id)
+    save_page("flp2", "# Unlisted\n\nHidden", "listed", site_id=site["id"])
+    page_meta = get_page_meta("flp2", site_id=site["id"])
     claim_page(page_meta["id"], user_id)
     update_page_visibility(page_meta["id"], "unlisted")
 
-    r = client.get("/@feedlist/feed.xml")
+    r = client.get("/feed.xml", headers=_subdomain_host("feedlist"))
     assert b"<title>Test</title>" in r.data
     assert b"Unlisted" not in r.data
 
-    r = client.get("/@feedlist/feed.json")
+    r = client.get("/feed.json", headers=_subdomain_host("feedlist"))
     feed = json.loads(r.data)
     assert len(feed["items"]) == 1
     assert feed["items"][0]["title"] == "Test"
@@ -160,9 +173,10 @@ def test_site_feed_includes_pinned(client):
     user_id = create_user_with_username(
         client, "feedpin@example.com", "feedpin", "fpp1"
     )
-    update_page_visibility(get_page_meta("fpp1", user_id)["id"], "pinned")
+    site = get_default_site_for_user(user_id)
+    update_page_visibility(get_page_meta("fpp1", site_id=site["id"])["id"], "pinned")
 
-    r = client.get("/@feedpin/feed.json")
+    r = client.get("/feed.json", headers=_subdomain_host("feedpin"))
     feed = json.loads(r.data)
     assert len(feed["items"]) == 1
     assert feed["items"][0]["title"] == "Test"

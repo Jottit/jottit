@@ -10,4 +10,7 @@
     <span class="page-footer-license">{% if license_info.url %}Licensed under <a href="{{ license_info.url }}">{{ license_info.name }}</a>{% else %}{{ license_info.name }}{% endif %}</span>
     {% endif %}
     <span>powered by <a href="{{ base_url }}">Jottit</a></span>
+    {% if is_subdomain and not is_owner %}
+    <a href="{{ base_url }}/signin">sign in</a>
+    {% endif %}
 </footer>

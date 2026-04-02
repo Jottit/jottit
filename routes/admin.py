@@ -1,15 +1,18 @@
 import re
 
-from flask import flash, redirect, render_template, request, session
+from flask import flash, g, redirect, render_template, request, session
 
 from db import (
     check_username_available,
     create_api_token,
+    create_site,
     delete_api_token,
     delete_user,
     find_or_create_user,
     get_api_tokens,
+    get_default_site_for_user,
     get_user,
+    update_site_license,
     update_user_avatar,
     update_user_email,
     update_user_settings,
@@ -24,7 +27,7 @@ from storage import (
     validate_image,
 )
 from utils import RESERVED_USERNAMES, valid_email, valid_username
-from routes import bp, limiter, LICENSES, profile_url, require_user, send_verification
+from routes import bp, limiter, BASE_DOMAIN, LICENSES, profile_url, require_user, send_verification, subdomain_url
 
 
 @bp.route("/signin", methods=["GET", "POST"])
@@ -43,6 +46,11 @@ def signin():
 
     if not user_exists(email):
         return render_template("signin.html", not_found=True)
+
+    # Store the subdomain we came from for post-signin redirect
+    site = getattr(g, "site", None)
+    if site:
+        session["signin_subdomain"] = site["subdomain"]
 
     send_verification(email, "signin")
     return redirect("/signin/verify")
@@ -72,6 +80,12 @@ def signin_verify():
     user_id = find_or_create_user(email)
     session.pop("signin_email", None)
     session["user_id"] = user_id
+
+    # Redirect back to subdomain if we came from one
+    signin_subdomain = session.pop("signin_subdomain", None)
+    if signin_subdomain:
+        return redirect(subdomain_url(signin_subdomain))
+
     user = get_user(user_id)
     if user and user.get("username"):
         return redirect(profile_url(user["username"]))
@@ -81,6 +95,12 @@ def signin_verify():
 @bp.route("/signout", methods=["POST"])
 def signout():
     session.pop("user_id", None)
+
+    # Redirect back to subdomain if on one
+    site = getattr(g, "site", None)
+    if site:
+        return redirect(subdomain_url(site["subdomain"]))
+
     return redirect("/")
 
 
@@ -91,8 +111,11 @@ def user_settings():
         return redirect("/signin")
 
     back_url = "/"
+    default_site = get_default_site_for_user(user_id)
+    site_license = default_site.get("license") if default_site else None
     return render_template(
-        "settings.html", user=user, back_url=back_url, licenses=LICENSES
+        "settings.html", user=user, back_url=back_url, licenses=LICENSES,
+        site_license=site_license,
     )
 
 
@@ -115,7 +138,7 @@ def settings_profile():
         bio = request.form.get("bio", "").strip()[:500]
 
     update_user_settings(
-        user_id, name, user.get("username") or "", bio, user.get("license")
+        user_id, name, user.get("username") or "", bio
     )
 
     if is_ajax:
@@ -130,15 +153,22 @@ def settings_license():
     if not user:
         return redirect("/signin")
 
+    default_site = get_default_site_for_user(user_id)
+
     if request.method == "GET":
-        return render_template("settings_license.html", user=user, licenses=LICENSES)
+        current_license = default_site.get("license") if default_site else None
+        return render_template(
+            "settings_license.html",
+            user={**user, "license": current_license},
+            licenses=LICENSES,
+        )
 
     license = request.form.get("license", "").strip()
     if license and license not in LICENSES:
         license = ""
-    update_user_settings(
-        user_id, user.get("name"), user.get("username") or "", user.get("bio"), license
-    )
+
+    if default_site:
+        update_site_license(default_site["id"], license or None)
     if request.headers.get("X-Requested-With") == "fetch":
         return {"ok": True}
     flash("License saved")
@@ -188,13 +218,27 @@ def settings_username():
             error=error,
         )
 
+    old_username = user.get("username")
     update_user_settings(
         user_id,
         user.get("name") or "",
         username,
         user.get("bio") or "",
-        user.get("license"),
     )
+
+    # Update or create the site subdomain to match
+    from db import get_db
+    default_site = get_default_site_for_user(user_id)
+    if default_site:
+        with get_db() as conn:
+            conn.execute(
+                "UPDATE sites SET subdomain = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                (username, default_site["id"]),
+            )
+            conn.commit()
+    elif username:
+        create_site(user_id, username)
+
     flash("Saved")
     return redirect("/settings/username")
 

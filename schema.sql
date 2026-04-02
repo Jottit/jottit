@@ -4,9 +4,18 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE,
     name TEXT,
     bio TEXT,
-    license TEXT,
     avatar TEXT,
-    subdomain TEXT UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sites (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    subdomain TEXT NOT NULL UNIQUE,
+    visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('private', 'public')),
+    license TEXT,
+    home_page_id INTEGER,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -16,10 +25,22 @@ CREATE TABLE IF NOT EXISTS pages (
     slug TEXT NOT NULL,
     original_slug TEXT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    site_id INTEGER REFERENCES sites(id) ON DELETE SET NULL,
     visibility TEXT NOT NULL DEFAULT 'private',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Add FK from sites.home_page_id -> pages.id (deferred due to circular reference)
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'sites_home_page_id_fkey' AND table_name = 'sites'
+    ) THEN
+        ALTER TABLE sites ADD CONSTRAINT sites_home_page_id_fkey
+            FOREIGN KEY (home_page_id) REFERENCES pages(id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS revisions (
     id SERIAL PRIMARY KEY,
@@ -88,16 +109,18 @@ CREATE INDEX IF NOT EXISTS revisions_page_id_idx ON revisions (page_id);
 CREATE INDEX IF NOT EXISTS revisions_page_revision_idx ON revisions (page_id, revision DESC);
 CREATE INDEX IF NOT EXISTS pages_visibility_idx ON pages (visibility);
 CREATE INDEX IF NOT EXISTS pages_original_slug ON pages (original_slug);
-CREATE UNIQUE INDEX IF NOT EXISTS pages_user_slug_unique ON pages (user_id, slug) WHERE user_id IS NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL;
+CREATE INDEX IF NOT EXISTS pages_site_id_idx ON pages (site_id);
+CREATE UNIQUE INDEX IF NOT EXISTS pages_site_slug_unique ON pages (site_id, slug) WHERE site_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS pages_slug_unclaimed_unique ON pages (slug) WHERE user_id IS NULL AND site_id IS NULL;
 CREATE INDEX IF NOT EXISTS pages_visibility_updated_idx ON pages (visibility, updated_at DESC);
 CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens (user_id);
 CREATE INDEX IF NOT EXISTS oauth_codes_expires_idx ON oauth_codes (expires_at);
 CREATE INDEX IF NOT EXISTS page_secrets_hash_idx ON page_secrets (secret_hash);
+CREATE INDEX IF NOT EXISTS sites_user_id_idx ON sites (user_id);
 
--- On fresh DBs (no sites table), seed historical migrations as already applied
+-- On fresh DBs, seed historical migrations as already applied
 DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'sites') THEN
+    IF NOT EXISTS (SELECT 1 FROM schema_migrations LIMIT 1) THEN
         INSERT INTO schema_migrations (filename) VALUES
             ('001_drop_sites.sql'),
             ('002_add_avatar_bio.sql'),
@@ -115,7 +138,8 @@ DO $$ BEGIN
             ('014_add_oauth.sql'),
             ('015_unify_visibility.sql'),
             ('016_add_page_secrets.sql'),
-            ('017_page_secret_expiry_and_index.sql')
+            ('017_page_secret_expiry_and_index.sql'),
+            ('018_add_sites.py')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

@@ -13,11 +13,14 @@ from flask import (
 )
 
 from db import (
+    assign_page_to_site,
     check_username_available,
     claim_page,
+    create_site,
     delete_page,
     find_or_create_user,
     find_page_owner_for_redirect,
+    get_default_site_for_user,
     get_export_pages,
     get_export_pages_for_user,
     get_page,
@@ -54,6 +57,7 @@ from routes import (
     find_page,
     profile_url,
     send_verification,
+    subdomain_url,
 )
 
 
@@ -106,32 +110,43 @@ def profile_new_page(username):
 
 @bp.route("/@<username>/<slug>/edit", methods=["GET", "POST"])
 def profile_edit_page(username, slug):
-    _set_profile_user(username)
-    return edit_page(slug)
+    # Redirect to subdomain canonical URL
+    return redirect(subdomain_url(username, f"/{slug}/edit"), 301)
 
 
 @bp.route("/@<username>/<slug>/delete", methods=["GET", "POST"])
 def profile_delete_page(username, slug):
-    _set_profile_user(username)
-    return delete_page_route(slug)
+    return redirect(subdomain_url(username, f"/{slug}/delete"), 301)
 
 
 @bp.route("/@<username>/<slug>/visibility", methods=["POST"])
 def profile_update_visibility(username, slug):
-    _set_profile_user(username)
-    return update_visibility(slug)
+    return redirect(subdomain_url(username, f"/{slug}/visibility"), 301)
 
 
 @bp.route("/@<username>/<slug>/export")
 def profile_export_page(username, slug):
-    _set_profile_user(username)
-    return export_page_route(slug)
+    return redirect(subdomain_url(username, f"/{slug}/export"), 301)
+
+
+def _get_site_id():
+    """Get site_id from g.site (subdomain) or subdomain_user's default site."""
+    site = getattr(g, "site", None)
+    if site:
+        return site["id"]
+    subdomain_user = g.subdomain_user
+    if subdomain_user:
+        default_site = get_default_site_for_user(subdomain_user["id"])
+        return default_site["id"] if default_site else None
+    return None
 
 
 @bp.route("/new", methods=["GET", "POST"])
 @limiter.limit("30 per hour", methods=["POST"])
 def new_page():
+    site = getattr(g, "site", None)
     subdomain_user = g.subdomain_user
+    is_subdomain = site is not None or subdomain_user is not None
 
     if request.method == "GET":
         return render_template(
@@ -140,7 +155,7 @@ def new_page():
             title="",
             content="",
             is_new=True,
-            is_subdomain=subdomain_user is not None,
+            is_subdomain=is_subdomain,
         )
 
     title = request.form.get("title", "").strip()
@@ -149,33 +164,44 @@ def new_page():
     if title:
         content = f"# {title}\n\n{content}"
 
-    subdomain_user_id = subdomain_user["id"] if subdomain_user else None
-    owner_id = subdomain_user_id or session.get("user_id")
-    reserved = RESERVED_SLUGS if not subdomain_user else set()
+    site_id = _get_site_id()
+    owner_id = session.get("user_id")
+    if site:
+        owner_id = site["user_id"]
+    elif subdomain_user:
+        owner_id = subdomain_user["id"]
+
+    reserved = RESERVED_SLUGS if not is_subdomain else set()
     slug = None
     if owner_id and title:
         nice_slug = slugify(title)
         if nice_slug and nice_slug not in reserved:
-            if not get_page_meta(nice_slug, owner_id):
+            if site_id:
+                if not get_page_meta(nice_slug, site_id=site_id):
+                    slug = nice_slug
+            elif not get_page_meta(nice_slug, owner_id):
                 slug = nice_slug
     if not slug:
         slug = generate_slug()
 
     visibility = "listed" if owner_id else "unlisted"
-    slug = save_page(slug, content, visibility, subdomain_user_id)
-    _track_new_page(slug, subdomain_user_id)
+    slug = save_page(slug, content, visibility, owner_id if not site_id else None,
+                     site_id=site_id)
+    _track_new_page(slug, owner_id, site_id)
 
     return redirect(f"{g.url_prefix}/{slug}")
 
 
-def _track_new_page(slug, subdomain_user_id):
-    new_page_meta = get_page_meta(slug, subdomain_user_id)
+def _track_new_page(slug, owner_id, site_id=None):
+    new_page_meta = get_page_meta(slug, site_id=site_id) if site_id else get_page_meta(slug, owner_id)
+    if not new_page_meta:
+        new_page_meta = get_page_meta(slug)
     if not new_page_meta:
         return
     created_pages = session.get("created_pages", [])
     created_pages.append(new_page_meta["id"])
     session["created_pages"] = created_pages
-    if session.get("user_id") and not subdomain_user_id:
+    if session.get("user_id") and not site_id:
         claim_page(new_page_meta["id"], session["user_id"])
     return new_page_meta
 
@@ -183,22 +209,23 @@ def _track_new_page(slug, subdomain_user_id):
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
 @limiter.limit("30 per 5 minutes", methods=["POST"])
 def edit_page(slug):
+    site = getattr(g, "site", None)
     subdomain_user = g.subdomain_user
-    if slug in RESERVED_SLUGS and not subdomain_user:
+    is_subdomain = site is not None or subdomain_user is not None
+
+    if slug in RESERVED_SLUGS and not is_subdomain:
         abort(404)
     page_meta = find_page(slug)
 
-    if not page_meta and not subdomain_user:
+    if not page_meta and not is_subdomain:
         owner_user_id = find_page_owner_for_redirect(slug)
         if owner_user_id:
             user = get_user(owner_user_id)
             if user and user.get("username"):
-                return redirect(profile_url(user["username"], f"/{slug}/edit"))
+                return redirect(subdomain_url(user["username"], f"/{slug}/edit"))
             return redirect(f"/{slug}")
 
-    # Allow editing unclaimed pages via token (e.g. from CLI publish output URL).
-    # On first visit with ?token=, validate and move to a httponly cookie to avoid
-    # leaking the secret in Referer headers, browser history, and server logs.
+    # Allow editing unclaimed pages via token
     query_token = request.args.get("token", "")
     if query_token and page_meta and page_meta["user_id"] is None:
         if verify_page_secret(slug, query_token) is not None:
@@ -234,7 +261,7 @@ def edit_page(slug):
             title=title,
             content=content,
             is_new=page_meta is None,
-            is_subdomain=subdomain_user is not None,
+            is_subdomain=is_subdomain,
         )
 
     title = request.form.get("title", "").strip()
@@ -244,38 +271,44 @@ def edit_page(slug):
         content = f"# {title}\n\n{content}"
 
     is_new = page_meta is None
-    subdomain_user_id = subdomain_user["id"] if subdomain_user else None
+    site_id = _get_site_id()
+    owner_id = None
+    if site:
+        owner_id = site["user_id"]
+    elif subdomain_user:
+        owner_id = subdomain_user["id"]
+
     # Preserve existing visibility on edit; default to "listed" for new pages
     visibility = page_meta["visibility"] if page_meta else "listed"
-    slug = save_page(slug, content, visibility, subdomain_user_id)
+    slug = save_page(slug, content, visibility, owner_id if not site_id else None,
+                     site_id=site_id)
 
     if is_new:
-        new_page_meta = _track_new_page(slug, subdomain_user_id)
+        new_page_meta = _track_new_page(slug, owner_id, site_id)
         if new_page_meta:
-            effective_user_id = subdomain_user_id or session.get("user_id")
+            effective_user_id = owner_id or session.get("user_id")
             if effective_user_id and title:
                 nice_slug = slugify(title)
-                reserved = RESERVED_SLUGS if not subdomain_user else set()
+                reserved = RESERVED_SLUGS if not is_subdomain else set()
                 if (
                     nice_slug
                     and nice_slug != slug
                     and nice_slug not in reserved
-                    and not get_page_meta(nice_slug, effective_user_id)
                 ):
-                    rename_page(new_page_meta["id"], nice_slug)
-                    slug = nice_slug
+                    conflict = get_page_meta(nice_slug, site_id=site_id) if site_id else get_page_meta(nice_slug, effective_user_id)
+                    if not conflict:
+                        rename_page(new_page_meta["id"], nice_slug)
+                        slug = nice_slug
     elif title and is_random_slug(slug):
-        effective_user_id = subdomain_user_id or session.get("user_id")
+        effective_user_id = owner_id or session.get("user_id")
         if effective_user_id:
             nice_slug = slugify(title)
-            reserved = RESERVED_SLUGS if not subdomain_user else set()
-            if (
-                nice_slug
-                and nice_slug not in reserved
-                and not get_page_meta(nice_slug, effective_user_id)
-            ):
-                rename_page(page_meta["id"], nice_slug)
-                slug = nice_slug
+            reserved = RESERVED_SLUGS if not is_subdomain else set()
+            if nice_slug and nice_slug not in reserved:
+                conflict = get_page_meta(nice_slug, site_id=site_id) if site_id else get_page_meta(nice_slug, effective_user_id)
+                if not conflict:
+                    rename_page(page_meta["id"], nice_slug)
+                    slug = nice_slug
 
     return redirect(f"{g.url_prefix}/{slug}")
 
@@ -354,6 +387,11 @@ def claim_verify(slug):
 def _finish_claim(slug, page_meta, user_id, username):
     claim_page(page_meta["id"], user_id)
     update_page_visibility(page_meta["id"], "listed")
+
+    # Assign page to user's default site
+    default_site = get_default_site_for_user(user_id)
+    if default_site:
+        assign_page_to_site(page_meta["id"], default_site["id"])
 
     row = get_page(page_meta["id"])
     if row:
@@ -440,7 +478,11 @@ def claim_address(slug):
     user_id = session["user_id"]
     name = session["claim_name"]
     set_user_username(user_id, username)
-    update_user_settings(user_id, name=name, username=username, bio="", license=None)
+    update_user_settings(user_id, name=name, username=username, bio="")
+
+    # Create the user's default site
+    create_site(user_id, username)
+
     return _finish_claim(slug, page_meta, user_id, username)
 
 
@@ -466,6 +508,9 @@ def delete_page_route(slug):
     delete_page(page_meta["id"])
     user = get_user(user_id) if user_id else None
     if user and user.get("username"):
+        site = getattr(g, "site", None)
+        if site:
+            return redirect("/")
         return redirect(profile_url(user["username"]))
     return redirect(base_url("/"))
 

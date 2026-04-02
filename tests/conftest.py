@@ -55,7 +55,9 @@ def client():
 
 def create_user_with_username(client, email, username, slug):
     from db import (
+        assign_page_to_site,
         claim_page,
+        create_site,
         find_or_create_user,
         get_page_meta,
         save_page,
@@ -64,7 +66,8 @@ def create_user_with_username(client, email, username, slug):
 
     user_id = find_or_create_user(email)
     set_user_username(user_id, username)
-    save_page(slug, "# Test\n\nContent", "listed")
-    page_meta = get_page_meta(slug)
+    site_id = create_site(user_id, username)
+    save_page(slug, "# Test\n\nContent", "listed", site_id=site_id)
+    page_meta = get_page_meta(slug, site_id=site_id)
     claim_page(page_meta["id"], user_id)
     return user_id

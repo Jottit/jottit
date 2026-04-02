@@ -157,5 +157,6 @@ def test_backfill_usernames_makes_page_accessible(client):
         conn.commit()
 
     user = get_user(user_id)
+    # After backfill, /@username/slug redirects to subdomain
     r = client.get(f"/@{user['username']}/mypage")
-    assert r.status_code == 200
+    assert r.status_code == 301

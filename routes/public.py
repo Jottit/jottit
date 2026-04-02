@@ -19,10 +19,12 @@ from flask import (
 
 from db import (
     get_feed_entries,
+    get_feed_entries_for_site,
     get_feed_entries_for_user,
     get_page,
     get_page_full,
     get_page_meta,
+    get_pages_for_site,
     get_pages_for_user,
     get_public_pages,
     get_revision,
@@ -52,6 +54,7 @@ from routes import (
     is_creator,
     can_edit,
     profile_url,
+    subdomain_url,
 )
 
 
@@ -72,6 +75,10 @@ _VISIBILITY_TABS = ("all", "private", "unlisted", "listed", "pinned")
 
 @bp.route("/")
 def home():
+    site = getattr(g, "site", None)
+    if site:
+        return _site_home(site)
+
     if "user_id" not in session:
         return render_template("home.html", **account_link_vars())
 
@@ -100,6 +107,75 @@ def home():
         counts=counts,
         display_name=display_name,
         **account_link_vars(),
+    )
+
+
+def _site_home(site):
+    is_owner = session.get("user_id") == site["user_id"]
+
+    if site["visibility"] == "private" and not is_owner:
+        return render_template("site_private.html", base_url=f"{request.scheme}://{BASE_DOMAIN}"), 403
+
+    user = g.subdomain_user
+
+    # If home page is set, render it
+    if site.get("home_page_id"):
+        row = get_page_full(site["home_page_id"])
+        if row:
+            page_meta = get_page_meta(None, site_id=site["id"])
+            # Find the actual page meta for this home page
+            from db import get_db
+            with get_db() as conn:
+                page_meta = conn.execute(
+                    "SELECT id, slug, user_id, site_id, visibility FROM pages WHERE id = %s",
+                    (site["home_page_id"],),
+                ).fetchone()
+            if page_meta:
+                return _render_page(page_meta, row, user, site, is_owner)
+
+    # Otherwise show chronological feed
+    if is_owner:
+        pages = get_pages_for_site(site["id"])
+        items = [_build_page_item(p) for p in pages]
+    else:
+        pages = get_pages_for_site(site["id"])
+        items = [
+            _build_page_item(p)
+            for p in pages
+            if p["visibility"] in ("listed", "pinned")
+        ]
+
+    pinned = [i for i in items if i.get("pinned")]
+    listed = [i for i in items if not i.get("pinned")]
+    page_list = pinned + listed
+
+    site_title = user.get("name") or user.get("username")
+    owner_initials = None
+    owner_avatar_url = None
+    profile_incomplete = False
+    if is_owner:
+        owner_initials = compute_initials(user)
+        owner_avatar_url = user.get("avatar")
+        if not user.get("avatar") and not user.get("bio"):
+            profile_incomplete = True
+    bio = user.get("bio")
+    bio_html = render_bio(bio, g.url_prefix) if bio else ""
+    license_info = LICENSES.get(site.get("license") or "")
+    return render_template(
+        "profile.html",
+        user=user,
+        pages=page_list,
+        site_title=site_title,
+        is_owner=is_owner,
+        owner_initials=owner_initials,
+        owner_avatar_url=owner_avatar_url,
+        profile_incomplete=profile_incomplete,
+        avatar_url=user.get("avatar"),
+        bio_html=bio_html,
+        license_info=license_info,
+        profile_url=profile_url(user["username"]) if user.get("username") else None,
+        base_url=f"{request.scheme}://{BASE_DOMAIN}",
+        is_subdomain=True,
     )
 
 
@@ -142,6 +218,12 @@ def subdomain_home(user):
             profile_incomplete = True
     bio = user.get("bio")
     bio_html = render_bio(bio, g.url_prefix) if bio else ""
+
+    # Get license from the user's default site
+    from db import get_default_site_for_user
+    default_site = get_default_site_for_user(user["id"])
+    license_key = default_site.get("license") if default_site else None
+
     return render_template(
         "profile.html",
         user=user,
@@ -153,7 +235,7 @@ def subdomain_home(user):
         profile_incomplete=profile_incomplete,
         avatar_url=user.get("avatar"),
         bio_html=bio_html,
-        license_info=LICENSES.get(user.get("license") or ""),
+        license_info=LICENSES.get(license_key or ""),
         profile_url=profile_url(user["username"]) if user.get("username") else None,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
     )
@@ -170,44 +252,38 @@ def profile_home(username):
 
 @bp.route("/@<username>/<slug>")
 def profile_view_page(username, slug):
-    _set_profile_user(username)
-    return view_page(slug)
+    # 301 redirect to subdomain canonical URL
+    return redirect(subdomain_url(username, f"/{slug}"), 301)
 
 
 @bp.route("/@<username>/<slug>/history")
 def profile_page_history(username, slug):
-    _set_profile_user(username)
-    return page_history(slug)
+    return redirect(subdomain_url(username, f"/{slug}/history"), 301)
 
 
 @bp.route("/@<username>/<slug>/history/<int:revision>")
 def profile_view_revision(username, slug, revision):
-    _set_profile_user(username)
-    return view_revision(slug, revision)
+    return redirect(subdomain_url(username, f"/{slug}/history/{revision}"), 301)
 
 
 @bp.route("/@<username>/<slug>/feed.xml")
 def profile_rss_feed(username, slug):
-    _set_profile_user(username)
-    return rss_feed(slug)
+    return redirect(subdomain_url(username, f"/{slug}/feed.xml"), 301)
 
 
 @bp.route("/@<username>/<slug>/feed.json")
 def profile_json_feed(username, slug):
-    _set_profile_user(username)
-    return json_feed(slug)
+    return redirect(subdomain_url(username, f"/{slug}/feed.json"), 301)
 
 
 @bp.route("/@<username>/feed.xml")
 def profile_site_rss_feed(username):
-    _set_profile_user(username)
-    return site_rss_feed()
+    return redirect(subdomain_url(username, "/feed.xml"), 301)
 
 
 @bp.route("/@<username>/feed.json")
 def profile_site_json_feed(username):
-    _set_profile_user(username)
-    return site_json_feed()
+    return redirect(subdomain_url(username, "/feed.json"), 301)
 
 
 @bp.route("/about")
@@ -218,6 +294,96 @@ def about():
 @bp.route("/talk")
 def talk():
     return render_template("talk.html", **account_link_vars())
+
+
+def _render_page(page_meta, row, site_user, site, is_owner):
+    """Render a page view, shared between subdomain and non-subdomain paths."""
+    slug = page_meta["slug"]
+    page_is_creator = is_creator(page_meta)
+    unclaimed = page_meta["user_id"] is None
+
+    if unclaimed:
+        from db import verify_page_secret
+        _claim_token = request.cookies.get(f"page_token_{slug}", "")
+        unclaimed = (
+            bool(_claim_token) and verify_page_secret(slug, _claim_token) is not None
+        )
+
+    if row["visibility"] == "private" and not is_owner and not page_is_creator:
+        abort(404)
+
+    page_can_edit = can_edit(page_meta)
+    show_actions = is_owner or (page_is_creator and page_can_edit)
+
+    page_title = get_title(row["content"])
+    page_description = get_description(row["content"])
+    html = render_markdown(row["content"])
+    html = html.replace("<h1>", '<h1 class="p-name">', 1)
+
+    content_title = ""
+    content_body = html
+    h1_end = html.find("</h1>")
+    if html.lstrip().startswith("<h1") and h1_end != -1:
+        split_pos = h1_end + len("</h1>")
+        content_title = html[:split_pos]
+        content_body = html[split_pos:].lstrip()
+
+    site_title = None
+    avatar_url = None
+    bio_html = ""
+    license_info = None
+    if site_user:
+        site_title = site_user.get("name") or site_user.get("username")
+        avatar_url = site_user.get("avatar")
+        bio = site_user.get("bio")
+        bio_html = render_bio(bio, g.url_prefix) if bio else ""
+        if site:
+            license_info = LICENSES.get(site.get("license") or "")
+
+    owner_initials = None
+    owner_avatar_url = None
+    profile_incomplete = False
+    owner_profile_url = None
+    if is_owner:
+        user = g.current_user
+        if user:
+            owner_initials = compute_initials(user)
+            owner_avatar_url = user.get("avatar")
+            if not user.get("avatar") and not user.get("bio"):
+                profile_incomplete = True
+            if user.get("username"):
+                owner_profile_url = profile_url(user["username"])
+
+    resp = render_template(
+        "page.html",
+        content_title=content_title,
+        content_body=content_body,
+        slug=slug,
+        show_actions=show_actions,
+        unclaimed=unclaimed,
+        is_owner=is_owner,
+        owner_initials=owner_initials,
+        owner_avatar_url=owner_avatar_url,
+        profile_incomplete=profile_incomplete,
+        profile_url=owner_profile_url,
+        avatar_url=avatar_url,
+        bio_html=bio_html,
+        updated_at=row["created_at"],
+        page_title=page_title,
+        page_description=page_description,
+        site_title=site_title,
+        base_url=f"{request.scheme}://{BASE_DOMAIN}",
+        is_subdomain=getattr(g, "is_subdomain", False),
+        license_info=license_info,
+        visibility=page_meta["visibility"],
+        reading_time=reading_time(row["content"]),
+        ai_assisted=row.get("ai_assisted", False),
+        page_source=row.get("source", "web"),
+    )
+    response = current_app.make_response(resp)
+    if not is_owner and not show_actions and row["visibility"] != "private":
+        response.headers["Cache-Control"] = "public, max-age=60"
+    return response
 
 
 @bp.route("/<slug>")
@@ -240,9 +406,37 @@ def view_page(slug):
             )
             return resp
 
+    site = getattr(g, "site", None)
     subdomain_user = g.subdomain_user
 
-    if subdomain_user:
+    if site:
+        # Subdomain request: look up page within the site
+        page_meta = get_page_meta(slug, site_id=site["id"])
+        if not page_meta:
+            original = find_page_by_original_slug(slug, site_id=site["id"])
+            if original:
+                return redirect(f"/{original['slug']}", 301)
+            is_owner = session.get("user_id") == site["user_id"]
+            if is_owner:
+                return redirect(f"/{slug}/edit")
+            abort(404)
+
+        is_owner = (
+            session.get("user_id") == page_meta["user_id"]
+            and page_meta["user_id"] is not None
+        )
+
+        # Private site: non-owners can't see pages
+        if site["visibility"] == "private" and not is_owner:
+            abort(404)
+
+        row = get_page_full(page_meta["id"])
+        if not row:
+            abort(404)
+
+        return _render_page(page_meta, row, subdomain_user, site, is_owner)
+
+    elif subdomain_user:
         page_meta = get_page_meta(slug, subdomain_user["id"])
         if not page_meta:
             original = find_page_by_original_slug(slug, subdomain_user["id"])
@@ -263,14 +457,14 @@ def view_page(slug):
             if owner_user_id:
                 user = get_user(owner_user_id)
                 if user and user.get("username"):
-                    return redirect(profile_url(user["username"], f"/{slug}"))
+                    return redirect(subdomain_url(user["username"], f"/{slug}"), 301)
             original = find_page_by_original_slug(slug)
             if original and original["slug"] != slug:
                 if original["user_id"]:
                     owner = get_user(original["user_id"])
                     if owner and owner.get("username"):
                         return redirect(
-                            profile_url(owner["username"], f"/{original['slug']}"),
+                            subdomain_url(owner["username"], f"/{original['slug']}"),
                             301,
                         )
                 return redirect(f"/{original['slug']}", 301)
@@ -278,7 +472,7 @@ def view_page(slug):
         if page_meta["user_id"] is not None:
             user = get_user(page_meta["user_id"])
             if user and user.get("username"):
-                return redirect(profile_url(user["username"], f"/{slug}"))
+                return redirect(subdomain_url(user["username"], f"/{slug}"), 301)
 
     if not page_meta:
         abort(404)
@@ -328,7 +522,11 @@ def view_page(slug):
         avatar_url = subdomain_user.get("avatar")
         bio = subdomain_user.get("bio")
         bio_html = render_bio(bio, g.url_prefix) if bio else ""
-        license_info = LICENSES.get(subdomain_user.get("license") or "")
+
+        from db import get_default_site_for_user
+        default_site = get_default_site_for_user(subdomain_user["id"])
+        if default_site:
+            license_info = LICENSES.get(default_site.get("license") or "")
 
     owner_initials = None
     owner_avatar_url = None
@@ -416,7 +614,7 @@ def page_history(slug):
         revisions=paginated,
         page=page,
         total_pages=total_pages,
-        is_subdomain=g.subdomain_user is not None,
+        is_subdomain=getattr(g, "is_subdomain", False) or g.subdomain_user is not None,
     )
 
 
@@ -439,16 +637,19 @@ def view_revision(slug, revision):
         created_at=row["created_at"],
         source=row["source"],
         ai_assisted=row["ai_assisted"],
-        is_subdomain=g.subdomain_user is not None,
+        is_subdomain=getattr(g, "is_subdomain", False) or g.subdomain_user is not None,
     )
 
 
 # --- Feeds ---
 
 
-def _build_site_feed_entries(user_id):
-    entries = get_feed_entries_for_user(user_id)
-    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
+def _build_site_feed_entries(user_id=None, site_id=None):
+    if site_id:
+        entries = get_feed_entries_for_site(site_id)
+    else:
+        entries = get_feed_entries_for_user(user_id)
+    feed_base = f"{request.scheme}://{request.host}{g.url_prefix}"
     items = []
     for entry in entries:
         body = get_body(entry["content"])
@@ -467,7 +668,7 @@ def _build_site_feed_entries(user_id):
 
 def _build_feed_entries(page_id, slug):
     entries = get_feed_entries(page_id)
-    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
+    feed_base = f"{request.scheme}://{request.host}{g.url_prefix}"
     page_url = f"{feed_base}/{slug}"
     items = []
     for entry in entries:
@@ -520,8 +721,11 @@ def sitemap():
         f"  </url>",
     ]
     for page in pages:
-        if page["username"]:
-            loc = f"https://{BASE_DOMAIN}/@{page['username']}/{page['slug']}"
+        subdomain = page.get("subdomain")
+        if subdomain:
+            loc = f"https://{subdomain}.{BASE_DOMAIN}/{page['slug']}"
+        elif page["username"]:
+            loc = f"https://{page['username']}.{BASE_DOMAIN}/{page['slug']}"
         else:
             loc = f"https://{BASE_DOMAIN}/{page['slug']}"
         lastmod = page["updated_at"].strftime("%Y-%m-%d")
@@ -538,14 +742,18 @@ def sitemap():
 
 @bp.route("/feed.xml")
 def site_rss_feed():
+    site = getattr(g, "site", None)
     user = g.subdomain_user
-    if not user:
+    if not site and not user:
         abort(404)
 
-    site_title = user.get("name") or user.get("username")
-    items = _build_site_feed_entries(user["id"])
-    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
-    avatar_url = user.get("avatar")
+    site_title = user.get("name") or user.get("username") if user else ""
+    if site:
+        items = _build_site_feed_entries(site_id=site["id"])
+    else:
+        items = _build_site_feed_entries(user_id=user["id"])
+    feed_base = f"{request.scheme}://{request.host}{g.url_prefix}"
+    avatar_url = user.get("avatar") if user else None
     if avatar_url and avatar_url.startswith("/"):
         avatar_url = f"{request.scheme}://{BASE_DOMAIN}{avatar_url}"
 
@@ -576,14 +784,18 @@ def site_rss_feed():
 
 @bp.route("/feed.json")
 def site_json_feed():
+    site = getattr(g, "site", None)
     user = g.subdomain_user
-    if not user:
+    if not site and not user:
         abort(404)
 
-    site_title = user.get("name") or user.get("username")
-    items = _build_site_feed_entries(user["id"])
-    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
-    avatar_url = user.get("avatar")
+    site_title = user.get("name") or user.get("username") if user else ""
+    if site:
+        items = _build_site_feed_entries(site_id=site["id"])
+    else:
+        items = _build_site_feed_entries(user_id=user["id"])
+    feed_base = f"{request.scheme}://{request.host}{g.url_prefix}"
+    avatar_url = user.get("avatar") if user else None
     if avatar_url and avatar_url.startswith("/"):
         avatar_url = f"{request.scheme}://{BASE_DOMAIN}{avatar_url}"
 
