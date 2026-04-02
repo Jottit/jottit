@@ -186,7 +186,7 @@ def new_page():
         slug = generate_slug()
 
     visibility = "listed" if owner_id else "unlisted"
-    slug = save_page(slug, content, visibility, owner_id if not site_id else None,
+    slug = save_page(slug, content, visibility, owner_id,
                      site_id=site_id)
     new_page_meta = _track_new_page(slug, owner_id, site_id)
 
@@ -276,7 +276,7 @@ def edit_page(slug):
 
     # Preserve existing visibility on edit; default to "listed" for new pages
     visibility = page_meta["visibility"] if page_meta else "listed"
-    slug = save_page(slug, content, visibility, owner_id if not site_id else None,
+    slug = save_page(slug, content, visibility, owner_id,
                      site_id=site_id)
 
     if is_new:
