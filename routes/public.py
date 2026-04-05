@@ -20,15 +20,20 @@ from flask import (
 from db import (
     get_feed_entries,
     get_feed_entries_for_user,
+    get_feed_entries_for_wiki,
     get_page,
     get_page_full,
     get_page_meta,
     get_pages_for_user,
+    get_pages_for_wiki,
     get_public_pages,
+    get_public_pages_for_user_wikis,
     get_revision,
     get_revision_count,
     get_revisions_paginated,
     get_user,
+    get_wiki,
+    get_wiki_by_slug,
     find_page_by_original_slug,
     find_page_owner_for_redirect,
 )
@@ -46,11 +51,13 @@ from routes import (
     LICENSES,
     _set_profile_user,
     account_link_vars,
+    can_view_wiki,
     compute_initials,
     find_page,
     is_creator,
     can_edit,
     profile_url,
+    wiki_url,
 )
 
 
@@ -66,11 +73,15 @@ def install_cli():
     return send_from_directory("static", "install-cli.sh", mimetype="text/plain")
 
 
-_VISIBILITY_TABS = ("all", "private", "unlisted", "listed", "pinned")
+_VISIBILITY_TABS = ("all", "unlisted", "listed", "pinned")
 
 
 @bp.route("/")
 def home():
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        return wiki_home(wiki)
+
     if "user_id" not in session:
         return render_template("home.html", **account_link_vars())
 
@@ -104,7 +115,7 @@ def home():
 
 def _build_page_item(p):
     title = get_title(p["content"]) if p["content"] else None
-    return {
+    item = {
         "slug": p["slug"],
         "title": title or "",
         "description": get_description(p["content"], max_length=350),
@@ -113,10 +124,17 @@ def _build_page_item(p):
         "visibility": p["visibility"],
         "pinned": p["visibility"] == "pinned",
     }
+    if "wiki_slug" in p and p["wiki_slug"]:
+        item["wiki_slug"] = p["wiki_slug"]
+    return item
 
 
-def subdomain_home(user):
-    pages = get_pages_for_user(user["id"])
+def wiki_home(wiki):
+    if not can_view_wiki(wiki):
+        abort(404)
+
+    owner = get_user(wiki["owner_id"])
+    pages = get_pages_for_wiki(wiki["id"])
     pinned = []
     listed = []
     for p in pages:
@@ -128,6 +146,42 @@ def subdomain_home(user):
         else:
             listed.append(item)
     page_list = pinned + listed
+
+    site_title = wiki.get("name") or wiki["slug"]
+    is_owner = session.get("user_id") == wiki["owner_id"]
+    owner_initials = None
+    owner_avatar_url = None
+    profile_incomplete = False
+    if is_owner and owner:
+        owner_initials = compute_initials(owner)
+        owner_avatar_url = owner.get("avatar")
+        if not owner.get("avatar") and not owner.get("bio"):
+            profile_incomplete = True
+    bio = owner.get("bio") if owner else None
+    bio_html = render_bio(bio, "") if bio else ""
+    avatar_url = owner.get("avatar") if owner else None
+    return render_template(
+        "profile.html",
+        user=owner,
+        wiki=wiki,
+        pages=page_list,
+        site_title=site_title,
+        is_owner=is_owner,
+        owner_initials=owner_initials,
+        owner_avatar_url=owner_avatar_url,
+        profile_incomplete=profile_incomplete,
+        avatar_url=avatar_url,
+        bio_html=bio_html,
+        license_info=LICENSES.get(wiki.get("license") or ""),
+        profile_url=profile_url(owner["username"]) if owner and owner.get("username") else None,
+        base_url=f"{request.scheme}://{BASE_DOMAIN}",
+    )
+
+
+def subdomain_home(user):
+    """Legacy @username profile - now shows aggregated pages across public wikis."""
+    pages = get_public_pages_for_user_wikis(user["id"])
+    page_list = [_build_page_item(p) for p in pages]
 
     site_title = user.get("name") or user.get("username")
     is_owner = session.get("user_id") == user["id"]
@@ -152,9 +206,10 @@ def subdomain_home(user):
         profile_incomplete=profile_incomplete,
         avatar_url=user.get("avatar"),
         bio_html=bio_html,
-        license_info=LICENSES.get(user.get("license") or ""),
+        license_info=None,
         profile_url=profile_url(user["username"]) if user.get("username") else None,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
+        is_aggregate_profile=True,
     )
 
 
@@ -169,32 +224,69 @@ def profile_home(username):
 
 @bp.route("/@<username>/<slug>")
 def profile_view_page(username, slug):
-    _set_profile_user(username)
-    return view_page(slug)
+    """Redirect @username/slug to canonical wiki subdomain URL."""
+    user = _set_profile_user(username)
+    from db import get_wikis_for_user
+    wikis = get_wikis_for_user(user["id"])
+    for w in wikis:
+        page_meta = get_page_meta(slug, wiki_id=w["id"])
+        if page_meta:
+            return redirect(wiki_url(w["slug"], f"/{slug}"), 301)
+    # Try original slug redirect
+    for w in wikis:
+        original = find_page_by_original_slug(slug, wiki_id=w["id"])
+        if original:
+            return redirect(wiki_url(w["slug"], f"/{original['slug']}"), 301)
+    abort(404)
 
 
 @bp.route("/@<username>/<slug>/history")
 def profile_page_history(username, slug):
-    _set_profile_user(username)
-    return page_history(slug)
+    """Redirect to canonical wiki URL."""
+    user = _set_profile_user(username)
+    from db import get_wikis_for_user
+    wikis = get_wikis_for_user(user["id"])
+    for w in wikis:
+        page_meta = get_page_meta(slug, wiki_id=w["id"])
+        if page_meta:
+            return redirect(wiki_url(w["slug"], f"/{slug}/history"), 301)
+    abort(404)
 
 
 @bp.route("/@<username>/<slug>/history/<int:revision>")
 def profile_view_revision(username, slug, revision):
-    _set_profile_user(username)
-    return view_revision(slug, revision)
+    user = _set_profile_user(username)
+    from db import get_wikis_for_user
+    wikis = get_wikis_for_user(user["id"])
+    for w in wikis:
+        page_meta = get_page_meta(slug, wiki_id=w["id"])
+        if page_meta:
+            return redirect(wiki_url(w["slug"], f"/{slug}/history/{revision}"), 301)
+    abort(404)
 
 
 @bp.route("/@<username>/<slug>/feed.xml")
 def profile_rss_feed(username, slug):
-    _set_profile_user(username)
-    return rss_feed(slug)
+    user = _set_profile_user(username)
+    from db import get_wikis_for_user
+    wikis = get_wikis_for_user(user["id"])
+    for w in wikis:
+        page_meta = get_page_meta(slug, wiki_id=w["id"])
+        if page_meta:
+            return redirect(wiki_url(w["slug"], f"/{slug}/feed.xml"), 301)
+    abort(404)
 
 
 @bp.route("/@<username>/<slug>/feed.json")
 def profile_json_feed(username, slug):
-    _set_profile_user(username)
-    return json_feed(slug)
+    user = _set_profile_user(username)
+    from db import get_wikis_for_user
+    wikis = get_wikis_for_user(user["id"])
+    for w in wikis:
+        page_meta = get_page_meta(slug, wiki_id=w["id"])
+        if page_meta:
+            return redirect(wiki_url(w["slug"], f"/{slug}/feed.json"), 301)
+    abort(404)
 
 
 @bp.route("/@<username>/feed.xml")
@@ -231,7 +323,7 @@ def view_page(slug):
             if page["id"] not in created_pages:
                 created_pages.append(page["id"])
                 session["created_pages"] = created_pages
-            resp = make_response(redirect(f"{g.url_prefix}/{slug}"))
+            resp = make_response(redirect(f"/{slug}"))
             resp.set_cookie(
                 f"page_token_{slug}",
                 query_token,
@@ -241,49 +333,78 @@ def view_page(slug):
             )
             return resp
 
-    subdomain_user = g.subdomain_user
+    wiki = getattr(g, "wiki", None)
 
-    if subdomain_user:
-        page_meta = get_page_meta(slug, subdomain_user["id"])
+    if wiki:
+        # Wiki subdomain - serve page from wiki
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
         if not page_meta:
-            original = find_page_by_original_slug(slug, subdomain_user["id"])
+            original = find_page_by_original_slug(slug, wiki_id=wiki["id"])
             if original:
-                return redirect(f"{g.url_prefix}/{original['slug']}", 301)
-            if session.get("user_id") == subdomain_user["id"]:
-                return redirect(f"{g.url_prefix}/{slug}/edit")
-            abort(404)
-    else:
-        if session.get("user_id"):
-            page_meta = get_page_meta(slug, session["user_id"])
-        else:
-            page_meta = None
-        if not page_meta:
-            page_meta = get_page_meta(slug)
-        if not page_meta:
-            owner_user_id = find_page_owner_for_redirect(slug)
-            if owner_user_id:
-                user = get_user(owner_user_id)
-                if user and user.get("username"):
-                    return redirect(profile_url(user["username"], f"/{slug}"))
-            original = find_page_by_original_slug(slug)
-            if original and original["slug"] != slug:
-                if original["user_id"]:
-                    owner = get_user(original["user_id"])
-                    if owner and owner.get("username"):
-                        return redirect(
-                            profile_url(owner["username"], f"/{original['slug']}"),
-                            301,
-                        )
                 return redirect(f"/{original['slug']}", 301)
+            if session.get("user_id") == wiki["owner_id"]:
+                return redirect(f"/{slug}/edit")
             abort(404)
-        if page_meta["user_id"] is not None:
-            user = get_user(page_meta["user_id"])
+
+        if not can_view_wiki(wiki):
+            abort(404)
+
+        return _render_page(page_meta, wiki=wiki)
+
+    # Apex domain - handle unclaimed pages and redirects
+    if session.get("user_id"):
+        page_meta = get_page_meta(slug, session["user_id"])
+    else:
+        page_meta = None
+    if not page_meta:
+        page_meta = get_page_meta(slug)
+    if not page_meta:
+        # Try to find the page in a wiki and redirect
+        owner_user_id = find_page_owner_for_redirect(slug)
+        if owner_user_id:
+            from db import get_wikis_for_user
+            wikis = get_wikis_for_user(owner_user_id)
+            for w in wikis:
+                wp = get_page_meta(slug, wiki_id=w["id"])
+                if wp:
+                    return redirect(wiki_url(w["slug"], f"/{slug}"), 301)
+            user = get_user(owner_user_id)
             if user and user.get("username"):
                 return redirect(profile_url(user["username"], f"/{slug}"))
-
-    if not page_meta:
+        original = find_page_by_original_slug(slug)
+        if original and original["slug"] != slug:
+            if original.get("wiki_id"):
+                w = get_wiki(original["wiki_id"])
+                if w:
+                    return redirect(wiki_url(w["slug"], f"/{original['slug']}"), 301)
+            if original["user_id"]:
+                owner = get_user(original["user_id"])
+                if owner and owner.get("username"):
+                    return redirect(
+                        profile_url(owner["username"], f"/{original['slug']}"),
+                        301,
+                    )
+            return redirect(f"/{original['slug']}", 301)
         abort(404)
 
+    # If page belongs to a wiki, redirect to canonical wiki URL
+    if page_meta.get("wiki_id"):
+        w = get_wiki(page_meta["wiki_id"])
+        if w:
+            return redirect(wiki_url(w["slug"], f"/{slug}"), 301)
+
+    # If page is claimed but no wiki (shouldn't happen after migration, but safe)
+    if page_meta["user_id"] is not None and not page_meta.get("wiki_id"):
+        user = get_user(page_meta["user_id"])
+        if user and user.get("username"):
+            return redirect(profile_url(user["username"], f"/{slug}"))
+
+    # Unclaimed page on apex domain
+    return _render_page(page_meta)
+
+
+def _render_page(page_meta, wiki=None):
+    slug = page_meta["slug"]
     row = get_page_full(page_meta["id"])
     if not row:
         abort(404)
@@ -303,7 +424,8 @@ def view_page(slug):
     )
     page_is_creator = is_creator(page_meta)
 
-    if row["visibility"] == "private" and not is_owner and not page_is_creator:
+    # Wiki-level access control
+    if wiki and not can_view_wiki(wiki) and not is_owner:
         abort(404)
 
     page_can_edit = can_edit(page_meta)
@@ -326,12 +448,13 @@ def view_page(slug):
     avatar_url = None
     bio_html = ""
     license_info = None
-    if subdomain_user:
-        site_title = subdomain_user.get("name") or subdomain_user.get("username")
-        avatar_url = subdomain_user.get("avatar")
-        bio = subdomain_user.get("bio")
-        bio_html = render_bio(bio, g.url_prefix) if bio else ""
-        license_info = LICENSES.get(subdomain_user.get("license") or "")
+    if wiki:
+        owner = get_user(wiki["owner_id"])
+        site_title = wiki.get("name") or wiki["slug"]
+        avatar_url = owner.get("avatar") if owner else None
+        bio = owner.get("bio") if owner else None
+        bio_html = render_bio(bio, "") if bio else ""
+        license_info = LICENSES.get(wiki.get("license") or "")
 
     owner_initials = None
     owner_avatar_url = None
@@ -366,22 +489,29 @@ def view_page(slug):
         page_description=page_description,
         site_title=site_title,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
-        is_subdomain=subdomain_user is not None,
+        is_subdomain=wiki is not None,
         license_info=license_info,
         visibility=page_meta["visibility"],
         reading_time=reading_time(row["content"]),
         ai_assisted=row.get("ai_assisted", False),
         page_source=row.get("source", "web"),
+        wiki=wiki,
     )
     response = current_app.make_response(resp)
-    if not is_owner and not show_actions and row["visibility"] != "private":
+    if not is_owner and not show_actions:
         response.headers["Cache-Control"] = "public, max-age=60"
     return response
 
 
 @bp.route("/<slug>/history")
 def page_history(slug):
-    page_meta = find_page(slug)
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
+        if wiki and not can_view_wiki(wiki):
+            abort(404)
+    else:
+        page_meta = find_page(slug)
     if not page_meta:
         abort(404)
 
@@ -419,13 +549,19 @@ def page_history(slug):
         revisions=paginated,
         page=page,
         total_pages=total_pages,
-        is_subdomain=g.subdomain_user is not None,
+        is_subdomain=wiki is not None,
     )
 
 
 @bp.route("/<slug>/history/<int:revision>")
 def view_revision(slug, revision):
-    page_meta = find_page(slug)
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
+        if wiki and not can_view_wiki(wiki):
+            abort(404)
+    else:
+        page_meta = find_page(slug)
     if not page_meta:
         abort(404)
 
@@ -442,16 +578,21 @@ def view_revision(slug, revision):
         created_at=row["created_at"],
         source=row["source"],
         ai_assisted=row["ai_assisted"],
-        is_subdomain=g.subdomain_user is not None,
+        is_subdomain=wiki is not None,
     )
 
 
 # --- Feeds ---
 
 
-def _build_site_feed_entries(user_id):
-    entries = get_feed_entries_for_user(user_id)
-    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
+def _build_site_feed_entries(user_id=None, wiki_id=None):
+    if wiki_id:
+        entries = get_feed_entries_for_wiki(wiki_id)
+    elif user_id:
+        entries = get_feed_entries_for_user(user_id)
+    else:
+        return []
+    feed_base = f"{request.scheme}://{request.host}"
     items = []
     for entry in entries:
         body = get_body(entry["content"])
@@ -470,7 +611,7 @@ def _build_site_feed_entries(user_id):
 
 def _build_feed_entries(page_id, slug):
     entries = get_feed_entries(page_id)
-    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
+    feed_base = f"{request.scheme}://{request.host}"
     page_url = f"{feed_base}/{slug}"
     items = []
     for entry in entries:
@@ -523,7 +664,9 @@ def sitemap():
         f"  </url>",
     ]
     for page in pages:
-        if page["username"]:
+        if page.get("wiki_slug"):
+            loc = f"https://{page['wiki_slug']}.{BASE_DOMAIN}/{page['slug']}"
+        elif page["username"]:
             loc = f"https://{BASE_DOMAIN}/@{page['username']}/{page['slug']}"
         else:
             loc = f"https://{BASE_DOMAIN}/{page['slug']}"
@@ -541,14 +684,24 @@ def sitemap():
 
 @bp.route("/feed.xml")
 def site_rss_feed():
+    wiki = getattr(g, "wiki", None)
     user = g.subdomain_user
-    if not user:
+
+    if wiki:
+        if not can_view_wiki(wiki):
+            abort(404)
+        site_title = wiki.get("name") or wiki["slug"]
+        items = _build_site_feed_entries(wiki_id=wiki["id"])
+        owner = get_user(wiki["owner_id"])
+        avatar_url = owner.get("avatar") if owner else None
+    elif user:
+        site_title = user.get("name") or user.get("username")
+        items = _build_site_feed_entries(user_id=user["id"])
+        avatar_url = user.get("avatar")
+    else:
         abort(404)
 
-    site_title = user.get("name") or user.get("username")
-    items = _build_site_feed_entries(user["id"])
-    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
-    avatar_url = user.get("avatar")
+    feed_base = f"{request.scheme}://{request.host}"
     if avatar_url and avatar_url.startswith("/"):
         avatar_url = f"{request.scheme}://{BASE_DOMAIN}{avatar_url}"
 
@@ -579,14 +732,24 @@ def site_rss_feed():
 
 @bp.route("/feed.json")
 def site_json_feed():
+    wiki = getattr(g, "wiki", None)
     user = g.subdomain_user
-    if not user:
+
+    if wiki:
+        if not can_view_wiki(wiki):
+            abort(404)
+        site_title = wiki.get("name") or wiki["slug"]
+        items = _build_site_feed_entries(wiki_id=wiki["id"])
+        owner = get_user(wiki["owner_id"])
+        avatar_url = owner.get("avatar") if owner else None
+    elif user:
+        site_title = user.get("name") or user.get("username")
+        items = _build_site_feed_entries(user_id=user["id"])
+        avatar_url = user.get("avatar")
+    else:
         abort(404)
 
-    site_title = user.get("name") or user.get("username")
-    items = _build_site_feed_entries(user["id"])
-    feed_base = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}"
-    avatar_url = user.get("avatar")
+    feed_base = f"{request.scheme}://{request.host}"
     if avatar_url and avatar_url.startswith("/"):
         avatar_url = f"{request.scheme}://{BASE_DOMAIN}{avatar_url}"
 
@@ -617,8 +780,12 @@ def site_json_feed():
 
 @bp.route("/<slug>/feed.xml")
 def rss_feed(slug):
-    page_meta = find_page(slug)
-    if not page_meta or page_meta["user_id"] is None:
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
+    else:
+        page_meta = find_page(slug)
+    if not page_meta or (page_meta["user_id"] is None and not wiki):
         abort(404)
 
     items, page_url = _build_feed_entries(page_meta["id"], slug)
@@ -646,8 +813,12 @@ def rss_feed(slug):
 
 @bp.route("/<slug>/feed.json")
 def json_feed(slug):
-    page_meta = find_page(slug)
-    if not page_meta or page_meta["user_id"] is None:
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
+    else:
+        page_meta = find_page(slug)
+    if not page_meta or (page_meta["user_id"] is None and not wiki):
         abort(404)
 
     items, page_url = _build_feed_entries(page_meta["id"], slug)

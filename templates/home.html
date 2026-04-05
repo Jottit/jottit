@@ -21,7 +21,6 @@
         <a href="/" class="tab{% if tab == 'all' %} tab--active{% endif %}">All <span class="tab-count">{{ counts.all }}</span></a>
         <a href="/?tab=listed" class="tab{% if tab == 'listed' %} tab--active{% endif %}">Listed <span class="tab-count">{{ counts.listed }}</span></a>
         <a href="/?tab=unlisted" class="tab{% if tab == 'unlisted' %} tab--active{% endif %}">Unlisted <span class="tab-count">{{ counts.unlisted }}</span></a>
-        <a href="/?tab=private" class="tab{% if tab == 'private' %} tab--active{% endif %}">Private <span class="tab-count">{{ counts.private }}</span></a>
         <a href="/?tab=pinned" class="tab{% if tab == 'pinned' %} tab--active{% endif %}">Pinned <span class="tab-count">{{ counts.pinned }}</span></a>
       </nav>
       <button class="tabs-fade tabs-fade--right" aria-label="Scroll right">›</button>
@@ -49,6 +48,7 @@
     <p class="tagline">The fastest way to publish on the web</p>
     <a href="/new" class="btn btn-solid btn-lg">Write something</a>
     <p class="home-hint">no sign-up required</p>
+    <a href="/wiki/new" class="btn btn--outline btn-lg home-wiki-btn">Create a wiki</a>
   </main>
   {% endif %}
 

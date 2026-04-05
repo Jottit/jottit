@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Create a wiki — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/" class="panel-back">&larr; Back</a>
+    <h1 class="title">Create a wiki</h1>
+    <div class="panel">
+        {% if error %}
+        <p class="notice notice--error">{{ error }}</p>
+        {% endif %}
+        <form method="post" class="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="name" class="form-label">Wiki name</label>
+                <input type="text" id="name" name="name" class="form-input" value="{{ name|default('', true) }}" required autofocus maxlength="100" placeholder="My Wiki">
+            </div>
+            <div class="form-group">
+                <label for="slug" class="form-label">Wiki address</label>
+                <div class="form-input-prefix">
+                    <input type="text" id="slug" name="slug" class="form-input" value="{{ slug|default('', true) }}" maxlength="64" placeholder="my-wiki" pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?">
+                    <span class="form-input-suffix">.jottit.org</span>
+                </div>
+                <p class="form-hint" id="slug-status"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Visibility</label>
+                <div class="form-radio-group">
+                    <label class="form-radio"><input type="radio" name="visibility" value="public" checked> Public — anyone can view</label>
+                    <label class="form-radio"><input type="radio" name="visibility" value="private"> Private — only you can view</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-solid">Create wiki</button>
+        </form>
+    </div>
+</div>
+<script>
+(function() {
+    var nameInput = document.getElementById('name');
+    var slugInput = document.getElementById('slug');
+    var status = document.getElementById('slug-status');
+    var timer;
+    nameInput.addEventListener('input', function() {
+        if (!slugInput.value || slugInput.dataset.auto === '1') {
+            slugInput.value = nameInput.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+            slugInput.dataset.auto = '1';
+            checkSlug();
+        }
+    });
+    slugInput.addEventListener('input', function() {
+        slugInput.dataset.auto = '0';
+        checkSlug();
+    });
+    function checkSlug() {
+        clearTimeout(timer);
+        var slug = slugInput.value;
+        if (!slug) { status.textContent = ''; return; }
+        timer = setTimeout(function() {
+            fetch('/api/check-wiki-slug?slug=' + encodeURIComponent(slug))
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    if (d.available) {
+                        status.textContent = slug + '.jottit.org is available';
+                        status.className = 'form-hint form-hint--success';
+                    } else {
+                        status.textContent = d.error || 'Not available';
+                        status.className = 'form-hint form-hint--error';
+                    }
+                });
+        }, 300);
+    }
+})();
+</script>
+{% endblock %}

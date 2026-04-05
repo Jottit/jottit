@@ -224,10 +224,12 @@ def test_settings_export_page(client):
     assert b"Download" in r.data
 
 
-# License settings page renders with CC BY 4.0 option
+# License settings page renders with CC BY 4.0 option (requires wiki)
 def test_settings_license_page(client):
+    from db import create_wiki
     user_id = find_or_create_user("license@example.com")
     set_user_username(user_id, "licuser")
+    create_wiki("licuser", "licuser", user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
@@ -237,30 +239,36 @@ def test_settings_license_page(client):
     assert b"CC BY 4.0" in r.data
 
 
-# Saving a valid license persists it
+# Saving a valid license persists it on the wiki
 def test_settings_license_saves(client):
+    from db import create_wiki, get_wiki_by_slug
     user_id = find_or_create_user("license2@example.com")
     set_user_username(user_id, "licuser2")
+    create_wiki("licuser2", "licuser2", user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    r = client.post("/settings/license", data={"license": "cc-by-4.0"})
+    wiki = get_wiki_by_slug("licuser2")
+    r = client.post("/settings/license", data={"license": "cc-by-4.0", "wiki_id": wiki["id"]})
     assert r.status_code == 302
 
-    user = get_user(user_id)
-    assert user["license"] == "cc-by-4.0"
+    wiki = get_wiki_by_slug("licuser2")
+    assert wiki["license"] == "cc-by-4.0"
 
 
-# Invalid license value is not saved
+# Invalid license value is not saved on the wiki
 def test_settings_license_rejects_invalid(client):
+    from db import create_wiki, get_wiki_by_slug
     user_id = find_or_create_user("license3@example.com")
     set_user_username(user_id, "licuser3")
+    create_wiki("licuser3", "licuser3", user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
-    client.post("/settings/license", data={"license": "invalid-license"})
-    user = get_user(user_id)
-    assert user["license"] is None
+    wiki = get_wiki_by_slug("licuser3")
+    client.post("/settings/license", data={"license": "invalid-license", "wiki_id": wiki["id"]})
+    wiki = get_wiki_by_slug("licuser3")
+    assert wiki["license"] is None
 
 
 # -- Username availability API --

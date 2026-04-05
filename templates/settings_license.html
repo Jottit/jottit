@@ -7,21 +7,28 @@
     <a href="/settings" class="panel-back">&larr; Settings</a>
     <h1 class="title">License</h1>
     <div class="panel">
-        <form method="post" action="/settings/license">
+        {% for message in get_flashed_messages() %}
+        <p class="notice notice--success">{{ message }}</p>
+        {% endfor %}
+        <p class="form-hint">License is now set per wiki. Choose a wiki to update its license.</p>
+        {% for wiki in wikis %}
+        <form method="post" action="/settings/license" class="form" style="margin-bottom: var(--space-4);">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="wiki_id" value="{{ wiki.id }}">
             <div class="field">
-                <label class="label" for="license">License for your pages</label>
+                <label class="label">{{ wiki.name or wiki.slug }}</label>
                 <div class="field-select">
-                    <select id="license" name="license">
+                    <select name="license">
                         <option value="">No license</option>
                         {% for key, info in licenses.items() %}
-                        <option value="{{ key }}"{{ ' selected' if user.license == key }}>{{ info.name }}</option>
+                        <option value="{{ key }}"{{ ' selected' if wiki.license == key }}>{{ info.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
+            <button type="submit" class="btn btn--sm btn-solid">Save</button>
         </form>
+        {% endfor %}
     </div>
 </div>
-<script src="/static/settings-license.js?v={{ asset_v }}"></script>
 {% endblock %}

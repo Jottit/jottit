@@ -1,11 +1,13 @@
 import json
 
-from db import create_api_token, find_or_create_user, save_page, set_user_username
+from db import create_api_token, create_wiki, check_wiki_slug_available, find_or_create_user, save_page, set_user_username
 
 
 def _setup_user():
     user_id = find_or_create_user("mcp@test.com")
     set_user_username(user_id, "mcpuser")
+    if check_wiki_slug_available("mcpuser"):
+        create_wiki("mcpuser", "mcpuser", user_id)
     token, _ = create_api_token(user_id, "mcp test")
     return user_id, token
 
@@ -160,8 +162,9 @@ def test_get_revisions(client):
 
 def test_get_user_profile(client):
     user_id, token = _setup_user()
-
-    save_page("profile-page", "# Public Page", "listed", user_id)
+    from db import get_default_wiki_for_user
+    wiki = get_default_wiki_for_user(user_id)
+    save_page("profile-page", "# Public Page", "listed", user_id, wiki_id=wiki["id"])
 
     r = _rpc(
         client,

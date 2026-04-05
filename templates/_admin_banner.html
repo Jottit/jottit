@@ -1,7 +1,24 @@
 <div class="admin-banner">
-    <a href="{{ base_url|default('/', true) }}" class="admin-banner-home">Jottit</a>
+    <div class="admin-banner-left">
+        <a href="{{ base_url|default('/', true) }}" class="admin-banner-home">Jottit</a>
+        {% if user_wikis %}
+        <div class="wiki-switcher">
+            <button class="wiki-switcher-btn" aria-expanded="false" aria-haspopup="true">
+                {% if current_wiki %}{{ current_wiki.name or current_wiki.slug }}{% else %}Wikis{% endif %}
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l3 3 3-3"/></svg>
+            </button>
+            <div class="wiki-switcher-dropdown" hidden>
+                {% for wiki in user_wikis %}
+                <a href="{{ wiki_url(wiki.slug) }}" class="wiki-switcher-item{% if current_wiki and current_wiki.id == wiki.id %} wiki-switcher-item--active{% endif %}">{{ wiki.name or wiki.slug }}</a>
+                {% endfor %}
+                <div class="wiki-switcher-divider"></div>
+                <a href="/wiki/new" class="wiki-switcher-item wiki-switcher-item--new">+ New wiki</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
     <div class="admin-banner-actions">
-        <a href="{{ url_prefix }}/new" class="btn btn-publish btn--sm">Write</a>
+        <a href="/new" class="btn btn-publish btn--sm">Write</a>
         {% if owner_avatar_url %}
         <a href="{{ base_url|default('', true) }}/settings" title="Settings"><img src="{{ owner_avatar_url }}" alt="Settings" class="admin-avatar-img"></a>
         {% else %}
@@ -9,3 +26,6 @@
         {% endif %}
     </div>
 </div>
+{% if user_wikis %}
+<script src="/static/wiki-switcher.js?v={{ asset_v }}" defer></script>
+{% endif %}

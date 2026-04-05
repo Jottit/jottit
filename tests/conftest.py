@@ -55,7 +55,10 @@ def client():
 
 def create_user_with_username(client, email, username, slug):
     from db import (
+        assign_page_to_wiki,
         claim_page,
+        create_wiki,
+        check_wiki_slug_available,
         find_or_create_user,
         get_page_meta,
         save_page,
@@ -64,7 +67,17 @@ def create_user_with_username(client, email, username, slug):
 
     user_id = find_or_create_user(email)
     set_user_username(user_id, username)
-    save_page(slug, "# Test\n\nContent", "listed")
-    page_meta = get_page_meta(slug)
+
+    # Create a default wiki for the user
+    wiki_id = None
+    if check_wiki_slug_available(username):
+        wiki_id = create_wiki(username, username, user_id)
+
+    save_page(slug, "# Test\n\nContent", "listed", wiki_id=wiki_id)
+    page_meta = get_page_meta(slug, wiki_id=wiki_id) if wiki_id else get_page_meta(slug)
+    if not page_meta:
+        page_meta = get_page_meta(slug)
     claim_page(page_meta["id"], user_id)
+    if wiki_id:
+        assign_page_to_wiki(page_meta["id"], wiki_id)
     return user_id

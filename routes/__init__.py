@@ -4,7 +4,14 @@ from flask import Blueprint, abort, g, redirect, request, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from db import create_verification_code, get_page_meta, get_user, get_user_by_username
+from db import (
+    create_verification_code,
+    get_page_meta,
+    get_user,
+    get_user_by_username,
+    get_wiki_by_slug,
+    get_wikis_for_user,
+)
 from mail import send_verification_email
 
 limiter = Limiter(get_remote_address, storage_uri="memory://")
@@ -37,7 +44,8 @@ LICENSES = {
     },
 }
 
-VISIBILITY_OPTIONS = ("private", "unlisted", "listed", "pinned")
+VISIBILITY_OPTIONS = ("unlisted", "listed", "pinned")
+WIKI_VISIBILITY_OPTIONS = ("public", "private")
 
 
 def _get_subdomain():
@@ -60,6 +68,10 @@ def base_url(path=""):
     return f"{request.scheme}://{BASE_DOMAIN}{path}"
 
 
+def wiki_url(wiki_slug, path=""):
+    return f"{request.scheme}://{wiki_slug}.{BASE_DOMAIN}{path}"
+
+
 def profile_url(username, path=""):
     return f"/@{username}{path}"
 
@@ -74,6 +86,9 @@ def _set_profile_user(username):
 
 
 def find_page(slug):
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        return get_page_meta(slug, wiki_id=wiki["id"])
     subdomain_user = g.subdomain_user
     if subdomain_user:
         return get_page_meta(slug, subdomain_user["id"])
@@ -97,6 +112,12 @@ def can_edit(page_meta):
     return is_creator(page_meta)
 
 
+def can_view_wiki(wiki):
+    if wiki["visibility"] == "public":
+        return True
+    return session.get("user_id") == wiki["owner_id"]
+
+
 def send_verification(email, purpose):
     code = create_verification_code(email, purpose)
     send_verification_email(email, code)
@@ -111,11 +132,15 @@ def account_link_vars():
     account_profile_url = (
         profile_url(user["username"]) if user and user.get("username") else "/settings"
     )
+    wikis = get_wikis_for_user(user["id"]) if user else []
+    current_wiki = getattr(g, "wiki", None)
     return {
         "signed_in": signed_in,
         "owner_avatar_url": owner_avatar_url,
         "owner_initials": owner_initials,
         "profile_url": account_profile_url,
+        "user_wikis": wikis,
+        "current_wiki": current_wiki,
     }
 
 
@@ -149,10 +174,16 @@ def resolve_subdomain():
     if subdomain == "www":
         return redirect(f"{request.scheme}://{BASE_DOMAIN}{request.full_path}", 301)
     if subdomain:
-        path = request.full_path.rstrip("?")
-        if path == "/":
-            path = ""
-        return redirect(f"{request.scheme}://{BASE_DOMAIN}/@{subdomain}{path}", 301)
+        # Look up wiki by subdomain slug
+        wiki = get_wiki_by_slug(subdomain)
+        if wiki:
+            g.wiki = wiki
+            g.subdomain_user = None
+            g.url_prefix = ""
+            return
+        # No wiki found - 404 (don't redirect to @username anymore)
+        abort(404)
+    g.wiki = None
     g.subdomain_user = None
     g.url_prefix = ""
 
@@ -170,7 +201,7 @@ def strip_trailing_slash():
 
 @bp.app_context_processor
 def inject_url_prefix():
-    return {"url_prefix": getattr(g, "url_prefix", "")}
+    return {"url_prefix": getattr(g, "url_prefix", ""), "wiki_url": wiki_url}
 
 
 from routes import public, site, admin  # noqa: E402, F401

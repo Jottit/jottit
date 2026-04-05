@@ -3,14 +3,20 @@ import json
 from flask import Blueprint, Response, jsonify, request
 
 from db import (
+    assign_page_to_wiki,
     create_page_secret,
     delete_page,
+    get_default_wiki_for_user,
     get_page,
     get_page_meta,
     get_pages_for_user,
+    get_pages_for_wiki,
+    get_public_pages_for_user_wikis,
     get_revision_count,
     get_revisions_paginated,
     get_user_by_username,
+    get_wiki_by_slug,
+    get_wikis_for_user,
     save_page,
     update_page_visibility,
 )
@@ -26,8 +32,16 @@ SERVER_INFO = {"name": "Jottit", "version": "1.0.0"}
 TOOLS = [
     {
         "name": "list_pages",
-        "description": "List all pages owned by the authenticated user. Returns each page's slug, title, visibility, and last updated timestamp.",
-        "inputSchema": {"type": "object", "properties": {}},
+        "description": "List all pages owned by the authenticated user. Optionally filter by wiki slug.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "wiki": {
+                    "type": "string",
+                    "description": "Optional wiki slug to filter pages",
+                },
+            },
+        },
     },
     {
         "name": "get_page",
@@ -40,7 +54,7 @@ TOOLS = [
     },
     {
         "name": "create_page",
-        "description": "Create a new Jottit page. Content should be markdown — start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Visibility can be 'private', 'unlisted', 'listed', or 'pinned'.",
+        "description": "Create a new Jottit page. Content should be markdown \u2014 start with '# Title' on the first line. Slug is optional (auto-generated from title if omitted). Visibility can be 'unlisted', 'listed', or 'pinned'. Optionally specify a wiki slug.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -52,8 +66,12 @@ TOOLS = [
                 },
                 "visibility": {
                     "type": "string",
-                    "enum": ["private", "unlisted", "listed", "pinned"],
-                    "default": "private",
+                    "enum": ["unlisted", "listed", "pinned"],
+                    "default": "listed",
+                },
+                "wiki": {
+                    "type": "string",
+                    "description": "Wiki slug to create the page in (optional, defaults to user's default wiki)",
                 },
             },
             "required": ["content"],
@@ -61,7 +79,7 @@ TOOLS = [
     },
     {
         "name": "update_page",
-        "description": "Update an existing Jottit page. All fields except slug are optional — only provided fields are changed. Content should be full markdown including the '# Title' line. Requires authentication.",
+        "description": "Update an existing Jottit page. All fields except slug are optional \u2014 only provided fields are changed. Content should be full markdown including the '# Title' line. Requires authentication.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -69,7 +87,7 @@ TOOLS = [
                 "content": {"type": "string", "description": "Markdown content"},
                 "visibility": {
                     "type": "string",
-                    "enum": ["private", "unlisted", "listed", "pinned"],
+                    "enum": ["unlisted", "listed", "pinned"],
                 },
             },
             "required": ["slug"],
@@ -99,12 +117,17 @@ TOOLS = [
     },
     {
         "name": "get_user_profile",
-        "description": "Get a Jottit user's public profile and their listed/pinned pages.",
+        "description": "Get a Jottit user's public profile and their listed/pinned pages across public wikis.",
         "inputSchema": {
             "type": "object",
             "properties": {"username": {"type": "string"}},
             "required": ["username"],
         },
+    },
+    {
+        "name": "list_wikis",
+        "description": "List all wikis owned by the authenticated user.",
+        "inputSchema": {"type": "object", "properties": {}},
     },
 ]
 
@@ -129,7 +152,14 @@ def _call_tool(name, args, user):
     if name == "list_pages":
         if not user:
             return _text_result("Error: authentication required")
-        pages = get_pages_for_user(user_id)
+        wiki_slug = args.get("wiki")
+        if wiki_slug:
+            wiki = get_wiki_by_slug(wiki_slug)
+            if not wiki or wiki["owner_id"] != user_id:
+                return _text_result(f"Error: wiki '{wiki_slug}' not found")
+            pages = get_pages_for_wiki(wiki["id"])
+        else:
+            pages = get_pages_for_user(user_id)
         result = [
             {
                 "slug": p["slug"],
@@ -167,17 +197,32 @@ def _call_tool(name, args, user):
             slug = generate_slug()
 
         if user:
-            visibility = args.get("visibility", "private")
+            wiki_slug = args.get("wiki")
+            wiki_id = None
+            if wiki_slug:
+                wiki = get_wiki_by_slug(wiki_slug)
+                if not wiki or wiki["owner_id"] != user_id:
+                    return _text_result(f"Error: wiki '{wiki_slug}' not found")
+                wiki_id = wiki["id"]
+            else:
+                default_wiki = get_default_wiki_for_user(user_id)
+                if default_wiki:
+                    wiki_id = default_wiki["id"]
+
+            visibility = args.get("visibility", "listed")
             if visibility not in VISIBILITY_OPTIONS:
                 return _text_result(
                     f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"
                 )
 
             slug = save_page(
-                slug, content, visibility, user_id, source="mcp", ai_assisted=True
+                slug, content, visibility, user_id, source="mcp", ai_assisted=True,
+                wiki_id=wiki_id,
             )
 
             meta = get_page_meta(slug, user_id)
+            if not meta and wiki_id:
+                meta = get_page_meta(slug, wiki_id=wiki_id)
             page_data = get_page(meta["id"])
             return _text_result(json.dumps(_serialize_page(meta, page_data), indent=2))
 
@@ -226,6 +271,7 @@ def _call_tool(name, args, user):
             user_id,
             source="mcp",
             ai_assisted=True,
+            wiki_id=meta.get("wiki_id"),
         )
 
         meta = get_page_meta(slug, user_id)
@@ -281,16 +327,16 @@ def _call_tool(name, args, user):
         profile = get_user_by_username(username)
         if not profile:
             return _text_result(f"Error: user '{username}' not found")
-        pages = get_pages_for_user(profile["id"])
+        pages = get_public_pages_for_user_wikis(profile["id"])
         public_pages = [
             {
                 "slug": p["slug"],
                 "title": get_title(p["content"]) or "",
                 "visibility": p["visibility"],
                 "updated_at": p["updated_at"].isoformat(),
+                "wiki_slug": p.get("wiki_slug", ""),
             }
             for p in pages
-            if p["visibility"] in ("listed", "pinned")
         ]
         return _text_result(
             json.dumps(
@@ -299,6 +345,27 @@ def _call_tool(name, args, user):
                     "name": profile.get("name"),
                     "bio": profile.get("bio"),
                     "pages": public_pages,
+                },
+                indent=2,
+            )
+        )
+
+    if name == "list_wikis":
+        if not user:
+            return _text_result("Error: authentication required")
+        wikis = get_wikis_for_user(user_id)
+        return _text_result(
+            json.dumps(
+                {
+                    "wikis": [
+                        {
+                            "slug": w["slug"],
+                            "name": w["name"],
+                            "visibility": w["visibility"],
+                            "license": w.get("license"),
+                        }
+                        for w in wikis
+                    ]
                 },
                 indent=2,
             )
@@ -334,7 +401,6 @@ def handle_mcp():
     params = data.get("params", {})
 
     if method == "initialize":
-        # No auth required for initialize
         return _jsonrpc_result(
             msg_id,
             {
@@ -356,7 +422,6 @@ def handle_mcp():
     if method == "tools/call":
         name = params.get("name", "")
         args = params.get("arguments", {})
-        # create_page and update_page work without auth
         if name not in ("create_page", "update_page") and not user:
             r = jsonify({"error": "Unauthorized"})
             r.status_code = 401
@@ -365,7 +430,6 @@ def handle_mcp():
         result = _call_tool(name, args, user)
         return _jsonrpc_result(msg_id, result)
 
-    # All other methods require auth
     if not user:
         r = jsonify({"error": "Unauthorized"})
         r.status_code = 401

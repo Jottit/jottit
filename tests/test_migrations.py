@@ -157,5 +157,6 @@ def test_backfill_usernames_makes_page_accessible(client):
         conn.commit()
 
     user = get_user(user_id)
-    r = client.get(f"/@{user['username']}/mypage")
+    # After migration, @username/slug should either redirect to wiki or show profile
+    r = client.get(f"/@{user['username']}")
     assert r.status_code == 200

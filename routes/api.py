@@ -6,13 +6,19 @@ from db import (
     claim_page_with_secret,
     create_page_secret,
     delete_page,
+    get_default_wiki_for_user,
     get_page,
     get_page_meta,
     get_pages_for_user,
+    get_pages_for_wiki,
     get_revision_count,
     get_revisions_paginated,
     get_user_by_token_hash,
     get_user_by_username,
+    get_public_pages_for_user_wikis,
+    get_wiki_by_slug,
+    get_wikis_for_user,
+    assign_page_to_wiki,
     save_page,
     update_page_visibility,
     verify_page_secret,
@@ -42,14 +48,17 @@ def _error(message, status):
     return jsonify({"error": message}), status
 
 
-def _serialize_page(meta, page_data):
-    return {
+def _serialize_page(meta, page_data, wiki_slug=None):
+    result = {
         "slug": meta["slug"],
         "title": get_title(page_data["content"]) or "",
         "content": page_data["content"],
         "visibility": meta["visibility"],
         "updated_at": page_data["created_at"].isoformat(),
     }
+    if wiki_slug:
+        result["wiki_slug"] = wiki_slug
+    return result
 
 
 @api_bp.route("/user")
@@ -57,12 +66,21 @@ def get_current_user():
     user = _require_auth()
     if not user:
         return _error("Unauthorized", 401)
+    wikis = get_wikis_for_user(user["id"])
     return jsonify(
         {
             "username": user.get("username"),
             "name": user.get("name"),
             "bio": user.get("bio"),
             "avatar": user.get("avatar"),
+            "wikis": [
+                {
+                    "slug": w["slug"],
+                    "name": w["name"],
+                    "visibility": w["visibility"],
+                }
+                for w in wikis
+            ],
         }
     )
 
@@ -75,16 +93,16 @@ def get_user_profile(username):
     profile = get_user_by_username(username)
     if not profile:
         return _error("User not found", 404)
-    pages = get_pages_for_user(profile["id"])
+    pages = get_public_pages_for_user_wikis(profile["id"])
     public_pages = [
         {
             "slug": p["slug"],
             "title": get_title(p["content"]) or "",
             "visibility": p["visibility"],
             "updated_at": p["updated_at"].isoformat(),
+            "wiki_slug": p.get("wiki_slug", ""),
         }
         for p in pages
-        if p["visibility"] in ("listed", "pinned")
     ]
     return jsonify(
         {
@@ -102,7 +120,16 @@ def list_pages():
     user = _require_auth()
     if not user:
         return _error("Unauthorized", 401)
-    pages = get_pages_for_user(user["id"])
+
+    wiki_slug = request.args.get("wiki")
+    if wiki_slug:
+        wiki = get_wiki_by_slug(wiki_slug)
+        if not wiki or wiki["owner_id"] != user["id"]:
+            return _error("Wiki not found", 404)
+        pages = get_pages_for_wiki(wiki["id"])
+    else:
+        pages = get_pages_for_user(user["id"])
+
     return jsonify(
         {
             "pages": [
@@ -142,11 +169,22 @@ def create_page():
             slug = slugify(get_title(content) or "")
         if not slug:
             slug = generate_slug()
-    else:
-        slug = slugify(data.get("slug", "")) or generate_slug()
 
-    if user:
-        visibility = data.get("visibility", "private")
+        # Determine wiki
+        wiki_slug = data.get("wiki")
+        wiki_id = None
+        if wiki_slug:
+            wiki = get_wiki_by_slug(wiki_slug)
+            if not wiki or wiki["owner_id"] != user["id"]:
+                return _error("Wiki not found", 404)
+            wiki_id = wiki["id"]
+        else:
+            default_wiki = get_default_wiki_for_user(user["id"])
+            if default_wiki:
+                wiki_id = default_wiki["id"]
+                wiki_slug = default_wiki["slug"]
+
+        visibility = data.get("visibility", "listed")
         if visibility not in VISIBILITY_OPTIONS:
             return _error(
                 f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400
@@ -159,13 +197,17 @@ def create_page():
             user["id"],
             source=_get_source(),
             ai_assisted=ai_assisted,
+            wiki_id=wiki_id,
         )
 
         meta = get_page_meta(slug, user["id"])
+        if not meta and wiki_id:
+            meta = get_page_meta(slug, wiki_id=wiki_id)
         page_data = get_page(meta["id"])
-        return jsonify(_serialize_page(meta, page_data)), 201
+        return jsonify(_serialize_page(meta, page_data, wiki_slug=wiki_slug)), 201
 
     # Unauthenticated: create unclaimed page
+    slug = slugify(data.get("slug", "")) or generate_slug()
     slug = save_page(
         slug,
         content,
@@ -238,6 +280,7 @@ def update_page(slug):
         user["id"],
         source=_get_source(),
         ai_assisted=ai_assisted,
+        wiki_id=meta.get("wiki_id"),
     )
 
     meta = get_page_meta(slug, user["id"])
@@ -261,6 +304,11 @@ def claim_page_by_slug(slug):
 
     if not claim_page_with_secret(page_meta["id"], user["id"]):
         return _error("Page already claimed", 409)
+
+    # Assign to default wiki
+    default_wiki = get_default_wiki_for_user(user["id"])
+    if default_wiki:
+        assign_page_to_wiki(page_meta["id"], default_wiki["id"])
 
     meta = get_page_meta(slug, user["id"])
     page_data = get_page(meta["id"])
@@ -313,5 +361,29 @@ def list_revisions(slug):
             ],
             "page": page,
             "total_pages": total_pages,
+        }
+    )
+
+
+# --- Wiki API ---
+
+
+@api_bp.route("/wikis")
+def list_wikis():
+    user = _require_auth()
+    if not user:
+        return _error("Unauthorized", 401)
+    wikis = get_wikis_for_user(user["id"])
+    return jsonify(
+        {
+            "wikis": [
+                {
+                    "slug": w["slug"],
+                    "name": w["name"],
+                    "visibility": w["visibility"],
+                    "license": w.get("license"),
+                }
+                for w in wikis
+            ]
         }
     )

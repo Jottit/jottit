@@ -170,15 +170,24 @@ def test_profile_home_no_avatar_graceful(client):
     assert b"No Avatar" in r.data
 
 
-# Profile pages show a profile header with avatar and bio
-def test_profile_page_shows_profile_header(client):
+# Wiki pages show a profile header with avatar and bio
+def test_wiki_page_shows_profile_header(client):
     user_id = create_user_with_username(
         client, "profpage@example.com", "profpage", "pp1"
     )
     update_user_settings(user_id, "Prof Page", "profpage", "Writer")
     update_user_avatar(user_id, "/uploads/test/avatar.jpg")
 
-    r = client.get("/@profpage/pp1")
+    r = client.get("/pp1", headers={"Host": "profpage.jottit.localhost:8000"})
     assert r.status_code == 200
     assert b"page-byline" in r.data
     assert b"u-photo" in r.data
+
+
+# @username/page redirects to wiki subdomain
+def test_profile_page_redirects_to_wiki(client):
+    create_user_with_username(client, "profredir@example.com", "profredir", "pr1")
+
+    r = client.get("/@profredir/pr1")
+    assert r.status_code == 301
+    assert "profredir.jottit.localhost:8000/pr1" in r.headers["Location"]

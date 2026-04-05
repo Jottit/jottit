@@ -1,18 +1,24 @@
 import re
 
-from flask import flash, redirect, render_template, request, session
+from flask import flash, g, redirect, render_template, request, session
 
 from db import (
     check_username_available,
+    check_wiki_slug_available,
     create_api_token,
+    create_wiki,
     delete_api_token,
     delete_user,
     find_or_create_user,
     get_api_tokens,
+    get_default_wiki_for_user,
     get_user,
+    get_wiki,
+    get_wikis_for_user,
     update_user_avatar,
     update_user_email,
     update_user_settings,
+    update_wiki,
     user_exists,
     verify_code,
 )
@@ -24,7 +30,7 @@ from storage import (
     validate_image,
 )
 from utils import RESERVED_USERNAMES, valid_email, valid_username
-from routes import bp, limiter, LICENSES, profile_url, require_user, send_verification
+from routes import bp, limiter, LICENSES, WIKI_VISIBILITY_OPTIONS, profile_url, require_user, send_verification, wiki_url
 
 
 @bp.route("/signin", methods=["GET", "POST"])
@@ -91,8 +97,9 @@ def user_settings():
         return redirect("/signin")
 
     back_url = "/"
+    wikis = get_wikis_for_user(user_id)
     return render_template(
-        "settings.html", user=user, back_url=back_url, licenses=LICENSES
+        "settings.html", user=user, back_url=back_url, licenses=LICENSES, wikis=wikis
     )
 
 
@@ -126,19 +133,27 @@ def settings_profile():
 
 @bp.route("/settings/license", methods=["GET", "POST"])
 def settings_license():
+    """License settings - now redirects to wiki settings since license is wiki-level."""
     user_id, user = require_user()
     if not user:
         return redirect("/signin")
 
+    wikis = get_wikis_for_user(user_id)
+    if not wikis:
+        return redirect("/settings")
+
     if request.method == "GET":
-        return render_template("settings_license.html", user=user, licenses=LICENSES)
+        return render_template("settings_license.html", user=user, licenses=LICENSES, wikis=wikis)
+
+    wiki_id = request.form.get("wiki_id", type=int)
+    wiki = get_wiki(wiki_id) if wiki_id else None
+    if not wiki or wiki["owner_id"] != user_id:
+        return redirect("/settings/license")
 
     license = request.form.get("license", "").strip()
     if license and license not in LICENSES:
         license = ""
-    update_user_settings(
-        user_id, user.get("name"), user.get("username") or "", user.get("bio"), license
-    )
+    update_wiki(wiki_id, license=license or None)
     if request.headers.get("X-Requested-With") == "fetch":
         return {"ok": True}
     flash("License saved")
@@ -371,3 +386,85 @@ def settings_avatar_delete():
             delete_image(key)
         update_user_avatar(user_id, None)
     return redirect("/settings/profile")
+
+
+# --- Wiki management ---
+
+
+@bp.route("/wiki/new", methods=["GET", "POST"])
+@limiter.limit("10 per hour", methods=["POST"])
+def new_wiki():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    if request.method == "GET":
+        return render_template("wiki_new.html")
+
+    name = request.form.get("name", "").strip()[:100]
+    slug = request.form.get("slug", "").strip().lower()[:64]
+    visibility = request.form.get("visibility", "public")
+
+    if not name:
+        return render_template("wiki_new.html", error="Name is required.", slug=slug, name=name)
+
+    if not slug:
+        from utils import slugify
+        slug = slugify(name)
+
+    if not slug:
+        return render_template("wiki_new.html", error="Slug is required.", slug=slug, name=name)
+
+    if not valid_username(slug):
+        return render_template(
+            "wiki_new.html",
+            error="Slug must be lowercase letters, numbers, and hyphens only.",
+            slug=slug, name=name,
+        )
+
+    if slug in RESERVED_USERNAMES:
+        return render_template("wiki_new.html", error="That slug is reserved.", slug=slug, name=name)
+
+    if not check_wiki_slug_available(slug):
+        return render_template(
+            "wiki_new.html", error="That slug is already taken.", slug=slug, name=name
+        )
+
+    if visibility not in WIKI_VISIBILITY_OPTIONS:
+        visibility = "public"
+
+    wiki_id = create_wiki(slug, name, user_id, visibility)
+    return redirect(wiki_url(slug))
+
+
+@bp.route("/wiki/<int:wiki_id>/settings", methods=["GET", "POST"])
+def wiki_settings(wiki_id):
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+
+    wiki = get_wiki(wiki_id)
+    if not wiki or wiki["owner_id"] != user_id:
+        abort(404)
+
+    if request.method == "GET":
+        return render_template("wiki_settings.html", wiki=wiki, licenses=LICENSES)
+
+    name = request.form.get("name", "").strip()[:100]
+    visibility = request.form.get("visibility", wiki["visibility"])
+    license = request.form.get("license", "").strip()
+
+    if name:
+        update_wiki(wiki_id, name=name)
+    if visibility in WIKI_VISIBILITY_OPTIONS:
+        update_wiki(wiki_id, visibility=visibility)
+    if license is not None:
+        if license and license not in LICENSES:
+            license = ""
+        update_wiki(wiki_id, license=license or None)
+
+    flash("Wiki settings saved")
+    return redirect(f"/wiki/{wiki_id}/settings")
+
+
+from flask import abort  # noqa: E402

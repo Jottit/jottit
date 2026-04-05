@@ -70,6 +70,9 @@ RESERVED_USERNAMES = {
     "assets",
 }
 
+# Wiki slugs share the same reserved set as usernames since they also map to subdomains
+RESERVED_WIKI_SLUGS = RESERVED_USERNAMES
+
 MAX_CONTENT_LENGTH = 200_000  # ~200KB, roughly 40k words
 
 _SANITIZE_ATTRIBUTES = {**nh3.ALLOWED_ATTRIBUTES, "*": {"class"}}

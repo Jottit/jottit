@@ -13,17 +13,21 @@ from flask import (
 )
 
 from db import (
+    assign_page_to_wiki,
     check_username_available,
     claim_page,
     delete_page,
     find_or_create_user,
     find_page_owner_for_redirect,
+    get_default_wiki_for_user,
     get_export_pages,
     get_export_pages_for_user,
+    get_export_pages_for_wiki,
     get_page,
     get_page_meta,
     get_pages_for_user,
     get_user,
+    get_wiki,
     rename_page,
     save_page,
     set_user_username,
@@ -51,9 +55,11 @@ from routes import (
     _set_profile_user,
     base_url,
     can_edit,
+    can_view_wiki,
     find_page,
     profile_url,
     send_verification,
+    wiki_url,
 )
 
 
@@ -71,6 +77,25 @@ def check_username_route():
         return {"available": False, "error": "That username is reserved."}
     if not check_username_available(username):
         return {"available": False, "error": "That username is already taken."}
+    return {"available": True}
+
+
+@bp.route("/api/check-wiki-slug")
+def check_wiki_slug_route():
+    from db import check_wiki_slug_available
+
+    slug = request.args.get("slug", "").strip().lower()
+    if not slug:
+        return {"available": False}
+    if not valid_username(slug):
+        return {
+            "available": False,
+            "error": "Wiki slug must be lowercase letters, numbers, and hyphens only.",
+        }
+    if slug in RESERVED_USERNAMES:
+        return {"available": False, "error": "That slug is reserved."}
+    if not check_wiki_slug_available(slug):
+        return {"available": False, "error": "That slug is already taken."}
     return {"available": True}
 
 
@@ -100,13 +125,25 @@ def pages_list():
 
 @bp.route("/@<username>/new", methods=["GET", "POST"])
 def profile_new_page(username):
-    _set_profile_user(username)
+    """Redirect to wiki-based new page."""
+    user = _set_profile_user(username)
+    from db import get_wikis_for_user
+    wikis = get_wikis_for_user(user["id"])
+    if wikis:
+        return redirect(wiki_url(wikis[0]["slug"], "/new"))
     return new_page()
 
 
 @bp.route("/@<username>/<slug>/edit", methods=["GET", "POST"])
 def profile_edit_page(username, slug):
-    _set_profile_user(username)
+    """Redirect to canonical wiki URL for editing."""
+    user = _set_profile_user(username)
+    from db import get_wikis_for_user
+    wikis = get_wikis_for_user(user["id"])
+    for w in wikis:
+        page_meta = get_page_meta(slug, wiki_id=w["id"])
+        if page_meta:
+            return redirect(wiki_url(w["slug"], f"/{slug}/edit"), 301)
     return edit_page(slug)
 
 
@@ -131,16 +168,18 @@ def profile_export_page(username, slug):
 @bp.route("/new", methods=["GET", "POST"])
 @limiter.limit("30 per hour", methods=["POST"])
 def new_page():
-    subdomain_user = g.subdomain_user
+    wiki = getattr(g, "wiki", None)
 
     if request.method == "GET":
+        if wiki and not can_view_wiki(wiki):
+            abort(404)
         return render_template(
             "edit.html",
             slug=None,
             title="",
             content="",
             is_new=True,
-            is_subdomain=subdomain_user is not None,
+            is_subdomain=wiki is not None,
         )
 
     title = request.form.get("title", "").strip()
@@ -149,9 +188,25 @@ def new_page():
     if title:
         content = f"# {title}\n\n{content}"
 
-    subdomain_user_id = subdomain_user["id"] if subdomain_user else None
-    owner_id = subdomain_user_id or session.get("user_id")
-    reserved = RESERVED_SLUGS if not subdomain_user else set()
+    if wiki:
+        owner_id = wiki["owner_id"]
+        if session.get("user_id") != owner_id:
+            abort(403)
+        reserved = set()
+        slug = None
+        if title:
+            nice_slug = slugify(title)
+            if nice_slug:
+                if not get_page_meta(nice_slug, wiki_id=wiki["id"]):
+                    slug = nice_slug
+        if not slug:
+            slug = generate_slug()
+        slug = save_page(slug, content, "listed", owner_id, wiki_id=wiki["id"])
+        return redirect(f"/{slug}")
+
+    # Apex domain - unclaimed page or auto-claim
+    owner_id = session.get("user_id")
+    reserved = RESERVED_SLUGS if not wiki else set()
     slug = None
     if owner_id and title:
         nice_slug = slugify(title)
@@ -161,21 +216,33 @@ def new_page():
     if not slug:
         slug = generate_slug()
 
-    visibility = "listed" if owner_id else "unlisted"
-    slug = save_page(slug, content, visibility, subdomain_user_id)
-    _track_new_page(slug, subdomain_user_id)
+    if owner_id:
+        # Auto-assign to default wiki
+        default_wiki = get_default_wiki_for_user(owner_id)
+        wiki_id = default_wiki["id"] if default_wiki else None
+        visibility = "listed"
+    else:
+        wiki_id = None
+        visibility = "unlisted"
 
-    return redirect(f"{g.url_prefix}/{slug}")
+    slug = save_page(slug, content, visibility, owner_id if owner_id else None, wiki_id=wiki_id)
+    _track_new_page(slug, owner_id, wiki_id)
+
+    if wiki_id and default_wiki:
+        return redirect(wiki_url(default_wiki["slug"], f"/{slug}"))
+    return redirect(f"/{slug}")
 
 
-def _track_new_page(slug, subdomain_user_id):
-    new_page_meta = get_page_meta(slug, subdomain_user_id)
+def _track_new_page(slug, user_id, wiki_id=None):
+    new_page_meta = get_page_meta(slug, user_id, wiki_id=wiki_id)
+    if not new_page_meta:
+        new_page_meta = get_page_meta(slug)
     if not new_page_meta:
         return
     created_pages = session.get("created_pages", [])
     created_pages.append(new_page_meta["id"])
     session["created_pages"] = created_pages
-    if session.get("user_id") and not subdomain_user_id:
+    if session.get("user_id") and not user_id:
         claim_page(new_page_meta["id"], session["user_id"])
     return new_page_meta
 
@@ -183,12 +250,19 @@ def _track_new_page(slug, subdomain_user_id):
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
 @limiter.limit("30 per 5 minutes", methods=["POST"])
 def edit_page(slug):
-    subdomain_user = g.subdomain_user
-    if slug in RESERVED_SLUGS and not subdomain_user:
-        abort(404)
-    page_meta = find_page(slug)
+    wiki = getattr(g, "wiki", None)
 
-    if not page_meta and not subdomain_user:
+    if slug in RESERVED_SLUGS and not wiki:
+        abort(404)
+
+    if wiki:
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
+        if not can_view_wiki(wiki):
+            abort(404)
+    else:
+        page_meta = find_page(slug)
+
+    if not page_meta and not wiki:
         owner_user_id = find_page_owner_for_redirect(slug)
         if owner_user_id:
             user = get_user(owner_user_id)
@@ -196,13 +270,11 @@ def edit_page(slug):
                 return redirect(profile_url(user["username"], f"/{slug}/edit"))
             return redirect(f"/{slug}")
 
-    # Allow editing unclaimed pages via token (e.g. from CLI publish output URL).
-    # On first visit with ?token=, validate and move to a httponly cookie to avoid
-    # leaking the secret in Referer headers, browser history, and server logs.
+    # Allow editing unclaimed pages via token
     query_token = request.args.get("token", "")
     if query_token and page_meta and page_meta["user_id"] is None:
         if verify_page_secret(slug, query_token) is not None:
-            resp = make_response(redirect(f"{g.url_prefix}/{slug}/edit"))
+            resp = make_response(redirect(f"/{slug}/edit"))
             resp.set_cookie(
                 f"page_token_{slug}",
                 query_token,
@@ -221,7 +293,9 @@ def edit_page(slug):
     )
 
     if not can_edit(page_meta) and not token_valid:
-        return redirect(f"{g.url_prefix}/{slug}")
+        if wiki:
+            return redirect(f"/{slug}")
+        return redirect(f"/{slug}")
 
     if request.method == "GET":
         row = get_page(page_meta["id"]) if page_meta else None
@@ -234,7 +308,7 @@ def edit_page(slug):
             title=title,
             content=content,
             is_new=page_meta is None,
-            is_subdomain=subdomain_user is not None,
+            is_subdomain=wiki is not None,
         )
 
     title = request.form.get("title", "").strip()
@@ -244,18 +318,22 @@ def edit_page(slug):
         content = f"# {title}\n\n{content}"
 
     is_new = page_meta is None
-    subdomain_user_id = subdomain_user["id"] if subdomain_user else None
-    # Preserve existing visibility on edit; default to "listed" for new pages
-    visibility = page_meta["visibility"] if page_meta else "listed"
-    slug = save_page(slug, content, visibility, subdomain_user_id)
+    wiki_id = wiki["id"] if wiki else (page_meta.get("wiki_id") if page_meta else None)
+    owner_id = wiki["owner_id"] if wiki else (page_meta["user_id"] if page_meta else None)
 
-    if is_new:
-        new_page_meta = _track_new_page(slug, subdomain_user_id)
+    visibility = page_meta["visibility"] if page_meta else "listed"
+    slug = save_page(slug, content, visibility, owner_id, wiki_id=wiki_id)
+
+    if is_new and wiki:
+        # New page in wiki
+        pass
+    elif is_new:
+        new_page_meta = _track_new_page(slug, owner_id, wiki_id)
         if new_page_meta:
-            effective_user_id = subdomain_user_id or session.get("user_id")
+            effective_user_id = owner_id or session.get("user_id")
             if effective_user_id and title:
                 nice_slug = slugify(title)
-                reserved = RESERVED_SLUGS if not subdomain_user else set()
+                reserved = RESERVED_SLUGS if not wiki else set()
                 if (
                     nice_slug
                     and nice_slug != slug
@@ -265,19 +343,23 @@ def edit_page(slug):
                     rename_page(new_page_meta["id"], nice_slug)
                     slug = nice_slug
     elif title and is_random_slug(slug):
-        effective_user_id = subdomain_user_id or session.get("user_id")
+        effective_user_id = owner_id or session.get("user_id")
         if effective_user_id:
             nice_slug = slugify(title)
-            reserved = RESERVED_SLUGS if not subdomain_user else set()
+            reserved = RESERVED_SLUGS if not wiki else set()
+            if wiki_id:
+                existing = get_page_meta(nice_slug, wiki_id=wiki_id)
+            else:
+                existing = get_page_meta(nice_slug, effective_user_id)
             if (
                 nice_slug
                 and nice_slug not in reserved
-                and not get_page_meta(nice_slug, effective_user_id)
+                and not existing
             ):
                 rename_page(page_meta["id"], nice_slug)
                 slug = nice_slug
 
-    return redirect(f"{g.url_prefix}/{slug}")
+    return redirect(f"/{slug}")
 
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])
@@ -354,6 +436,11 @@ def claim_verify(slug):
 def _finish_claim(slug, page_meta, user_id, username):
     claim_page(page_meta["id"], user_id)
     update_page_visibility(page_meta["id"], "listed")
+
+    # Assign to user's default wiki
+    default_wiki = get_default_wiki_for_user(user_id)
+    if default_wiki:
+        assign_page_to_wiki(page_meta["id"], default_wiki["id"])
 
     row = get_page(page_meta["id"])
     if row:
@@ -441,13 +528,23 @@ def claim_address(slug):
     name = session["claim_name"]
     set_user_username(user_id, username)
     update_user_settings(user_id, name=name, username=username, bio="", license=None)
+
+    # Create default wiki for the new user
+    from db import create_wiki, check_wiki_slug_available
+    if check_wiki_slug_available(username):
+        create_wiki(username, name, user_id)
+
     return _finish_claim(slug, page_meta, user_id, username)
 
 
 @bp.route("/<slug>/delete", methods=["GET", "POST"])
 @limiter.limit("5 per 5 minutes", methods=["POST"])
 def delete_page_route(slug):
-    page_meta = find_page(slug)
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
+    else:
+        page_meta = find_page(slug)
     if not page_meta:
         return redirect("/")
 
@@ -464,6 +561,8 @@ def delete_page_route(slug):
         )
 
     delete_page(page_meta["id"])
+    if wiki:
+        return redirect(wiki_url(wiki["slug"]))
     user = get_user(user_id) if user_id else None
     if user and user.get("username"):
         return redirect(profile_url(user["username"]))
@@ -473,7 +572,11 @@ def delete_page_route(slug):
 @bp.route("/<slug>/visibility", methods=["POST"])
 @limiter.limit("30 per minute", methods=["POST"])
 def update_visibility(slug):
-    page_meta = find_page(slug)
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
+    else:
+        page_meta = find_page(slug)
     if not page_meta:
         abort(404)
 
@@ -490,16 +593,20 @@ def update_visibility(slug):
     if request.headers.get("X-Requested-With") == "fetch":
         return "", 204
 
-    return redirect(f"{g.url_prefix}/{slug}")
+    return redirect(f"/{slug}")
 
 
 @bp.route("/<slug>/export")
 def export_page_route(slug):
-    page_meta = find_page(slug)
+    wiki = getattr(g, "wiki", None)
+    if wiki:
+        page_meta = get_page_meta(slug, wiki_id=wiki["id"])
+    else:
+        page_meta = find_page(slug)
     if not page_meta:
         abort(404)
     if not can_edit(page_meta):
-        return redirect(f"{g.url_prefix}/{slug}")
+        return redirect(f"/{slug}")
 
     pages = get_export_pages(page_meta["id"])
     buf = io.BytesIO()

@@ -144,32 +144,23 @@ def test_view_page_shows_latest_content(client):
     assert b"Second" in r.data
 
 
-# -- Private visibility --
+# -- Unlisted visibility --
 
 
-# Private pages are visible to their creator
-def test_private_visible_to_creator(client):
-    from db import get_page_meta, update_page_visibility
-
-    client.post("/dv1/edit", data={"title": "Secret", "content": "Private content"})
-    page_meta = get_page_meta("dv1")
-    update_page_visibility(page_meta["id"], "private")
+# Unlisted pages are visible to their creator
+def test_unlisted_visible_to_creator(client):
+    client.post("/dv1/edit", data={"title": "Secret", "content": "Unlisted content"})
     r = client.get("/dv1")
     assert r.status_code == 200
-    assert b"private" in r.data.lower()
 
 
-# Private pages return 404 for non-creators
-def test_private_hidden_from_non_creator(client):
-    from db import get_page_meta, update_page_visibility
-
-    client.post("/dv2/edit", data={"title": "Secret", "content": "Private content"})
-    page_meta = get_page_meta("dv2")
-    update_page_visibility(page_meta["id"], "private")
+# Unlisted pages are still accessible by anyone with the URL
+def test_unlisted_accessible_by_url(client):
+    client.post("/dv2/edit", data={"title": "Secret", "content": "Unlisted content"})
     with client.session_transaction() as sess:
         sess.clear()
     r = client.get("/dv2")
-    assert r.status_code == 404
+    assert r.status_code == 200
 
 
 # -- Delete page --
@@ -261,17 +252,20 @@ def test_wikilink_renders_as_text(client):
 
 
 def _setup_user_with_pages(client):
+    from db import create_wiki, check_wiki_slug_available
     user_id = find_or_create_user("tabs@example.com")
     set_user_username(user_id, "tabuser")
+    wiki_id = None
+    if check_wiki_slug_available("tabuser"):
+        wiki_id = create_wiki("tabuser", "tabuser", user_id)
 
     for slug, content, vis in [
         ("pub1", "# Public One\n\nContent", "listed"),
         ("pub2", "# Public Two\n\nContent", "listed"),
         ("pin1", "# Pinned Post\n\nContent", "pinned"),
         ("unl1", "# Unlisted Post\n\nContent", "unlisted"),
-        ("prv1", "# Private Post\n\nContent", "private"),
     ]:
-        save_page(slug, content, vis, user_id=user_id)
+        save_page(slug, content, vis, user_id=user_id, wiki_id=wiki_id)
         page_meta = get_page_meta(slug, user_id)
         claim_page(page_meta["id"], user_id)
 
@@ -287,7 +281,6 @@ def test_homepage_shows_tabs_when_logged_in(client):
     body = r.data.decode()
     assert "tab--active" in body
     assert "All" in body
-    assert "Private" in body
     assert "Unlisted" in body
     assert "Listed" in body
     assert "Pinned" in body
@@ -303,19 +296,6 @@ def test_homepage_all_tab_shows_all_pages(client):
     assert "Public One" in body
     assert "Pinned Post" in body
     assert "Unlisted Post" in body
-    assert "Private Post" in body
-
-
-# Private tab filters to private pages only
-def test_homepage_private_tab_filters(client):
-    user_id = _setup_user_with_pages(client)
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/?tab=private")
-    body = r.data.decode()
-    assert "Private Post" in body
-    assert "Public One" not in body
-    assert "Pinned Post" not in body
 
 
 # Pinned tab filters to pinned pages only
@@ -327,7 +307,6 @@ def test_homepage_pinned_tab_filters(client):
     body = r.data.decode()
     assert "Pinned Post" in body
     assert "Public One" not in body
-    assert "Private Post" not in body
 
 
 # Public visitor sees no tabs on profile, only listed and pinned

@@ -1,5 +1,7 @@
 from db import (
     create_api_token,
+    create_wiki,
+    check_wiki_slug_available,
     find_or_create_user,
     get_page_meta,
     get_revision,
@@ -16,6 +18,8 @@ def _auth(token):
 def _setup_user_with_token(username="testuser"):
     user_id = find_or_create_user(f"{username}@test.com")
     set_user_username(user_id, username)
+    if check_wiki_slug_available(username):
+        create_wiki(username, username, user_id)
     token, token_id = create_api_token(user_id, "test token")
     return user_id, token
 
@@ -47,18 +51,27 @@ def test_get_current_user(client):
 
 def test_get_user_profile(client):
     user_id, token = _setup_user_with_token()
-    slug = save_page("mypage", "# Hello\n\nWorld", "listed", user_id)
+    # Create page via API so it auto-assigns to default wiki
+    client.post(
+        "/api/v1/pages",
+        headers=_auth(token),
+        json={"content": "# Hello\n\nWorld", "visibility": "listed"},
+    )
     r = client.get("/api/v1/users/testuser", headers=_auth(token))
     assert r.status_code == 200
     data = r.get_json()
     assert data["username"] == "testuser"
     assert len(data["pages"]) == 1
-    assert data["pages"][0]["slug"] == slug
 
 
-def test_get_user_profile_excludes_private(client):
+def test_get_user_profile_excludes_unlisted(client):
     user_id, token = _setup_user_with_token()
-    save_page("private-page", "# Private\n\nContent", "private", user_id)
+    # Create unlisted page via API
+    client.post(
+        "/api/v1/pages",
+        headers=_auth(token),
+        json={"content": "# Unlisted\n\nContent", "visibility": "unlisted"},
+    )
     r = client.get("/api/v1/users/testuser", headers=_auth(token))
     assert r.get_json()["pages"] == []
 
@@ -80,7 +93,7 @@ def test_create_page(client):
     data = r.get_json()
     assert data["title"] == "My Page"
     assert data["content"] == "# My Page\n\nHello world"
-    assert data["visibility"] == "private"
+    assert data["visibility"] == "listed"
 
 
 def test_create_page_with_custom_slug(client):
@@ -94,15 +107,25 @@ def test_create_page_with_custom_slug(client):
     assert r.get_json()["slug"] == "my-custom-slug"
 
 
-def test_create_page_as_private(client):
+def test_create_page_as_unlisted(client):
+    _, token = _setup_user_with_token()
+    r = client.post(
+        "/api/v1/pages",
+        headers=_auth(token),
+        json={"content": "# Unlisted\n\nContent", "visibility": "unlisted"},
+    )
+    assert r.status_code == 201
+    assert r.get_json()["visibility"] == "unlisted"
+
+
+def test_create_page_rejects_private_visibility(client):
     _, token = _setup_user_with_token()
     r = client.post(
         "/api/v1/pages",
         headers=_auth(token),
         json={"content": "# Private\n\nContent", "visibility": "private"},
     )
-    assert r.status_code == 201
-    assert r.get_json()["visibility"] == "private"
+    assert r.status_code == 400
 
 
 def test_create_page_empty_content_returns_400(client):

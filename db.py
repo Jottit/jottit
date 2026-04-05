@@ -102,41 +102,51 @@ def run_migrations():
                 if filename in applied:
                     continue
                 path = os.path.join(migrations_dir, filename)
-                if filename.endswith(".sql"):
-                    with open(path) as f:
-                        sql = f.read()
-                    conn.execute(sql, prepare=False)
-                else:
-                    spec = importlib.util.spec_from_file_location(filename, path)
-                    mod = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(mod)
-                    mod.migrate(conn)
-                conn.execute(
-                    "INSERT INTO schema_migrations (filename) VALUES (%s) ON CONFLICT DO NOTHING",
-                    (filename,),
-                )
-                conn.commit()
+                try:
+                    if filename.endswith(".sql"):
+                        with open(path) as f:
+                            sql = f.read()
+                        conn.execute(sql, prepare=False)
+                    else:
+                        spec = importlib.util.spec_from_file_location(filename, path)
+                        mod = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(mod)
+                        mod.migrate(conn)
+                    conn.execute(
+                        "INSERT INTO schema_migrations (filename) VALUES (%s) ON CONFLICT DO NOTHING",
+                        (filename,),
+                    )
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+                    raise
         finally:
             conn.execute("SELECT pg_advisory_unlock(1)")
 
 
-def _find_page_by_slug(conn, slug, user_id=None):
+def _find_page_by_slug(conn, slug, user_id=None, wiki_id=None):
+    if wiki_id is not None:
+        return conn.execute(
+            "SELECT id, slug, user_id, wiki_id, visibility FROM pages WHERE slug = %s AND wiki_id = %s",
+            (slug, wiki_id),
+        ).fetchone()
     if user_id is not None:
         return conn.execute(
-            "SELECT id, slug, user_id, visibility FROM pages WHERE slug = %s AND user_id = %s",
+            "SELECT id, slug, user_id, wiki_id, visibility FROM pages WHERE slug = %s AND user_id = %s",
             (slug, user_id),
         ).fetchone()
     return conn.execute(
-        "SELECT id, slug, user_id, visibility FROM pages WHERE slug = %s AND user_id IS NULL",
+        "SELECT id, slug, user_id, wiki_id, visibility FROM pages WHERE slug = %s AND user_id IS NULL",
         (slug,),
     ).fetchone()
 
 
 def save_page(
-    slug, content, visibility="private", user_id=None, source="web", ai_assisted=False
+    slug, content, visibility="unlisted", user_id=None, source="web", ai_assisted=False,
+    wiki_id=None,
 ):
     with get_db() as conn:
-        page = _find_page_by_slug(conn, slug, user_id)
+        page = _find_page_by_slug(conn, slug, user_id, wiki_id=wiki_id)
 
         if page:
             conn.execute(
@@ -153,8 +163,8 @@ def save_page(
             for _attempt in range(3):
                 try:
                     cursor = conn.execute(
-                        "INSERT INTO pages (slug, original_slug, visibility, user_id) VALUES (%s, %s, %s, %s) RETURNING id",
-                        (slug, original_slug, visibility, user_id),
+                        "INSERT INTO pages (slug, original_slug, visibility, user_id, wiki_id) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                        (slug, original_slug, visibility, user_id, wiki_id),
                     )
                     page_id = cursor.fetchone()["id"]
                     break
@@ -197,9 +207,9 @@ def get_page_full(page_id):
         ).fetchone()
 
 
-def get_page_meta(slug, user_id=None):
+def get_page_meta(slug, user_id=None, wiki_id=None):
     with get_db() as conn:
-        return _find_page_by_slug(conn, slug, user_id)
+        return _find_page_by_slug(conn, slug, user_id, wiki_id=wiki_id)
 
 
 def find_page_owner_for_redirect(slug):
@@ -213,15 +223,20 @@ def find_page_owner_for_redirect(slug):
         return None
 
 
-def find_page_by_original_slug(original_slug, user_id=None):
+def find_page_by_original_slug(original_slug, user_id=None, wiki_id=None):
     with get_db() as conn:
+        if wiki_id is not None:
+            return conn.execute(
+                "SELECT id, slug, user_id, wiki_id FROM pages WHERE original_slug = %s AND wiki_id = %s",
+                (original_slug, wiki_id),
+            ).fetchone()
         if user_id is not None:
             return conn.execute(
-                "SELECT id, slug, user_id FROM pages WHERE original_slug = %s AND user_id = %s",
+                "SELECT id, slug, user_id, wiki_id FROM pages WHERE original_slug = %s AND user_id = %s",
                 (original_slug, user_id),
             ).fetchone()
         return conn.execute(
-            "SELECT id, slug, user_id FROM pages WHERE original_slug = %s LIMIT 1",
+            "SELECT id, slug, user_id, wiki_id FROM pages WHERE original_slug = %s LIMIT 1",
             (original_slug,),
         ).fetchone()
 
@@ -273,7 +288,7 @@ def get_revision(page_id, revision):
 def get_user(user_id):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, email, username, name, bio, avatar, license, subdomain FROM users WHERE id = %s",
+            "SELECT id, email, username, name, bio, avatar FROM users WHERE id = %s",
             (user_id,),
         ).fetchone()
 
@@ -281,7 +296,7 @@ def get_user(user_id):
 def get_user_by_username(username):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, email, username, name, bio, avatar, license, subdomain FROM users WHERE username = %s",
+            "SELECT id, email, username, name, bio, avatar FROM users WHERE username = %s",
             (username,),
         ).fetchone()
 
@@ -364,7 +379,7 @@ def rename_page(page_id, new_slug):
 def get_pages_for_user(user_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT p.slug, p.visibility, p.updated_at, r.content
+            """SELECT p.slug, p.visibility, p.updated_at, p.wiki_id, r.content
                FROM pages p
                JOIN revisions r ON r.page_id = p.id
                WHERE p.user_id = %s
@@ -394,8 +409,8 @@ def update_page_visibility(page_id, visibility):
 def update_user_settings(user_id, name, username, bio=None, license=None):
     with get_db() as conn:
         conn.execute(
-            "UPDATE users SET name = %s, username = %s, bio = %s, license = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-            (name or None, username or None, bio or None, license or None, user_id),
+            "UPDATE users SET name = %s, username = %s, bio = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (name or None, username or None, bio or None, user_id),
         )
         conn.commit()
 
@@ -481,10 +496,11 @@ def get_feed_entries_for_user(user_id):
 def get_public_pages():
     with get_db() as conn:
         return conn.execute(
-            """SELECT p.slug, p.updated_at, u.username
+            """SELECT p.slug, p.updated_at, u.username, w.slug AS wiki_slug
                FROM pages p
                LEFT JOIN users u ON p.user_id = u.id
-               WHERE p.visibility != 'private'
+               LEFT JOIN wikis w ON p.wiki_id = w.id
+               WHERE p.visibility IN ('unlisted', 'listed', 'pinned')
                ORDER BY p.updated_at DESC""",
         ).fetchall()
 
@@ -600,7 +616,7 @@ def verify_page_secret(slug, secret):
     secret_hash = hashlib.sha256(secret.encode()).hexdigest()
     with get_db() as conn:
         return conn.execute(
-            """SELECT p.id, p.slug, p.user_id, p.visibility FROM page_secrets ps
+            """SELECT p.id, p.slug, p.user_id, p.wiki_id, p.visibility FROM page_secrets ps
                JOIN pages p ON ps.page_id = p.id
                WHERE p.slug = %s AND p.user_id IS NULL AND ps.secret_hash = %s
                AND ps.created_at > NOW() - INTERVAL '30 days'""",
@@ -625,7 +641,7 @@ def claim_page_with_secret(page_id, user_id):
 def get_user_by_token_hash(token_hash):
     with get_db() as conn:
         row = conn.execute(
-            """SELECT u.id, u.email, u.username, u.name, u.bio, u.avatar, u.license
+            """SELECT u.id, u.email, u.username, u.name, u.bio, u.avatar
                FROM api_tokens t
                JOIN users u ON t.user_id = u.id
                WHERE t.token_hash = %s""",
@@ -638,3 +654,155 @@ def get_user_by_token_hash(token_hash):
             )
             conn.commit()
         return row
+
+
+# --- Wiki functions ---
+
+
+def create_wiki(slug, name, owner_id, visibility="public", license=None):
+    with get_db() as conn:
+        row = conn.execute(
+            """INSERT INTO wikis (slug, name, owner_id, visibility, license)
+               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
+            (slug, name, owner_id, visibility, license),
+        ).fetchone()
+        conn.commit()
+        return row["id"]
+
+
+def get_wiki(wiki_id):
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT id, slug, name, owner_id, visibility, license, created_at, updated_at FROM wikis WHERE id = %s",
+            (wiki_id,),
+        ).fetchone()
+
+
+def get_wiki_by_slug(slug):
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT id, slug, name, owner_id, visibility, license, created_at, updated_at FROM wikis WHERE slug = %s",
+            (slug,),
+        ).fetchone()
+
+
+def get_wikis_for_user(user_id):
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT id, slug, name, owner_id, visibility, license, created_at, updated_at FROM wikis WHERE owner_id = %s ORDER BY created_at ASC",
+            (user_id,),
+        ).fetchall()
+
+
+def get_pages_for_wiki(wiki_id):
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT p.slug, p.visibility, p.updated_at, r.content
+               FROM pages p
+               JOIN revisions r ON r.page_id = p.id
+               WHERE p.wiki_id = %s
+               AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)
+               ORDER BY p.updated_at DESC""",
+            (wiki_id,),
+        ).fetchall()
+
+
+def get_public_pages_for_user_wikis(user_id):
+    """Get all listed/pinned pages across a user's public wikis, for profile aggregation."""
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT p.slug, p.visibility, p.updated_at, r.content, w.slug AS wiki_slug
+               FROM pages p
+               JOIN wikis w ON p.wiki_id = w.id
+               JOIN revisions r ON r.page_id = p.id
+               WHERE w.owner_id = %s AND w.visibility = 'public'
+               AND p.visibility IN ('listed', 'pinned')
+               AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)
+               ORDER BY
+                   CASE WHEN p.visibility = 'pinned' THEN 0 ELSE 1 END,
+                   p.updated_at DESC""",
+            (user_id,),
+        ).fetchall()
+
+
+def update_wiki(wiki_id, name=None, visibility=None, license=None):
+    with get_db() as conn:
+        if name is not None:
+            conn.execute(
+                "UPDATE wikis SET name = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                (name, wiki_id),
+            )
+        if visibility is not None:
+            conn.execute(
+                "UPDATE wikis SET visibility = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                (visibility, wiki_id),
+            )
+        if license is not None:
+            conn.execute(
+                "UPDATE wikis SET license = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                (license, wiki_id),
+            )
+        conn.commit()
+
+
+def check_wiki_slug_available(slug):
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id FROM wikis WHERE slug = %s", (slug,)
+        ).fetchone()
+        return row is None
+
+
+def get_feed_entries_for_wiki(wiki_id):
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT * FROM (
+                   SELECT DISTINCT ON (p.id)
+                       p.slug,
+                       r.content,
+                       r.created_at
+                   FROM pages p
+                   JOIN revisions r ON r.page_id = p.id
+                   WHERE p.wiki_id = %s AND p.visibility IN ('listed', 'pinned')
+                   ORDER BY p.id, r.revision DESC
+               ) sub
+               ORDER BY created_at DESC
+               LIMIT 20""",
+            (wiki_id,),
+        ).fetchall()
+
+
+def get_export_pages_for_wiki(wiki_id):
+    with get_db() as conn:
+        return conn.execute(
+            """SELECT * FROM (
+                   SELECT DISTINCT ON (p.id)
+                       p.slug,
+                       r.content,
+                       r.created_at
+                   FROM pages p
+                   JOIN revisions r ON r.page_id = p.id
+                   WHERE p.wiki_id = %s
+                   ORDER BY p.id, r.revision DESC
+               ) sub
+               ORDER BY slug ASC""",
+            (wiki_id,),
+        ).fetchall()
+
+
+def assign_page_to_wiki(page_id, wiki_id):
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE pages SET wiki_id = %s WHERE id = %s",
+            (wiki_id, page_id),
+        )
+        conn.commit()
+
+
+def get_default_wiki_for_user(user_id):
+    """Get the first (default) wiki for a user."""
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT id, slug, name, owner_id, visibility, license FROM wikis WHERE owner_id = %s ORDER BY created_at ASC LIMIT 1",
+            (user_id,),
+        ).fetchone()

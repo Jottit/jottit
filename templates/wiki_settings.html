@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ wiki.name or wiki.slug }} settings — Jottit{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/" class="panel-back">&larr; Back</a>
+    <h1 class="title">Wiki settings: {{ wiki.name or wiki.slug }}</h1>
+    <div class="panel">
+        {% for message in get_flashed_messages() %}
+        <p class="notice notice--success">{{ message }}</p>
+        {% endfor %}
+        <form method="post" class="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" id="name" name="name" class="form-input" value="{{ wiki.name }}" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Address</label>
+                <p class="form-static">{{ wiki.slug }}.jottit.org</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Visibility</label>
+                <div class="form-radio-group">
+                    <label class="form-radio"><input type="radio" name="visibility" value="public"{% if wiki.visibility == 'public' %} checked{% endif %}> Public — anyone can view</label>
+                    <label class="form-radio"><input type="radio" name="visibility" value="private"{% if wiki.visibility == 'private' %} checked{% endif %}> Private — only you can view</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="license" class="form-label">License</label>
+                <select id="license" name="license" class="form-select">
+                    <option value="">None</option>
+                    {% for key, info in licenses.items() %}
+                    <option value="{{ key }}"{% if wiki.license == key %} selected{% endif %}>{{ info.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-solid">Save</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
