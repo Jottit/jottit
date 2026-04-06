@@ -121,7 +121,7 @@ def sidebar_vars(user_id, username, active_slug=None):
     pinned_slugs = set()
     for p in pages:
         title = get_title(p["content"]) if p["content"] else None
-        item = {"slug": p["slug"], "title": title or p["slug"]}
+        item = {"slug": p["slug"], "title": title or "Untitled"}
         if p["visibility"] == "pinned":
             pinned.append(item)
             pinned_slugs.add(p["slug"])
@@ -129,7 +129,7 @@ def sidebar_vars(user_id, username, active_slug=None):
         if p["slug"] in pinned_slugs:
             continue
         title = get_title(p["content"]) if p["content"] else None
-        recent.append({"slug": p["slug"], "title": title or p["slug"]})
+        recent.append({"slug": p["slug"], "title": title or "Untitled"})
         if len(recent) >= 5:
             break
     return {

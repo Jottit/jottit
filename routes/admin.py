@@ -9,6 +9,7 @@ from db import (
     delete_user,
     find_or_create_user,
     get_api_tokens,
+    get_pages_for_user,
     get_user,
     update_user_avatar,
     update_user_email,
@@ -23,8 +24,8 @@ from storage import (
     upload_image,
     validate_image,
 )
-from utils import RESERVED_USERNAMES, valid_email, valid_username
-from routes import bp, limiter, LICENSES, profile_url, require_user, send_verification
+from utils import RESERVED_USERNAMES, get_title, valid_email, valid_username
+from routes import account_link_vars, bp, limiter, LICENSES, profile_url, require_user, send_verification
 
 
 @bp.route("/signin", methods=["GET", "POST"])
@@ -82,6 +83,30 @@ def signin_verify():
 def signout():
     session.pop("user_id", None)
     return redirect("/")
+
+
+@bp.route("/pages")
+def user_pages():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+    pages = get_pages_for_user(user_id)
+    page_list = []
+    for p in pages:
+        title = get_title(p["content"]) if p["content"] else None
+        page_list.append({
+            "slug": p["slug"],
+            "title": title or "Untitled",
+            "visibility": p["visibility"],
+            "updated_at": p["updated_at"],
+        })
+    username = user.get("username")
+    return render_template(
+        "user_pages.html",
+        pages=page_list,
+        username=username,
+        **account_link_vars(),
+    )
 
 
 @bp.route("/settings")

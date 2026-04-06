@@ -267,3 +267,22 @@ def test_homepage_logged_out_shows_landing(client):
     body = r.data.decode()
     assert "tab--active" not in body
     assert "Create a page" in body
+
+
+# /pages requires sign-in
+def test_pages_requires_signin(client):
+    r = client.get("/pages")
+    assert r.status_code == 302
+    assert "/signin" in r.headers["Location"]
+
+
+# /pages shows all pages for signed-in user
+def test_pages_shows_all_pages(client):
+    user_id = _setup_user_with_pages(client)
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/pages")
+    assert r.status_code == 200
+    assert b"Public One" in r.data
+    assert b"Pinned Post" in r.data
+    assert b"Unlisted Post" in r.data
