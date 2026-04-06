@@ -1124,7 +1124,7 @@
 }
 
 .claim-banner-text {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-md);
     color: var(--text-secondary);
 }
 
