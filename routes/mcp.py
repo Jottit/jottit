@@ -52,8 +52,8 @@ TOOLS = [
                 },
                 "visibility": {
                     "type": "string",
-                    "enum": ["private", "unlisted", "listed", "pinned"],
-                    "default": "private",
+                    "enum": ["unlisted", "listed", "pinned"],
+                    "default": "unlisted",
                 },
             },
             "required": ["content"],
@@ -69,7 +69,7 @@ TOOLS = [
                 "content": {"type": "string", "description": "Markdown content"},
                 "visibility": {
                     "type": "string",
-                    "enum": ["private", "unlisted", "listed", "pinned"],
+                    "enum": ["unlisted", "listed", "pinned"],
                 },
             },
             "required": ["slug"],
@@ -167,7 +167,7 @@ def _call_tool(name, args, user):
             slug = generate_slug()
 
         if user:
-            visibility = args.get("visibility", "private")
+            visibility = args.get("visibility", "unlisted")
             if visibility not in VISIBILITY_OPTIONS:
                 return _text_result(
                     f"Error: visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}"

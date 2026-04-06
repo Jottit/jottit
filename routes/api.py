@@ -146,7 +146,7 @@ def create_page():
         slug = slugify(data.get("slug", "")) or generate_slug()
 
     if user:
-        visibility = data.get("visibility", "private")
+        visibility = data.get("visibility", "unlisted")
         if visibility not in VISIBILITY_OPTIONS:
             return _error(
                 f"Visibility must be one of: {', '.join(VISIBILITY_OPTIONS)}", 400

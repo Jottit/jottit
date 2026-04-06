@@ -37,7 +37,6 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="listing-select-wrap">
                 <select name="visibility" class="listing-select" data-slug="{{ slug }}">
-                    <option value="private"{% if visibility == 'private' %} selected{% endif %}>Private</option>
                     <option value="unlisted"{% if visibility == 'unlisted' %} selected{% endif %}>Unlisted</option>
                     <option value="listed"{% if visibility == 'listed' %} selected{% endif %}>Listed</option>
                     <option value="pinned"{% if visibility == 'pinned' %} selected{% endif %}>Pinned</option>
@@ -46,7 +45,6 @@
         </form>
         {% endif %}
         <div class="page-actions-buttons">
-            {% if visibility == 'private' %}<span class="draft-pill">PRIVATE</span>{% endif %}
             {% if is_owner %}<a href="{{ url_prefix }}/{{ slug }}/delete" class="btn btn--outline btn--sm">Delete</a>{% endif %}
             <a href="{{ url_prefix }}/{{ slug }}/history" class="btn btn--outline btn--sm">History</a>
             <a href="{{ url_prefix }}/{{ slug }}/edit" class="btn btn--primary btn--sm">Edit</a>

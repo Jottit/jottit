@@ -66,7 +66,7 @@ def install_cli():
     return send_from_directory("static", "install-cli.sh", mimetype="text/plain")
 
 
-_VISIBILITY_TABS = ("all", "private", "unlisted", "listed", "pinned")
+_VISIBILITY_TABS = ("all", "unlisted", "listed", "pinned")
 
 
 @bp.route("/")
@@ -293,9 +293,6 @@ def view_page(slug):
         and page_meta["user_id"] is not None
     )
     page_is_creator = is_creator(page_meta)
-
-    if row["visibility"] == "private" and not is_owner and not page_is_creator:
-        abort(404)
 
     page_can_edit = can_edit(page_meta)
     show_actions = is_owner or (page_is_creator and page_can_edit)

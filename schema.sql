@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS pages (
     slug TEXT NOT NULL,
     original_slug TEXT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    visibility TEXT NOT NULL DEFAULT 'private',
+    visibility TEXT NOT NULL DEFAULT 'unlisted',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

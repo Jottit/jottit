@@ -25,9 +25,9 @@ def _read_content(file, title):
 @click.option("--slug", help="Custom slug for the page")
 @click.option(
     "--visibility",
-    type=click.Choice(["private", "unlisted", "listed", "pinned"]),
+    type=click.Choice(["unlisted", "listed", "pinned"]),
     default=None,
-    help="Page visibility (default: private, or unlisted if not signed in)",
+    help="Page visibility (default: unlisted)",
 )
 @click.option("--title", help="Page title (prepended as # heading if missing)")
 @click.option(

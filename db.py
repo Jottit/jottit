@@ -133,7 +133,7 @@ def _find_page_by_slug(conn, slug, user_id=None):
 
 
 def save_page(
-    slug, content, visibility="private", user_id=None, source="web", ai_assisted=False
+    slug, content, visibility="unlisted", user_id=None, source="web", ai_assisted=False
 ):
     with get_db() as conn:
         page = _find_page_by_slug(conn, slug, user_id)
@@ -423,7 +423,7 @@ def get_export_pages(page_id):
             """SELECT p.slug, r.content, r.created_at
                FROM pages p
                JOIN revisions r ON r.page_id = p.id
-               WHERE p.id = %s AND p.visibility != 'private'
+               WHERE p.id = %s
                AND r.revision = (SELECT MAX(r2.revision) FROM revisions r2 WHERE r2.page_id = p.id)""",
             (page_id,),
         ).fetchall()
@@ -439,7 +439,7 @@ def get_export_pages_for_user(user_id):
                        r.created_at
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
-                   WHERE p.user_id = %s AND p.visibility != 'private'
+                   WHERE p.user_id = %s
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY slug ASC""",

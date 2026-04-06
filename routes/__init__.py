@@ -37,7 +37,7 @@ LICENSES = {
     },
 }
 
-VISIBILITY_OPTIONS = ("private", "unlisted", "listed", "pinned")
+VISIBILITY_OPTIONS = ("unlisted", "listed", "pinned")
 
 
 def _get_subdomain():

@@ -56,13 +56,6 @@ def test_get_user_profile(client):
     assert data["pages"][0]["slug"] == slug
 
 
-def test_get_user_profile_excludes_private(client):
-    user_id, token = _setup_user_with_token()
-    save_page("private-page", "# Private\n\nContent", "private", user_id)
-    r = client.get("/api/v1/users/testuser", headers=_auth(token))
-    assert r.get_json()["pages"] == []
-
-
 def test_get_user_profile_not_found(client):
     _, token = _setup_user_with_token()
     r = client.get("/api/v1/users/nobody", headers=_auth(token))
@@ -80,7 +73,7 @@ def test_create_page(client):
     data = r.get_json()
     assert data["title"] == "My Page"
     assert data["content"] == "# My Page\n\nHello world"
-    assert data["visibility"] == "private"
+    assert data["visibility"] == "unlisted"
 
 
 def test_create_page_with_custom_slug(client):
@@ -94,15 +87,15 @@ def test_create_page_with_custom_slug(client):
     assert r.get_json()["slug"] == "my-custom-slug"
 
 
-def test_create_page_as_private(client):
+def test_create_page_as_unlisted(client):
     _, token = _setup_user_with_token()
     r = client.post(
         "/api/v1/pages",
         headers=_auth(token),
-        json={"content": "# Private\n\nContent", "visibility": "private"},
+        json={"content": "# Unlisted\n\nContent", "visibility": "unlisted"},
     )
     assert r.status_code == 201
-    assert r.get_json()["visibility"] == "private"
+    assert r.get_json()["visibility"] == "unlisted"
 
 
 def test_create_page_empty_content_returns_400(client):

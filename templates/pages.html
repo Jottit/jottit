@@ -12,7 +12,7 @@
             {% for page in pages %}
             <li>
                 <a href="{% if username %}/@{{ username }}/{{ page.slug }}{% else %}/{{ page.slug }}{% endif %}" class="menu-list-link">
-                    <span class="menu-list-name">{{ page.title }}{% if page.visibility == 'private' %} <span class="draft-pill">PRIVATE</span>{% endif %}</span>
+                    <span class="menu-list-name">{{ page.title }}</span>
                     <span class="menu-list-url">{% if username %}jottit.org/@{{ username }}/{{ page.slug }}{% else %}jottit.org/{{ page.slug }}{% endif %}</span>
                 </a>
             </li>

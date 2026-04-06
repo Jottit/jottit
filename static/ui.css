@@ -734,7 +734,7 @@
 }
 
 .site-header-name {
-    font-size: var(--font-size-xl2);
+    font-size: var(--font-size-xl);
     font-weight: 600;
     color: var(--site-color-text);
     text-decoration: none;
@@ -1077,20 +1077,6 @@
     text-align: center;
     font-size: var(--font-size-xl);
     font-variant-numeric: tabular-nums;
-}
-
-/* Draft pill */
-
-.draft-pill {
-    font-size: var(--font-size-xs, 0.75rem);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--warning);
-    background: rgba(230, 126, 34, 0.1);
-    padding: 0.15em 0.6em;
-    border-radius: var(--radius-pill);
-    vertical-align: middle;
 }
 
 /* Provenance pills */

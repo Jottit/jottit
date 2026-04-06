@@ -2,7 +2,9 @@
 <header class="site-header">
     <div class="site-header-inner">
         <div class="site-header-spacer">
+            {% if is_owner %}
             <a href="{{ base_url|default('/', true) }}" class="site-header-logo">Jottit</a>
+            {% endif %}
         </div>
         <a href="{{ url_prefix }}" class="site-header-name h-card p-name u-url">{{ site_title }}</a>
         <div class="site-header-spacer">

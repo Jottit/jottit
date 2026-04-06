@@ -144,35 +144,6 @@ def test_view_page_shows_latest_content(client):
     assert b"Second" in r.data
 
 
-# -- Private visibility --
-
-
-# Private pages are visible to their creator
-def test_private_visible_to_creator(client):
-    from db import get_page_meta, update_page_visibility
-
-    client.post("/dv1/edit", data={"title": "Secret", "content": "Private content"})
-    page_meta = get_page_meta("dv1")
-    update_page_visibility(page_meta["id"], "private")
-    r = client.get("/dv1")
-    assert r.status_code == 200
-    assert b"private" in r.data.lower()
-
-
-# Private pages return 404 for non-creators
-def test_private_hidden_from_non_creator(client):
-    from db import get_page_meta, update_page_visibility
-
-    client.post("/dv2/edit", data={"title": "Secret", "content": "Private content"})
-    page_meta = get_page_meta("dv2")
-    update_page_visibility(page_meta["id"], "private")
-    with client.session_transaction() as sess:
-        sess.clear()
-    client.delete_cookie("page_token_dv2")
-    r = client.get("/dv2")
-    assert r.status_code == 404
-
-
 # -- Delete page --
 
 
@@ -270,7 +241,6 @@ def _setup_user_with_pages(client):
         ("pub2", "# Public Two\n\nContent", "listed"),
         ("pin1", "# Pinned Post\n\nContent", "pinned"),
         ("unl1", "# Unlisted Post\n\nContent", "unlisted"),
-        ("prv1", "# Private Post\n\nContent", "private"),
     ]:
         save_page(slug, content, vis, user_id=user_id)
         page_meta = get_page_meta(slug, user_id)
