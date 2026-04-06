@@ -224,10 +224,6 @@ def view_page(slug):
     if query_token:
         page = verify_page_secret(slug, query_token)
         if page:
-            created_pages = session.get("created_pages", [])
-            if page["id"] not in created_pages:
-                created_pages.append(page["id"])
-                session["created_pages"] = created_pages
             resp = make_response(redirect(f"{g.url_prefix}/{slug}"))
             resp.set_cookie(
                 f"page_token_{slug}",

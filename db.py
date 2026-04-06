@@ -589,7 +589,7 @@ def create_page_secret(page_id):
     secret_hash = hashlib.sha256(secret.encode()).hexdigest()
     with get_db() as conn:
         conn.execute(
-            "INSERT INTO page_secrets (page_id, secret_hash) VALUES (%s, %s)",
+            "INSERT INTO page_secrets (page_id, secret_hash) VALUES (%s, %s) ON CONFLICT (page_id) DO UPDATE SET secret_hash = EXCLUDED.secret_hash",
             (page_id, secret_hash),
         )
         conn.commit()

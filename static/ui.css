@@ -1115,20 +1115,17 @@
 /* Claim banner */
 
 .claim-banner {
-    display: block;
-    background: var(--bg-raised);
-    color: var(--text);
-    font-weight: 500;
-    font-size: var(--font-size-base);
-    text-align: center;
-    padding: var(--space-3) var(--space-5);
-    text-decoration: none;
-    margin-bottom: var(--space-10);
-    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    background: #000;
 }
 
-.claim-banner:hover {
-    opacity: 0.9;
+.claim-banner-text {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
 }
 
 /* Settings hub */

@@ -4,7 +4,7 @@ from flask import Blueprint, abort, g, redirect, request, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from db import create_verification_code, get_page_meta, get_user, get_user_by_username
+from db import create_verification_code, get_page_meta, get_user, get_user_by_username, verify_page_secret
 from mail import send_verification_email
 
 limiter = Limiter(get_remote_address, storage_uri="memory://")
@@ -85,8 +85,11 @@ def find_page(slug):
 
 
 def is_creator(page_meta):
-    created_pages = session.get("created_pages", [])
-    return page_meta and page_meta["id"] in created_pages
+    if not page_meta:
+        return False
+    slug = page_meta.get("slug", "")
+    token = request.cookies.get(f"page_token_{slug}", "")
+    return bool(token) and verify_page_secret(slug, token) is not None
 
 
 def can_edit(page_meta):

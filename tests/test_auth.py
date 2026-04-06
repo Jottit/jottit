@@ -34,9 +34,10 @@ def test_non_creator_cannot_edit_unclaimed_page(client):
     # Create page in one session
     client.post("/prot2/edit", data={"title": "T", "content": "X"})
 
-    # Clear session to simulate different browser
+    # Clear session and cookie to simulate different browser
     with client.session_transaction() as sess:
         sess.clear()
+    client.delete_cookie("page_token_prot2")
 
     r = client.get("/prot2/edit")
     assert r.status_code == 302
@@ -88,6 +89,7 @@ def test_unclaimed_page_hides_claim_banner_without_token(client):
     client.post("/uncl2/edit", data={"title": "T", "content": "X"})
     with client.session_transaction() as sess:
         sess.clear()
+    client.delete_cookie("page_token_uncl2")
     r = client.get("/uncl2")
     assert b"claim-banner" not in r.data
 

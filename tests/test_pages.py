@@ -168,6 +168,7 @@ def test_private_hidden_from_non_creator(client):
     update_page_visibility(page_meta["id"], "private")
     with client.session_transaction() as sess:
         sess.clear()
+    client.delete_cookie("page_token_dv2")
     r = client.get("/dv2")
     assert r.status_code == 404
 
@@ -295,4 +296,4 @@ def test_homepage_logged_out_shows_landing(client):
     r = client.get("/")
     body = r.data.decode()
     assert "tab--active" not in body
-    assert "Write something" in body
+    assert "Create a page" in body

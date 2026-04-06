@@ -147,7 +147,7 @@ table {
 @media (prefers-color-scheme: dark) {
     :root:not(.theme-light) {
         --bg: #232a33;
-        --bg-raised: #2a3140;
+        --bg-raised: #323b46;
         --bg-surface: #2e353e;
         --text: #e0e0e0;
         --btn-bg: #fff;

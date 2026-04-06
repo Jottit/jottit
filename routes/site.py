@@ -15,6 +15,7 @@ from flask import (
 from db import (
     check_username_available,
     claim_page,
+    create_page_secret,
     delete_page,
     find_or_create_user,
     find_page_owner_for_redirect,
@@ -163,21 +164,22 @@ def new_page():
 
     visibility = "listed" if owner_id else "unlisted"
     slug = save_page(slug, content, visibility, subdomain_user_id)
-    _track_new_page(slug, subdomain_user_id)
 
-    return redirect(f"{g.url_prefix}/{slug}")
-
-
-def _track_new_page(slug, subdomain_user_id):
     new_page_meta = get_page_meta(slug, subdomain_user_id)
-    if not new_page_meta:
-        return
-    created_pages = session.get("created_pages", [])
-    created_pages.append(new_page_meta["id"])
-    session["created_pages"] = created_pages
-    if session.get("user_id") and not subdomain_user_id:
+    if new_page_meta and session.get("user_id") and not subdomain_user_id:
         claim_page(new_page_meta["id"], session["user_id"])
-    return new_page_meta
+
+    resp = make_response(redirect(f"{g.url_prefix}/{slug}"))
+    if not owner_id and new_page_meta:
+        secret = create_page_secret(new_page_meta["id"])
+        resp.set_cookie(
+            f"page_token_{slug}",
+            secret,
+            httponly=True,
+            samesite="Lax",
+            max_age=30 * 24 * 3600,
+        )
+    return resp
 
 
 @bp.route("/<slug>/edit", methods=["GET", "POST"])
@@ -250,7 +252,9 @@ def edit_page(slug):
     slug = save_page(slug, content, visibility, subdomain_user_id)
 
     if is_new:
-        new_page_meta = _track_new_page(slug, subdomain_user_id)
+        new_page_meta = get_page_meta(slug, subdomain_user_id)
+        if new_page_meta and session.get("user_id") and not subdomain_user_id:
+            claim_page(new_page_meta["id"], session["user_id"])
         if new_page_meta:
             effective_user_id = subdomain_user_id or session.get("user_id")
             if effective_user_id and title:
@@ -277,7 +281,19 @@ def edit_page(slug):
                 rename_page(page_meta["id"], nice_slug)
                 slug = nice_slug
 
-    return redirect(f"{g.url_prefix}/{slug}")
+    resp = make_response(redirect(f"{g.url_prefix}/{slug}"))
+    if is_new and not (subdomain_user_id or session.get("user_id")):
+        new_meta = get_page_meta(slug, subdomain_user_id) if not new_page_meta else new_page_meta
+        if new_meta:
+            secret = create_page_secret(new_meta["id"])
+            resp.set_cookie(
+                f"page_token_{slug}",
+                secret,
+                httponly=True,
+                samesite="Lax",
+                max_age=30 * 24 * 3600,
+            )
+    return resp
 
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])

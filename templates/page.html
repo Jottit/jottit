@@ -14,9 +14,10 @@
 {% block body %}
 {% include "_site_header.html" %}
 {% if unclaimed %}
-<a href="/{{ slug }}/claim" class="claim-banner">
-    Claim this page to make it yours &rarr;
-</a>
+<div class="claim-banner">
+    <span class="claim-banner-text">Claim this page to make it yours</span>
+    <a href="/{{ slug }}/claim" class="btn btn-publish btn--sm">Claim page</a>
+</div>
 {% endif %}
 <main class="page-main">
     <article class="page h-entry">
