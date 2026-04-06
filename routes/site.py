@@ -75,27 +75,6 @@ def check_username_route():
     return {"available": True}
 
 
-@bp.route("/pages")
-def pages_list():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect("/signin")
-    user = g.current_user
-    username = user.get("username") if user else None
-    pages = get_pages_for_user(user_id)
-    page_list = []
-    for p in pages:
-        title = get_title(p["content"]) if p["content"] else None
-        page_list.append(
-            {
-                "slug": p["slug"],
-                "title": title or "",
-                "visibility": p["visibility"],
-            }
-        )
-    return render_template("pages.html", pages=page_list, username=username)
-
-
 # --- @username routes for site actions ---
 
 
