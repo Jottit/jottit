@@ -133,6 +133,7 @@ def sidebar_vars(user_id, username, active_slug=None):
     return {
         "sidebar_pinned": pinned,
         "sidebar_recent": recent,
+        "sidebar_total": len(pages),
         "sidebar_active_slug": active_slug,
         "sidebar_username": username,
     }

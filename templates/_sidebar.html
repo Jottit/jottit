@@ -17,6 +17,8 @@
             <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link"><span class="sidebar-link-text">{{ p.title }}</span></a></li>
             {% endfor %}
         </ul>
+        {% if sidebar_total > 5 %}
         <a href="/pages" class="sidebar-see-all">See all</a>
+        {% endif %}
     </nav>
 </aside>

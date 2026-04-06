@@ -811,12 +811,12 @@
     position: sticky;
     top: 0;
     height: fit-content;
-    padding: var(--space-10) 0 var(--space-12) var(--space-8);
+    padding: var(--space-10) 0 var(--space-12) var(--space-10);
     border-left: 1px solid var(--border);
 }
 
 .sidebar-section {
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-6);
 }
 
 .sidebar-heading {
@@ -878,7 +878,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-8);
     padding: var(--space-2) var(--space-4);
 }
 
