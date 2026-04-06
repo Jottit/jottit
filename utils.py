@@ -174,6 +174,63 @@ def relative_time(value):
     return f"{years} year{'s' if years != 1 else ''} ago"
 
 
+def html_to_text(html):
+    """Convert rendered HTML to readable plain text.
+
+    Handles headings, paragraphs, links, emphasis, lists, and tables
+    without pulling in a heavy dependency.
+    """
+    import re as _re
+    from html import unescape
+
+    text = html
+
+    # Block elements: insert newlines before processing
+    text = _re.sub(r"<br\s*/?>", "\n", text)
+
+    # Headings: extract text, prefix with level marker
+    def _heading(m):
+        content = _re.sub(r"<[^>]+>", "", m.group(2))
+        return f"\n\n{content}\n{'=' * len(content)}\n\n"
+
+    text = _re.sub(r"<h([1-6])[^>]*>(.*?)</h\1>", _heading, text, flags=_re.DOTALL)
+
+    # Links: [text](url)
+    def _link(m):
+        inner = _re.sub(r"<[^>]+>", "", m.group(2))
+        href = m.group(1)
+        if inner.strip() == href.strip():
+            return inner
+        return f"{inner} ({href})"
+
+    text = _re.sub(r'<a[^>]+href="([^"]*)"[^>]*>(.*?)</a>', _link, text, flags=_re.DOTALL)
+
+    # Lists
+    text = _re.sub(r"<li[^>]*>", "  - ", text)
+    text = _re.sub(r"</li>", "\n", text)
+
+    # Table cells
+    text = _re.sub(r"<th[^>]*>(.*?)</th>", r"  \1  ", text, flags=_re.DOTALL)
+    text = _re.sub(r"<td[^>]*>(.*?)</td>", r"  \1  ", text, flags=_re.DOTALL)
+    text = _re.sub(r"</tr>", "\n", text)
+
+    # Paragraphs and divs
+    text = _re.sub(r"</(p|div|blockquote|ul|ol|table|thead|tbody)>", "\n\n", text)
+    text = _re.sub(r"<(p|div|blockquote|ul|ol|table|thead|tbody)[^>]*>", "", text)
+
+    # Strip remaining tags
+    text = _re.sub(r"<[^>]+>", "", text)
+
+    # Unescape HTML entities
+    text = unescape(text)
+
+    # Normalize whitespace: collapse blank lines, trim trailing spaces
+    lines = [line.rstrip() for line in text.splitlines()]
+    text = "\n".join(lines)
+    text = _re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip() + "\n"
+
+
 def describe_change(prev, curr):
     old_title = get_title(prev)
     new_title = get_title(curr)
