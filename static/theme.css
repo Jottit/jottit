@@ -341,6 +341,12 @@
     margin-bottom: var(--space-2);
 }
 
+.page-listing-readmore {
+    display: block;
+    text-align: center;
+    margin-top: var(--space-4);
+}
+
 .page-footer {
     padding-top: 60px;
     padding-bottom: 80px;
