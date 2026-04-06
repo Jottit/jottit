@@ -3,12 +3,12 @@
 .page-main {
     max-width: var(--content-max-width);
     margin: 0 auto;
-    padding: var(--space-6) var(--space-5) var(--space-12);
+    padding: var(--space-10) var(--space-5) var(--space-12);
 }
 
 @media (min-width: 640px) {
     .page-main {
-        padding: var(--space-6) var(--space-10) var(--space-12);
+        padding: var(--space-10) var(--space-10) var(--space-12);
     }
 }
 

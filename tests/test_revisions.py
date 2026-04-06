@@ -146,22 +146,9 @@ def test_revision_view_shows_provenance(client):
 
 
 # Published page footer shows AI attribution
-def test_page_footer_ai_attribution(client):
+# Footer shows no provenance info
+def test_page_footer_no_provenance(client):
     save_page("prov4", "# T\n\nBody", False, source="mcp", ai_assisted=True)
     r = client.get("/prov4")
-    assert b"published with AI via MCP" in r.data
-
-
-# Published page footer shows source without AI
-def test_page_footer_source_only(client):
-    save_page("prov5", "# T\n\nBody", False, source="api", ai_assisted=False)
-    r = client.get("/prov5")
-    assert b"published via API" in r.data
-
-
-# Web pages show no provenance in footer
-def test_page_footer_no_provenance_for_web(client):
-    save_page("prov6", "# T\n\nBody", False)
-    r = client.get("/prov6")
     assert b"published via" not in r.data
     assert b"published with AI" not in r.data
