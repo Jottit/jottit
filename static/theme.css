@@ -1,9 +1,5 @@
 /* Published page styling */
 
-.page-content {
-    padding-top: var(--space-12);
-}
-
 .page-main {
     max-width: var(--content-max-width);
     margin: 0 auto;

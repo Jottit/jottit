@@ -699,6 +699,7 @@
 
 .site-header {
     border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-12);
 }
 
 .site-header-inner {
@@ -719,7 +720,7 @@
 }
 
 .site-header-logo {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(90deg, var(--brand-1), var(--brand-2), var(--brand-3));
@@ -747,22 +748,22 @@
 }
 
 .site-header-actions .btn {
-    height: 40px;
+    height: 35px;
     display: flex;
     align-items: center;
 }
 
 .site-header-avatar {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
     object-fit: cover;
     display: block;
 }
 
 .site-header-initials {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
     background: var(--subtle);
     color: var(--text-secondary);

@@ -13,7 +13,6 @@
 
 {% block body %}
 {% include "_site_header.html" %}
-<div class="page-content">
 {% if unclaimed %}
 <a href="/{{ slug }}/claim" class="claim-banner">
     Claim this page to make it yours &rarr;
@@ -51,6 +50,5 @@
     {% endif %}
     {% include "_page_footer.html" %}
 </main>
-</div>
 {% if is_owner %}<script src="/static/listing.js?v={{ asset_v }}"></script>{% endif %}
 {% endblock %}

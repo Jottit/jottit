@@ -9,22 +9,6 @@
 
 {% block body %}
 {% include "_site_header.html" %}
-{% if site_title %}
-<header class="profile-header h-card{% if avatar_url and bio_html %} profile-header--full{% elif avatar_url %} profile-header--avatar{% elif bio_html %} profile-header--bio{% else %} profile-header--name{% endif %}">
-    {% if avatar_url %}
-    <a href="{{ url_prefix }}"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="profile-avatar u-photo"></a>
-    {% endif %}
-    <div class="profile-info">
-        <h1 class="profile-name"><a class="p-name u-url" href="{{ url_prefix }}">{{ site_title }}</a></h1>
-        {% if bio_html %}
-        <p class="profile-bio p-note">{{ bio_html|safe }}</p>
-        {% endif %}
-    </div>
-</header>
-{% endif %}
-{% if site_title %}
-<div class="page-separator"></div>
-{% endif %}
 <main class="page-main">
     <article class="page">
         {% if pages %}
