@@ -126,8 +126,6 @@ def sidebar_vars(user_id, username, active_slug=None):
             pinned.append(item)
             pinned_slugs.add(p["slug"])
     for p in pages:
-        if p["slug"] in pinned_slugs:
-            continue
         title = get_title(p["content"]) if p["content"] else None
         recent.append({"slug": p["slug"], "title": title or "Untitled"})
         if len(recent) >= 5:

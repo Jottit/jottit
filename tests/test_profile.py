@@ -181,11 +181,11 @@ def test_sidebar_hidden_from_visitor(client):
     assert b"sidebar" not in r.data
 
 
-# Sidebar highlights active page
-def test_sidebar_highlights_active_page(client):
+# Sidebar shown on individual page views for owner
+def test_sidebar_on_page_view(client):
     user_id = create_user_with_username(client, "side3@example.com", "sideuser3", "sp3")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     r = client.get("/@sideuser3/sp3")
     assert r.status_code == 200
-    assert b"sidebar-link--active" in r.data
+    assert b"sidebar" in r.data

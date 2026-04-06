@@ -11,7 +11,6 @@
 {% include "_site_header.html" %}
 {% if is_owner %}
 <div class="layout-with-sidebar">
-{% include "_sidebar.html" %}
 {% endif %}
 <main class="page-main">
     <article class="page">
@@ -35,6 +34,7 @@
     {% include "_page_footer.html" %}
 </main>
 {% if is_owner %}
+{% include "_sidebar.html" %}
 </div>
 {% endif %}
 {% endblock %}

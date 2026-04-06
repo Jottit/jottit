@@ -56,7 +56,7 @@ table {
 :root {
     /* Brand */
     --brand-1: #1a7a5a;
-    --brand-2: #2ea67a;
+    --brand-2: #2a9470;
     --brand-3: #4cc99a;
     --accent: #50c8a0;
 
@@ -245,7 +245,7 @@ a {
 
 .btn-publish {
     background: var(--brand-2);
-    color: #fff;
+    color: #0a3d2a;
 }
 
 .btn--sm {

@@ -1,21 +1,22 @@
 <aside class="sidebar">
+    <a href="{{ url_prefix }}/new" class="btn btn-publish btn--sm sidebar-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Create a page</a>
     {% if sidebar_pinned %}
     <nav class="sidebar-section">
         <h3 class="sidebar-heading">Pinned</h3>
         <ul class="sidebar-list">
             {% for p in sidebar_pinned %}
-            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link{% if p.slug == sidebar_active_slug %} sidebar-link--active{% endif %}">{{ p.title }}</a></li>
+            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link"><span class="sidebar-link-text">{{ p.title }}</span></a></li>
             {% endfor %}
         </ul>
     </nav>
     {% endif %}
     <nav class="sidebar-section">
-        <h3 class="sidebar-heading">Recent</h3>
+        <h3 class="sidebar-heading">Pages</h3>
         <ul class="sidebar-list">
             {% for p in sidebar_recent %}
-            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link{% if p.slug == sidebar_active_slug %} sidebar-link--active{% endif %}">{{ p.title }}</a></li>
+            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link"><span class="sidebar-link-text">{{ p.title }}</span></a></li>
             {% endfor %}
         </ul>
+        <a href="/pages" class="sidebar-see-all">See all</a>
     </nav>
-    <a href="/pages" class="sidebar-link sidebar-all">All pages</a>
 </aside>
