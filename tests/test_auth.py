@@ -153,7 +153,7 @@ def test_claim_full_flow(client):
     # Step 4: address — redirects to claimed page
     r = client.post("/cf3/claim/address", data={"username": "testuser"})
     assert r.status_code == 302
-    assert "/@testuser/my-great-page" in r.headers["Location"]
+    assert r.headers["Location"] == "/@testuser"
 
     claimed_user_id = find_or_create_user("user@example.com")
     page_meta = get_page_meta("my-great-page", claimed_user_id)
@@ -334,7 +334,7 @@ def test_returning_user_skips_setup(client):
     )
     assert r.status_code == 302
     # Should skip setup and go straight to claimed page
-    assert "/@returnuser/second-page" in r.headers["Location"]
+    assert r.headers["Location"] == "/@returnuser"
 
     claimed_user_id = find_or_create_user("returning@example.com")
     page_meta = get_page_meta("second-page", claimed_user_id)
@@ -542,6 +542,6 @@ def test_claim_renames_slug_from_title(client):
     r = client.post("/cf3b/claim/address", data={"username": "sluguser"})
     assert r.status_code == 302
     user_id = find_or_create_user("slugtest@example.com")
-    assert "/@sluguser/the-brand-age" in r.headers["Location"]
+    assert r.headers["Location"] == "/@sluguser"
     assert get_page_meta("the-brand-age", user_id) is not None
     assert get_page_meta("cf3b") is None
