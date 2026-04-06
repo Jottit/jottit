@@ -12,18 +12,8 @@
 {% endblock %}
 
 {% block body %}
-{% if is_owner %}
-{% include "_admin_banner.html" %}
-{% endif %}
+{% include "_site_header.html" %}
 <div class="page-content">
-{% if site_title %}
-<header class="page-byline h-card">
-    {% if avatar_url %}
-    <a href="{{ url_prefix }}"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="page-byline-avatar u-photo"></a>
-    {% endif %}
-    <a class="page-byline-name p-name u-url" href="{{ url_prefix }}">{{ site_title }}</a>
-</header>
-{% endif %}
 {% if unclaimed %}
 <a href="/{{ slug }}/claim" class="claim-banner">
     Claim this page to make it yours &rarr;

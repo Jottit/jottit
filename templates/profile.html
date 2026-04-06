@@ -8,9 +8,7 @@
 {% endblock %}
 
 {% block body %}
-{% if is_owner %}
-{% include "_admin_banner.html" %}
-{% endif %}
+{% include "_site_header.html" %}
 {% if site_title %}
 <header class="profile-header h-card{% if avatar_url and bio_html %} profile-header--full{% elif avatar_url %} profile-header--avatar{% elif bio_html %} profile-header--bio{% else %} profile-header--name{% endif %}">
     {% if avatar_url %}

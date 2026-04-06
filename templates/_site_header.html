@@ -1,0 +1,22 @@
+{% if site_title %}
+<header class="site-header">
+    <div class="site-header-inner">
+        <div class="site-header-spacer">
+            <a href="{{ base_url|default('/', true) }}" class="site-header-logo">Jottit</a>
+        </div>
+        <a href="{{ url_prefix }}" class="site-header-name h-card p-name u-url">{{ site_title }}</a>
+        <div class="site-header-spacer">
+            {% if is_owner %}
+            <div class="site-header-actions">
+                <a href="{{ url_prefix }}/new" class="btn btn-publish">Create a page</a>
+                {% if owner_avatar_url %}
+                <a href="{{ base_url|default('', true) }}/settings" title="Settings"><img src="{{ owner_avatar_url }}" alt="Settings" class="site-header-avatar"></a>
+                {% else %}
+                <a href="{{ base_url|default('', true) }}/settings" class="site-header-initials{% if profile_incomplete %} profile-incomplete{% endif %}" title="Settings">{{ owner_initials }}</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</header>
+{% endif %}

@@ -89,7 +89,7 @@
 /* Public pages (about, sponsor, etc.) */
 
 .public-main {
-    max-width: var(--site-max-width);
+    max-width: var(--content-max-width);
     margin: 0 auto;
     padding: var(--space-10) var(--space-5) var(--space-5);
 }
@@ -396,7 +396,7 @@
     }
 
     .editor-preview .page {
-        max-width: var(--site-max-width);
+        max-width: var(--content-max-width);
         margin: 0 auto;
     }
 }
@@ -461,7 +461,7 @@
 /* Profile header (subdomain pages) */
 
 .profile-header {
-    max-width: var(--site-max-width);
+    max-width: var(--content-max-width);
     margin: 0 auto;
 }
 
@@ -559,7 +559,7 @@
 /* Individual page — compact byline breadcrumb */
 
 .page-byline {
-    max-width: var(--site-max-width);
+    max-width: var(--content-max-width);
     margin: 0 auto;
     padding: 0 var(--space-5);
     display: flex;
@@ -595,7 +595,7 @@
 /* Home page separator */
 
 .page-separator {
-    max-width: var(--site-max-width);
+    max-width: var(--content-max-width);
     margin: var(--space-4) auto;
     padding: 0 var(--space-6);
 }
@@ -705,10 +705,74 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: var(--site-max-width);
-    margin: 0 auto;
-    position: relative;
     padding: var(--space-5) var(--space-5);
+}
+
+.site-header-spacer {
+    flex: 1;
+    min-width: 0;
+}
+
+.site-header-spacer:last-child {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.site-header-logo {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, var(--brand-1), var(--brand-2), var(--brand-3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+}
+
+.site-header-name {
+    font-size: var(--font-size-xl2);
+    font-weight: 600;
+    color: var(--site-color-text);
+    text-decoration: none;
+}
+
+.site-header-name:hover {
+    color: var(--site-color-muted);
+}
+
+.site-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.site-header-actions .btn {
+    height: 40px;
+    display: flex;
+    align-items: center;
+}
+
+.site-header-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.site-header-initials {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--subtle);
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    letter-spacing: 0.02em;
 }
 
 @media (min-width: 640px) {

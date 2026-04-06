@@ -180,5 +180,5 @@ def test_profile_page_shows_profile_header(client):
 
     r = client.get("/@profpage/pp1")
     assert r.status_code == 200
-    assert b"page-byline" in r.data
-    assert b"u-photo" in r.data
+    assert b"site-header" in r.data
+    assert b"Prof Page" in r.data
