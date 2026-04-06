@@ -19,6 +19,10 @@
     <a href="/{{ slug }}/claim" class="btn btn--primary btn--sm">Claim page</a>
 </div>
 {% endif %}
+{% if is_owner %}
+<div class="layout-with-sidebar">
+{% include "_sidebar.html" %}
+{% endif %}
 <main class="page-main">
     <article class="page h-entry">
         {% if content_title %}<div class="e-content-title">{{ content_title | safe }}</div>
@@ -53,5 +57,8 @@
     {% endif %}
     {% include "_page_footer.html" %}
 </main>
-{% if is_owner %}<script src="/static/listing.js?v={{ asset_v }}"></script>{% endif %}
+{% if is_owner %}
+</div>
+<script src="/static/listing.js?v={{ asset_v }}"></script>
+{% endif %}
 {% endblock %}

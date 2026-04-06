@@ -114,6 +114,32 @@ def _build_page_item(p):
     }
 
 
+def sidebar_vars(user_id, username, active_slug=None):
+    pages = get_pages_for_user(user_id)
+    pinned = []
+    recent = []
+    pinned_slugs = set()
+    for p in pages:
+        title = get_title(p["content"]) if p["content"] else None
+        item = {"slug": p["slug"], "title": title or p["slug"]}
+        if p["visibility"] == "pinned":
+            pinned.append(item)
+            pinned_slugs.add(p["slug"])
+    for p in pages:
+        if p["slug"] in pinned_slugs:
+            continue
+        title = get_title(p["content"]) if p["content"] else None
+        recent.append({"slug": p["slug"], "title": title or p["slug"]})
+        if len(recent) >= 5:
+            break
+    return {
+        "sidebar_pinned": pinned,
+        "sidebar_recent": recent,
+        "sidebar_active_slug": active_slug,
+        "sidebar_username": username,
+    }
+
+
 def subdomain_home(user):
     pages = get_pages_for_user(user["id"])
     pinned = []
@@ -154,6 +180,7 @@ def subdomain_home(user):
         license_info=LICENSES.get(user.get("license") or ""),
         profile_url=profile_url(user["username"]) if user.get("username") else None,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
+        **(sidebar_vars(user["id"], user["username"]) if is_owner else {}),
     )
 
 
@@ -359,6 +386,7 @@ def view_page(slug):
         visibility=page_meta["visibility"],
         ai_assisted=row.get("ai_assisted", False),
         page_source=row.get("source", "web"),
+        **(sidebar_vars(page_meta["user_id"], (subdomain_user or g.current_user or {}).get("username", ""), active_slug=slug) if is_owner else {}),
     )
     response = current_app.make_response(resp)
     if not is_owner and not show_actions and row["visibility"] != "private":

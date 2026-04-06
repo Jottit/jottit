@@ -160,3 +160,32 @@ def test_profile_page_shows_profile_header(client):
     assert r.status_code == 200
     assert b"site-header" in r.data
     assert b"Prof Page" in r.data
+
+
+# Owner sees sidebar on profile page
+def test_sidebar_visible_to_owner(client):
+    user_id = create_user_with_username(client, "side@example.com", "sideuser", "sp1")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/@sideuser")
+    assert r.status_code == 200
+    assert b"sidebar" in r.data
+    assert b"sp1" in r.data
+
+
+# Visitor does not see sidebar
+def test_sidebar_hidden_from_visitor(client):
+    create_user_with_username(client, "side2@example.com", "sideuser2", "sp2")
+    r = client.get("/@sideuser2")
+    assert r.status_code == 200
+    assert b"sidebar" not in r.data
+
+
+# Sidebar highlights active page
+def test_sidebar_highlights_active_page(client):
+    user_id = create_user_with_username(client, "side3@example.com", "sideuser3", "sp3")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/@sideuser3/sp3")
+    assert r.status_code == 200
+    assert b"sidebar-link--active" in r.data

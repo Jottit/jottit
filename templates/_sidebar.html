@@ -1,0 +1,21 @@
+<aside class="sidebar">
+    {% if sidebar_pinned %}
+    <nav class="sidebar-section">
+        <h3 class="sidebar-heading">Pinned</h3>
+        <ul class="sidebar-list">
+            {% for p in sidebar_pinned %}
+            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link{% if p.slug == sidebar_active_slug %} sidebar-link--active{% endif %}">{{ p.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+    <nav class="sidebar-section">
+        <h3 class="sidebar-heading">Recent</h3>
+        <ul class="sidebar-list">
+            {% for p in sidebar_recent %}
+            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link{% if p.slug == sidebar_active_slug %} sidebar-link--active{% endif %}">{{ p.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </nav>
+    <a href="/@{{ sidebar_username }}" class="sidebar-link sidebar-all{% if not sidebar_active_slug %} sidebar-link--active{% endif %}">All pages</a>
+</aside>

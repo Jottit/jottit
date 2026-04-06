@@ -140,6 +140,8 @@ def test_unlisted_page_hidden_from_profile(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     client.post("/@listuser3/lp3/visibility", data={"visibility": "unlisted"})
+    with client.session_transaction() as sess:
+        sess.clear()
     r = client.get("/@listuser3")
     assert b"lp3" not in r.data
 
