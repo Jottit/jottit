@@ -146,10 +146,13 @@
     align-items: center;
     justify-content: center;
     gap: var(--space-1);
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-5);
 }
 
 .logo {
-    font-size: 4rem;
+    font-size: var(--font-size-logo);
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1;
@@ -163,8 +166,8 @@
 
 
 .tagline {
-    font-size: var(--font-size-md);
-    color: var(--muted);
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
     margin-bottom: var(--space-3);
 }
 
@@ -1113,8 +1116,8 @@
 
 .claim-banner {
     display: block;
-    background: var(--text);
-    color: var(--bg);
+    background: var(--bg-raised);
+    color: var(--text);
     font-weight: 500;
     font-size: var(--font-size-base);
     text-align: center;

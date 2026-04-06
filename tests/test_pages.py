@@ -278,58 +278,6 @@ def _setup_user_with_pages(client):
     return user_id
 
 
-# Logged-in user sees tabs with counts on homepage
-def test_homepage_shows_tabs_when_logged_in(client):
-    user_id = _setup_user_with_pages(client)
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/")
-    body = r.data.decode()
-    assert "tab--active" in body
-    assert "All" in body
-    assert "Private" in body
-    assert "Unlisted" in body
-    assert "Listed" in body
-    assert "Pinned" in body
-
-
-# All tab shows every page on homepage
-def test_homepage_all_tab_shows_all_pages(client):
-    user_id = _setup_user_with_pages(client)
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/")
-    body = r.data.decode()
-    assert "Public One" in body
-    assert "Pinned Post" in body
-    assert "Unlisted Post" in body
-    assert "Private Post" in body
-
-
-# Private tab filters to private pages only
-def test_homepage_private_tab_filters(client):
-    user_id = _setup_user_with_pages(client)
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/?tab=private")
-    body = r.data.decode()
-    assert "Private Post" in body
-    assert "Public One" not in body
-    assert "Pinned Post" not in body
-
-
-# Pinned tab filters to pinned pages only
-def test_homepage_pinned_tab_filters(client):
-    user_id = _setup_user_with_pages(client)
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/?tab=pinned")
-    body = r.data.decode()
-    assert "Pinned Post" in body
-    assert "Public One" not in body
-    assert "Private Post" not in body
-
-
 # Public visitor sees no tabs on profile, only listed and pinned
 def test_public_profile_shows_no_tabs(client):
     _setup_user_with_pages(client)

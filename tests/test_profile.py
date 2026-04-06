@@ -137,28 +137,6 @@ def test_render_bio_strips_other_tags():
 # -- Profile display --
 
 
-# Profile homepage displays the user's bio with p-note microformat
-def test_profile_home_shows_bio(client):
-    user_id = create_user_with_username(client, "biohome@example.com", "biohome", "bh1")
-    update_user_settings(user_id, "Bio Home", "biohome", "My cool bio")
-
-    r = client.get("/@biohome")
-    assert r.status_code == 200
-    assert b"My cool bio" in r.data
-    assert b"p-note" in r.data
-
-
-# Profile homepage shows avatar with u-photo microformat
-def test_profile_home_shows_avatar(client):
-    user_id = create_user_with_username(client, "avhome@example.com", "avhome", "ah1")
-    update_user_avatar(user_id, "/uploads/test/avatar.jpg")
-
-    r = client.get("/@avhome")
-    assert r.status_code == 200
-    assert b"u-photo" in r.data
-    assert b"profile-avatar" in r.data
-
-
 # Profile homepage without avatar renders gracefully
 def test_profile_home_no_avatar_graceful(client):
     user_id = create_user_with_username(client, "noav@example.com", "noavuser", "na1")

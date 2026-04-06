@@ -62,6 +62,7 @@ table {
 
     /* Light mode (default) */
     --bg: #f5f5f0;
+    --bg-raised: #ececea;
     --bg-surface: #fff;
     --text: #333333;
     --btn-bg: #222222;
@@ -92,7 +93,7 @@ table {
     --font-size-xl: 1.5rem;
     --font-size-xl2: 1.5625rem;
     --font-size-2xl: 2rem;
-    --font-size-logo: 4.5rem;
+    --font-size-logo: 4rem;
 
     /* Font weights */
     --font-weight-semibold: 500;
@@ -146,6 +147,7 @@ table {
 @media (prefers-color-scheme: dark) {
     :root:not(.theme-light) {
         --bg: #232a33;
+        --bg-raised: #2a3140;
         --bg-surface: #2e353e;
         --text: #e0e0e0;
         --btn-bg: #fff;
