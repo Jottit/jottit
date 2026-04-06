@@ -1,6 +1,6 @@
 import re
 
-from flask import flash, redirect, render_template, request, session
+from flask import flash, g, redirect, render_template, request, session
 
 from db import (
     check_username_available,
@@ -24,8 +24,8 @@ from storage import (
     upload_image,
     validate_image,
 )
-from utils import RESERVED_USERNAMES, get_title, valid_email, valid_username
-from routes import account_link_vars, bp, limiter, LICENSES, profile_url, require_user, send_verification
+from utils import RESERVED_USERNAMES, valid_email, valid_username
+from routes import bp, limiter, BASE_DOMAIN, LICENSES, profile_url, require_user, send_verification
 
 
 @bp.route("/signin", methods=["GET", "POST"])
@@ -87,25 +87,27 @@ def signout():
 
 @bp.route("/pages")
 def user_pages():
+    from routes.public import _build_page_item, sidebar_vars, compute_initials
+
     user_id, user = require_user()
     if not user:
         return redirect("/signin")
     pages = get_pages_for_user(user_id)
-    page_list = []
-    for p in pages:
-        title = get_title(p["content"]) if p["content"] else None
-        page_list.append({
-            "slug": p["slug"],
-            "title": title or "Untitled",
-            "visibility": p["visibility"],
-            "updated_at": p["updated_at"],
-        })
+    page_list = [_build_page_item(p) for p in pages]
     username = user.get("username")
+    site_title = user.get("name") or username
     return render_template(
-        "user_pages.html",
+        "profile.html",
         pages=page_list,
-        username=username,
-        **account_link_vars(),
+        site_title=site_title,
+        is_owner=True,
+        owner_initials=compute_initials(user),
+        owner_avatar_url=user.get("avatar"),
+        profile_incomplete=not user.get("avatar") and not user.get("bio"),
+        license_info=LICENSES.get(user.get("license") or ""),
+        profile_url=profile_url(username) if username else None,
+        base_url=request.scheme + "://" + BASE_DOMAIN,
+        **sidebar_vars(user_id, username),
     )
 
 
