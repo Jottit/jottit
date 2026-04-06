@@ -9,6 +9,7 @@ from psycopg import errors as pg_errors
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+from core.jobs import enqueue_unique
 from utils import generate_slug
 
 DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
@@ -170,6 +171,25 @@ def save_page(
 
         conn.commit()
     return slug
+
+
+def enqueue_publish_job(slug, user_id=None):
+    """Enqueue a background job for post-publish work.
+
+    Idempotent: won't create duplicates if a job for the same
+    page is already queued or running.
+    """
+    page = get_page_meta(slug, user_id)
+    if page is None:
+        return None
+    with get_db() as conn:
+        job_id = enqueue_unique(
+            conn,
+            "page_published",
+            {"page_id": page["id"], "slug": slug},
+        )
+        conn.commit()
+        return job_id
 
 
 def get_page(page_id):
