@@ -32,7 +32,7 @@
 <main class="page-main">
     <article class="page h-entry">
         {% if content_title %}<div class="e-content-title">{{ content_title | safe }}</div>{% endif %}
-        <time class="page-meta dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>
+        <time class="page-meta dt-published" datetime="{{ updated_at | isoformat }}">Updated {{ updated_at | relative_time }}</time>
         <div class="e-content">{{ content_body | safe }}</div>
         <a class="u-url" href="{{ url_prefix }}/{{ slug }}" hidden></a>
     </article>

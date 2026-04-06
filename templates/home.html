@@ -33,7 +33,7 @@
       <div class="listing-item">
         <a href="/{{ page.slug }}" class="page-listing-link">
           <span class="listing-title">{{ page.title or page.description|truncate(60, true) or page.slug }}{% if tab == 'all' and page.visibility != 'listed' %} <span class="visibility-label visibility-label--{{ page.visibility }}">{{ page.visibility }}</span>{% endif %}</span>
-          <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">{{ page.updated_at | relative_time }} · {{ page.reading_time }} min read</time>
+          <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">{{ page.updated_at | relative_time }}</time>
         </a>
       </div>
       {% endfor %}
