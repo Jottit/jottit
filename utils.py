@@ -84,6 +84,14 @@ def is_random_slug(slug):
     return bool(re.fullmatch(r"[a-z0-9]{6}", slug))
 
 
+def valid_slug(slug):
+    """Check that a slug won't collide with representation suffixes (.md, .txt).
+
+    Dots are disallowed entirely so that routes like /<slug>.md are unambiguous.
+    """
+    return bool(slug) and "." not in slug
+
+
 def render_markdown(text):
     html = _mistune_md(text)
     html = _smartypants(html)
@@ -92,6 +100,8 @@ def render_markdown(text):
 
 def slugify(name):
     s = name.lower().strip()
+    # Only allow lowercase alphanumeric, spaces (converted to hyphens), and hyphens.
+    # Dots are excluded to avoid collisions with .md/.txt representation routes.
     s = re.sub(r"[^a-z0-9\s-]", "", s)
     s = re.sub(r"\s+", "-", s)
     s = re.sub(r"-+", "-", s)
@@ -172,6 +182,63 @@ def relative_time(value):
         return f"{months} month{'s' if months != 1 else ''} ago"
     years = days // 365
     return f"{years} year{'s' if years != 1 else ''} ago"
+
+
+def html_to_text(html):
+    """Convert rendered HTML to readable plain text.
+
+    Handles headings, paragraphs, links, emphasis, lists, and tables
+    without pulling in a heavy dependency.
+    """
+    import re as _re
+    from html import unescape
+
+    text = html
+
+    # Block elements: insert newlines before processing
+    text = _re.sub(r"<br\s*/?>", "\n", text)
+
+    # Headings: extract text, prefix with level marker
+    def _heading(m):
+        content = _re.sub(r"<[^>]+>", "", m.group(2))
+        return f"\n\n{content}\n{'=' * len(content)}\n\n"
+
+    text = _re.sub(r"<h([1-6])[^>]*>(.*?)</h\1>", _heading, text, flags=_re.DOTALL)
+
+    # Links: [text](url)
+    def _link(m):
+        inner = _re.sub(r"<[^>]+>", "", m.group(2))
+        href = m.group(1)
+        if inner.strip() == href.strip():
+            return inner
+        return f"{inner} ({href})"
+
+    text = _re.sub(r'<a[^>]+href="([^"]*)"[^>]*>(.*?)</a>', _link, text, flags=_re.DOTALL)
+
+    # Lists
+    text = _re.sub(r"<li[^>]*>", "  - ", text)
+    text = _re.sub(r"</li>", "\n", text)
+
+    # Table cells
+    text = _re.sub(r"<th[^>]*>(.*?)</th>", r"  \1  ", text, flags=_re.DOTALL)
+    text = _re.sub(r"<td[^>]*>(.*?)</td>", r"  \1  ", text, flags=_re.DOTALL)
+    text = _re.sub(r"</tr>", "\n", text)
+
+    # Paragraphs and divs
+    text = _re.sub(r"</(p|div|blockquote|ul|ol|table|thead|tbody)>", "\n\n", text)
+    text = _re.sub(r"<(p|div|blockquote|ul|ol|table|thead|tbody)[^>]*>", "", text)
+
+    # Strip remaining tags
+    text = _re.sub(r"<[^>]+>", "", text)
+
+    # Unescape HTML entities
+    text = unescape(text)
+
+    # Normalize whitespace: collapse blank lines, trim trailing spaces
+    lines = [line.rstrip() for line in text.splitlines()]
+    text = "\n".join(lines)
+    text = _re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip() + "\n"
 
 
 def describe_change(prev, curr):

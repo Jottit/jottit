@@ -37,6 +37,7 @@ from utils import (
     get_body,
     get_description,
     get_title,
+    html_to_text,
     render_bio,
     render_markdown,
 )
@@ -198,6 +199,18 @@ def profile_view_page(username, slug):
     return view_page(slug)
 
 
+@bp.route("/@<username>/<slug>.md")
+def profile_view_page_md(username, slug):
+    _set_profile_user(username)
+    return view_page_md(slug)
+
+
+@bp.route("/@<username>/<slug>.txt")
+def profile_view_page_txt(username, slug):
+    _set_profile_user(username)
+    return view_page_txt(slug)
+
+
 @bp.route("/@<username>/<slug>/history")
 def profile_page_history(username, slug):
     _set_profile_user(username)
@@ -244,13 +257,19 @@ def talk():
     return render_template("talk.html", **account_link_vars())
 
 
-@bp.route("/<slug>")
-def view_page(slug):
+def _resolve_page(slug, suffix=""):
+    """Resolve a page slug, handling redirects and lookups.
+
+    Returns (page_meta, row) on success.  Raises abort(404) or returns
+    a redirect response for claimed / original-slug cases.  *suffix* is
+    appended to redirect URLs so that .md / .txt representations keep
+    their extension across redirects.
+    """
     query_token = request.args.get("token", "")
     if query_token:
         page = verify_page_secret(slug, query_token)
         if page:
-            resp = make_response(redirect(f"{g.url_prefix}/{slug}"))
+            resp = make_response(redirect(f"{g.url_prefix}/{slug}{suffix}"))
             resp.set_cookie(
                 f"page_token_{slug}",
                 query_token,
@@ -267,8 +286,8 @@ def view_page(slug):
         if not page_meta:
             original = find_page_by_original_slug(slug, subdomain_user["id"])
             if original:
-                return redirect(f"{g.url_prefix}/{original['slug']}", 301)
-            if session.get("user_id") == subdomain_user["id"]:
+                return redirect(f"{g.url_prefix}/{original['slug']}{suffix}", 301)
+            if not suffix and session.get("user_id") == subdomain_user["id"]:
                 return redirect(f"{g.url_prefix}/{slug}/edit")
             abort(404)
     else:
@@ -283,22 +302,22 @@ def view_page(slug):
             if owner_user_id:
                 user = get_user(owner_user_id)
                 if user and user.get("username"):
-                    return redirect(profile_url(user["username"], f"/{slug}"))
+                    return redirect(profile_url(user["username"], f"/{slug}{suffix}"))
             original = find_page_by_original_slug(slug)
             if original and original["slug"] != slug:
                 if original["user_id"]:
                     owner = get_user(original["user_id"])
                     if owner and owner.get("username"):
                         return redirect(
-                            profile_url(owner["username"], f"/{original['slug']}"),
+                            profile_url(owner["username"], f"/{original['slug']}{suffix}"),
                             301,
                         )
-                return redirect(f"/{original['slug']}", 301)
+                return redirect(f"/{original['slug']}{suffix}", 301)
             abort(404)
         if page_meta["user_id"] is not None:
             user = get_user(page_meta["user_id"])
             if user and user.get("username"):
-                return redirect(profile_url(user["username"], f"/{slug}"))
+                return redirect(profile_url(user["username"], f"/{slug}{suffix}"))
 
     if not page_meta:
         abort(404)
@@ -306,6 +325,59 @@ def view_page(slug):
     row = get_page_full(page_meta["id"])
     if not row:
         abort(404)
+
+    return page_meta, row
+
+
+def _format_response(page_meta, row, content_type, body):
+    """Build a response for an alternate representation (.md, .txt)."""
+    is_owner = (
+        session.get("user_id") == page_meta["user_id"]
+        and page_meta["user_id"] is not None
+    )
+    response = make_response(body)
+    response.headers["Content-Type"] = content_type
+    if not is_owner and row["visibility"] != "private":
+        response.headers["Cache-Control"] = "public, max-age=60"
+    return response
+
+
+# .md and .txt are representation suffixes, not part of the slug.
+# Dots are disallowed in slugs (enforced by valid_slug / slugify) so there
+# is no ambiguity between e.g. a page named "notes.md" and the markdown
+# representation of a page named "notes".
+
+@bp.route("/<slug>.md")
+def view_page_md(slug):
+    result = _resolve_page(slug, suffix=".md")
+    if not isinstance(result, tuple):
+        return result
+    page_meta, row = result
+    return _format_response(
+        page_meta, row, "text/markdown; charset=utf-8", row["content"]
+    )
+
+
+@bp.route("/<slug>.txt")
+def view_page_txt(slug):
+    result = _resolve_page(slug, suffix=".txt")
+    if not isinstance(result, tuple):
+        return result
+    page_meta, row = result
+    html = render_markdown(row["content"])
+    return _format_response(
+        page_meta, row, "text/plain; charset=utf-8", html_to_text(html)
+    )
+
+
+@bp.route("/<slug>")
+def view_page(slug):
+    result = _resolve_page(slug)
+    if not isinstance(result, tuple):
+        return result
+    page_meta, row = result
+
+    subdomain_user = g.subdomain_user
 
     unclaimed = page_meta["user_id"] is None
     # Only show claim banner if the visitor holds a valid page token cookie

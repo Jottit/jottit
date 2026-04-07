@@ -43,6 +43,7 @@ from utils import (
     is_random_slug,
     slugify,
     valid_email,
+    valid_slug,
     valid_username,
 )
 from routes import (
@@ -165,6 +166,8 @@ def new_page():
 @limiter.limit("30 per 5 minutes", methods=["POST"])
 def edit_page(slug):
     subdomain_user = g.subdomain_user
+    if not valid_slug(slug):
+        abort(404)
     if slug in RESERVED_SLUGS and not subdomain_user:
         abort(404)
     page_meta = find_page(slug)
@@ -367,7 +370,7 @@ def _finish_claim(slug, page_meta, user_id, username):
     session.pop("claim_email", None)
     session.pop("claim_verified", None)
     session.pop("claim_name", None)
-    return redirect(f"/@{username}/{slug}")
+    return redirect(f"/@{username}")
 
 
 @bp.route("/<slug>/claim/setup", methods=["GET", "POST"])
