@@ -1,3 +1,5 @@
+import pytest
+
 from conftest import create_user_with_username
 from db import (
     claim_page,
@@ -7,6 +9,7 @@ from db import (
     save_page,
     set_user_username,
 )
+from utils import slugify, valid_slug
 
 
 # -- /{slug}.md --
@@ -169,3 +172,68 @@ def test_txt_has_cache_header_for_public_page(client):
     client.post("/cachetxt/edit", data={"title": "T", "content": "C"})
     r = client.get("/cachetxt.txt")
     assert "public" in r.headers.get("Cache-Control", "")
+
+
+# -- Dotted slug collision prevention --
+
+
+def test_valid_slug_rejects_dots():
+    assert valid_slug("notes") is True
+    assert valid_slug("my-page") is True
+    assert valid_slug("notes.md") is False
+    assert valid_slug("notes.txt") is False
+    assert valid_slug("file.name") is False
+
+
+def test_slugify_strips_dots():
+    assert "." not in slugify("notes.md")
+    assert "." not in slugify("my.file.name")
+    assert slugify("notes.md") == "notesmd"
+
+
+def test_edit_dotted_slug_returns_404(client):
+    r = client.get("/notes.md/edit")
+    assert r.status_code == 404
+
+
+def test_create_via_edit_dotted_slug_returns_404(client):
+    r = client.post("/notes.md/edit", data={"title": "T", "content": "C"})
+    assert r.status_code == 404
+
+
+def test_save_page_rejects_dotted_slug(client):
+    with pytest.raises(ValueError):
+        save_page("notes.md", "# Test\n\nContent", "listed")
+
+
+def test_rename_page_rejects_dotted_slug(client):
+    save_page("goodslug", "# Test\n\nContent", "listed")
+    page_meta = get_page_meta("goodslug")
+    with pytest.raises(ValueError):
+        rename_page(page_meta["id"], "bad.slug")
+
+
+def test_title_derived_slug_has_no_dots(client):
+    user_id = find_or_create_user("dottest@example.com")
+    set_user_username(user_id, "dotuser")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/new", data={"title": "notes.md", "content": "Body"})
+    assert r.status_code == 302
+    location = r.headers["Location"]
+    slug = location.split("/")[-1]
+    assert "." not in slug
+
+
+def test_md_route_still_works_after_dot_restriction(client):
+    client.post("/dotcheck/edit", data={"title": "Test", "content": "Body"})
+    r = client.get("/dotcheck.md")
+    assert r.status_code == 200
+    assert r.content_type == "text/markdown; charset=utf-8"
+
+
+def test_txt_route_still_works_after_dot_restriction(client):
+    client.post("/dotcheck2/edit", data={"title": "Test", "content": "Body"})
+    r = client.get("/dotcheck2.txt")
+    assert r.status_code == 200
+    assert r.content_type == "text/plain; charset=utf-8"

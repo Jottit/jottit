@@ -343,8 +343,9 @@ def _format_response(page_meta, row, content_type, body):
 
 
 # .md and .txt are representation suffixes, not part of the slug.
-# Slugs containing a literal ".md" or ".txt" will not match these routes;
-# Flask tries the more-specific suffix routes first.
+# Dots are disallowed in slugs (enforced by valid_slug / slugify) so there
+# is no ambiguity between e.g. a page named "notes.md" and the markdown
+# representation of a page named "notes".
 
 @bp.route("/<slug>.md")
 def view_page_md(slug):

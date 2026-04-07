@@ -9,7 +9,7 @@ from psycopg import errors as pg_errors
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-from utils import generate_slug
+from utils import generate_slug, valid_slug
 
 DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
 
@@ -135,6 +135,8 @@ def _find_page_by_slug(conn, slug, user_id=None):
 def save_page(
     slug, content, visibility="unlisted", user_id=None, source="web", ai_assisted=False
 ):
+    if not valid_slug(slug):
+        raise ValueError(f"Invalid slug: {slug!r} (dots are not allowed)")
     with get_db() as conn:
         page = _find_page_by_slug(conn, slug, user_id)
 
@@ -352,6 +354,8 @@ def verify_code(email, code, purpose):
 
 
 def rename_page(page_id, new_slug):
+    if not valid_slug(new_slug):
+        raise ValueError(f"Invalid slug: {new_slug!r} (dots are not allowed)")
     with get_db() as conn:
         result = conn.execute(
             "UPDATE pages SET slug = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",

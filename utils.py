@@ -84,6 +84,14 @@ def is_random_slug(slug):
     return bool(re.fullmatch(r"[a-z0-9]{6}", slug))
 
 
+def valid_slug(slug):
+    """Check that a slug won't collide with representation suffixes (.md, .txt).
+
+    Dots are disallowed entirely so that routes like /<slug>.md are unambiguous.
+    """
+    return bool(slug) and "." not in slug
+
+
 def render_markdown(text):
     html = _mistune_md(text)
     html = _smartypants(html)
@@ -92,6 +100,8 @@ def render_markdown(text):
 
 def slugify(name):
     s = name.lower().strip()
+    # Only allow lowercase alphanumeric, spaces (converted to hyphens), and hyphens.
+    # Dots are excluded to avoid collisions with .md/.txt representation routes.
     s = re.sub(r"[^a-z0-9\s-]", "", s)
     s = re.sub(r"\s+", "-", s)
     s = re.sub(r"-+", "-", s)
