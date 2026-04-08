@@ -119,21 +119,18 @@ def _build_page_item(p):
 
 
 def sidebar_vars(user_id, username, active_slug=None):
-    pages = get_pages_for_user(user_id)
+    all_pages = get_pages_for_user(user_id)
+    pages = [p for p in all_pages if not is_special_slug(p["slug"])]
     pinned = []
     recent = []
     pinned_slugs = set()
     for p in pages:
-        if is_special_slug(p["slug"]):
-            continue
         title = get_title(p["content"]) if p["content"] else None
         item = {"slug": p["slug"], "title": title or "Untitled"}
         if p["visibility"] == "pinned":
             pinned.append(item)
             pinned_slugs.add(p["slug"])
     for p in pages:
-        if is_special_slug(p["slug"]):
-            continue
         title = get_title(p["content"]) if p["content"] else None
         recent.append({"slug": p["slug"], "title": title or "Untitled"})
         if len(recent) >= 5:
