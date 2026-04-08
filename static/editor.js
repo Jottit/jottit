@@ -174,17 +174,25 @@ if (slugChip && slugPopover) {
         return '';
     }
 
+    var hasSubmitted = false;
+
     function onSlugInput() {
         var error = validateSlug(slugInput.value.trim());
         saveBtn.disabled = !!error;
-        if (!error) {
-            slugError.hidden = true;
+        if (hasSubmitted) {
+            if (error) {
+                slugError.textContent = error;
+                slugError.hidden = false;
+            } else {
+                slugError.hidden = true;
+            }
         }
     }
 
     slugInput.addEventListener('input', onSlugInput);
 
     slugChip.addEventListener('click', function() {
+        hasSubmitted = false;
         slugInput.value = currentSlug;
         slugPopover.hidden = false;
         slugError.hidden = true;
@@ -210,6 +218,7 @@ if (slugChip && slugPopover) {
 
     slugForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        hasSubmitted = true;
         var rawSlug = slugInput.value.trim();
         var error = validateSlug(rawSlug);
         if (error) {
