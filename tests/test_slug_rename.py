@@ -235,9 +235,7 @@ def test_agents_md_viewable_at_canonical_url(client):
 
 # Normal .md representation still works for ordinary slugs
 def test_normal_md_representation_still_works(client):
-    user_id = create_user_with_username(
-        client, "md@example.com", "mduser", "mypage"
-    )
+    create_user_with_username(client, "md@example.com", "mduser", "mypage")
     r = client.get("/@mduser/mypage.md")
     assert r.status_code == 200
     assert r.content_type.startswith("text/markdown")
@@ -245,9 +243,7 @@ def test_normal_md_representation_still_works(client):
 
 # Normal .txt representation still works for ordinary slugs
 def test_normal_txt_representation_still_works(client):
-    user_id = create_user_with_username(
-        client, "tx@example.com", "txuser", "txpage"
-    )
+    create_user_with_username(client, "tx@example.com", "txuser", "txpage")
     r = client.get("/@txuser/txpage.txt")
     assert r.status_code == 200
     assert r.content_type.startswith("text/plain")
