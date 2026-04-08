@@ -855,7 +855,7 @@
 }
 
 .site-header-name {
-    font-size: 20px;
+    font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--site-color-text);
     text-decoration: none;
