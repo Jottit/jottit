@@ -32,6 +32,7 @@ from db import (
     find_page_by_original_slug,
     find_page_owner_for_redirect,
     find_slug_redirect,
+    find_slug_redirect_with_owner,
     verify_page_secret,
 )
 from utils import (
@@ -319,9 +320,16 @@ def _resolve_page(slug, suffix=""):
                             301,
                         )
                 return redirect(f"/{original['slug']}{suffix}", 301)
-            redir_slug = find_slug_redirect(slug)
-            if redir_slug:
-                return redirect(f"/{redir_slug}{suffix}", 301)
+            redir = find_slug_redirect_with_owner(slug)
+            if redir:
+                if redir["user_id"]:
+                    owner = get_user(redir["user_id"])
+                    if owner and owner.get("username"):
+                        return redirect(
+                            profile_url(owner["username"], f"/{redir['slug']}{suffix}"),
+                            301,
+                        )
+                return redirect(f"/{redir['slug']}{suffix}", 301)
             abort(404)
         if page_meta["user_id"] is not None:
             user = get_user(page_meta["user_id"])

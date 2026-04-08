@@ -101,7 +101,8 @@ CREATE INDEX IF NOT EXISTS pages_visibility_updated_idx ON pages (visibility, up
 CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens (user_id);
 CREATE INDEX IF NOT EXISTS oauth_codes_expires_idx ON oauth_codes (expires_at);
 CREATE INDEX IF NOT EXISTS page_secrets_hash_idx ON page_secrets (secret_hash);
-CREATE INDEX IF NOT EXISTS slug_redirects_lookup ON slug_redirects (old_slug, user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS slug_redirects_lookup ON slug_redirects (old_slug, user_id) WHERE user_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS slug_redirects_lookup_unclaimed ON slug_redirects (old_slug) WHERE user_id IS NULL;
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
@@ -125,7 +126,8 @@ DO $$ BEGIN
             ('016_add_page_secrets.sql'),
             ('017_page_secret_expiry_and_index.sql'),
             ('018_remove_private_visibility.sql'),
-            ('019_slug_redirects.sql')
+            ('019_slug_redirects.sql'),
+            ('020_slug_redirects_unique.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

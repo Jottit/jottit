@@ -211,6 +211,16 @@ if (slugChip && slugPopover) {
                     editorEl.dataset.slug = data.slug;
                     form.action = form.action.replace(/\/[^/]+\/edit$/, '/' + data.slug + '/edit');
                     var newPath = window.location.pathname.replace(/\/[^/]+\/edit$/, '/' + data.slug + '/edit');
+                    var newStorageKey = 'jottit-draft:' + newPath;
+                    var newCursorKey = 'jottit-cursor:' + newPath;
+                    var draft = localStorage.getItem(storageKey);
+                    if (draft) localStorage.setItem(newStorageKey, draft);
+                    var cursor = localStorage.getItem(cursorKey);
+                    if (cursor) localStorage.setItem(newCursorKey, cursor);
+                    localStorage.removeItem(storageKey);
+                    localStorage.removeItem(cursorKey);
+                    storageKey = newStorageKey;
+                    cursorKey = newCursorKey;
                     history.replaceState(null, '', newPath);
                     slugPopover.hidden = true;
                     slugError.hidden = true;

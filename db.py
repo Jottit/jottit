@@ -362,6 +362,10 @@ def rename_page(page_id, new_slug):
         ).fetchone()
         if old and old["slug"] != new_slug:
             conn.execute(
+                "DELETE FROM slug_redirects WHERE old_slug = %s AND user_id IS NOT DISTINCT FROM %s",
+                (old["slug"], old["user_id"]),
+            )
+            conn.execute(
                 "INSERT INTO slug_redirects (old_slug, page_id, user_id) VALUES (%s, %s, %s)",
                 (old["slug"], page_id, old["user_id"]),
             )
@@ -379,17 +383,31 @@ def find_slug_redirect(slug, user_id=None):
             row = conn.execute(
                 """SELECT p.slug FROM slug_redirects sr
                    JOIN pages p ON p.id = sr.page_id
-                   WHERE sr.old_slug = %s AND sr.user_id = %s""",
+                   WHERE sr.old_slug = %s AND sr.user_id = %s
+                   ORDER BY sr.created_at DESC LIMIT 1""",
                 (slug, user_id),
             ).fetchone()
         else:
             row = conn.execute(
                 """SELECT p.slug FROM slug_redirects sr
                    JOIN pages p ON p.id = sr.page_id
-                   WHERE sr.old_slug = %s AND sr.user_id IS NULL""",
+                   WHERE sr.old_slug = %s AND sr.user_id IS NULL
+                   ORDER BY sr.created_at DESC LIMIT 1""",
                 (slug,),
             ).fetchone()
         return row["slug"] if row else None
+
+
+def find_slug_redirect_with_owner(slug):
+    with get_db() as conn:
+        row = conn.execute(
+            """SELECT p.slug, p.user_id FROM slug_redirects sr
+               JOIN pages p ON p.id = sr.page_id
+               WHERE sr.old_slug = %s
+               ORDER BY sr.created_at DESC LIMIT 1""",
+            (slug,),
+        ).fetchone()
+        return row
 
 
 def get_pages_for_user(user_id):

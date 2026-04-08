@@ -1,5 +1,6 @@
 from db import (
     find_slug_redirect,
+    find_slug_redirect_with_owner,
     get_page_meta,
     rename_page,
     save_page,
@@ -143,3 +144,46 @@ def test_rename_to_short_slug_not_overridden_by_auto_rename(client):
     # Should stay at "mypost", NOT auto-rename to "a-long-title"
     assert "/mypost" in r.headers["Location"]
     assert "a-long-title" not in r.headers["Location"]
+
+
+# Root-domain access to old slug of owned page redirects to profile
+def test_root_domain_old_slug_redirects_owned_page(client):
+    user_id = create_user_with_username(client, "rd2@example.com", "rd2user", "first")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/@rd2user/first/rename", data={"new_slug": "second"})
+    client.post("/@rd2user/second/rename", data={"new_slug": "third"})
+    # Access intermediate slug on root domain
+    r = client.get("/second")
+    assert r.status_code == 301
+    assert "/@rd2user/third" in r.headers["Location"]
+
+
+# Slug reuse: redirect resolves to the most recent page
+def test_slug_reuse_redirect_resolves_to_latest(client):
+    user_id = create_user_with_username(client, "su@example.com", "suuser", "alpha")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    # Page A: alpha -> beta -> gamma
+    client.post("/@suuser/alpha/rename", data={"new_slug": "beta"})
+    client.post("/@suuser/beta/rename", data={"new_slug": "gamma"})
+    # Page B takes "beta" and renames to "delta"
+    save_page("beta", "# Page B\n\nContent", "listed", user_id)
+    page_b = get_page_meta("beta", user_id)
+    rename_page(page_b["id"], "delta")
+    # Lookup for "beta" should resolve to "delta" (page B), not "gamma" (page A)
+    assert find_slug_redirect("beta", user_id) == "delta"
+    r = client.get("/@suuser/beta")
+    assert r.status_code == 301
+    assert "/delta" in r.headers["Location"]
+
+
+# find_slug_redirect_with_owner returns owner info for root-domain lookups
+def test_find_slug_redirect_with_owner(client):
+    user_id = create_user_with_username(client, "wo@example.com", "wouser", "owned")
+    page_meta = get_page_meta("owned", user_id)
+    rename_page(page_meta["id"], "renamed")
+    redir = find_slug_redirect_with_owner("owned")
+    assert redir is not None
+    assert redir["slug"] == "renamed"
+    assert redir["user_id"] == user_id
