@@ -86,6 +86,17 @@ def is_random_slug(slug):
 
 SPECIAL_SLUGS = {"AGENTS.md"}
 
+SPECIAL_SLUG_META = {
+    "AGENTS.md": {
+        "kind": "agents",
+        "description": "Site's AGENTS page — instructions for AI agents interacting with this site",
+    },
+}
+
+
+def is_special_slug(slug):
+    return slug in SPECIAL_SLUGS
+
 
 def valid_slug(slug):
     """Check that a slug won't collide with representation suffixes (.md, .txt).
