@@ -84,11 +84,17 @@ def is_random_slug(slug):
     return bool(re.fullmatch(r"[a-z0-9]{6}", slug))
 
 
+SPECIAL_SLUGS = {"AGENTS.md"}
+
+
 def valid_slug(slug):
     """Check that a slug won't collide with representation suffixes (.md, .txt).
 
     Dots are disallowed entirely so that routes like /<slug>.md are unambiguous.
+    Special slugs (e.g. AGENTS.md) are always allowed.
     """
+    if slug in SPECIAL_SLUGS:
+        return True
     return bool(slug) and "." not in slug
 
 

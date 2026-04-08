@@ -161,14 +161,36 @@ var editorEl = document.querySelector('.editor');
 var currentSlug = editorEl ? editorEl.dataset.slug : '';
 
 if (slugChip && slugPopover) {
-    slugInput.addEventListener('input', function() {
-        slugInput.value = slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-    });
+    var SPECIAL_SLUGS = ['AGENTS.md'];
+    var saveBtn = slugForm.querySelector('button[type="submit"]');
+
+    function validateSlug(value) {
+        if (!value) return 'Slug cannot be empty.';
+        if (value === currentSlug) return '';
+        if (SPECIAL_SLUGS.indexOf(value) !== -1) return '';
+        if (!/^[a-z0-9-]+$/.test(value)) return 'Only lowercase letters, numbers, and hyphens.';
+        if (/\.md$|\.txt$/.test(value)) return 'Slug cannot end in .md or .txt.';
+        return '';
+    }
+
+    function onSlugInput() {
+        var error = validateSlug(slugInput.value.trim());
+        if (error) {
+            slugError.textContent = error;
+            slugError.hidden = false;
+            saveBtn.disabled = true;
+        } else {
+            slugError.hidden = true;
+            saveBtn.disabled = false;
+        }
+    }
+
+    slugInput.addEventListener('input', onSlugInput);
 
     slugChip.addEventListener('click', function() {
         slugInput.value = currentSlug;
         slugPopover.hidden = false;
-        slugError.hidden = true;
+        onSlugInput();
         slugInput.focus();
         slugInput.select();
     });

@@ -38,6 +38,7 @@ from utils import (
     MAX_CONTENT_LENGTH,
     RESERVED_SLUGS,
     RESERVED_USERNAMES,
+    SPECIAL_SLUGS,
     generate_slug,
     get_body,
     get_title,
@@ -300,11 +301,14 @@ def rename_page_route(slug, username=None):
     if not page_meta or not can_edit(page_meta):
         abort(403)
 
-    new_slug = request.form.get("new_slug", "").strip().lower()
+    new_slug = request.form.get("new_slug", "").strip()
+    if new_slug not in SPECIAL_SLUGS:
+        new_slug = new_slug.lower()
     if not new_slug:
         return jsonify(error="Slug cannot be empty."), 400
-    if not re.fullmatch(r"[a-z0-9-]+", new_slug):
-        return jsonify(error="Only letters, numbers, and hyphens allowed."), 400
+    if new_slug not in SPECIAL_SLUGS:
+        if not re.fullmatch(r"[a-z0-9-]+", new_slug):
+            return jsonify(error="Only letters, numbers, and hyphens allowed."), 400
     if new_slug == slug:
         return jsonify(ok=True, slug=slug)
 

@@ -206,3 +206,17 @@ def test_ambiguous_old_slug_returns_404(client):
     # Root-domain /shared is ambiguous — two different owners had it
     r = client.get("/shared")
     assert r.status_code == 404
+
+
+# Special slug AGENTS.md is allowed
+def test_rename_to_agents_md(client):
+    user_id = create_user_with_username(client, "ag@example.com", "aguser", "agtest")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post("/@aguser/agtest/rename", data={"new_slug": "AGENTS.md"})
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["ok"] is True
+    assert data["slug"] == "AGENTS.md"
+    page = get_page_meta("AGENTS.md", user_id)
+    assert page is not None
