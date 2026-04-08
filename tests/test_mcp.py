@@ -197,6 +197,42 @@ def test_create_page_without_auth(client):
     assert "page_secret" in data
 
 
+def test_list_pages_includes_conventions(client):
+    _, token = _setup_user()
+    r = _rpc(client, "tools/call", {"name": "list_pages", "arguments": {}}, token=token)
+    text = r.get_json()["result"]["content"][0]["text"]
+    data = json.loads(text)
+    assert "conventions" in data
+    assert "AGENTS" in data["conventions"]["special_pages"]
+
+
+def test_agents_page_excluded_from_list_pages(client):
+    user_id, token = _setup_user()
+    save_page("normal-page", "# Normal\n\nContent", "listed", user_id)
+    save_page("AGENTS", "# Agents\n\nInstructions", "unlisted", user_id)
+    r = _rpc(client, "tools/call", {"name": "list_pages", "arguments": {}}, token=token)
+    text = r.get_json()["result"]["content"][0]["text"]
+    data = json.loads(text)
+    slugs = [p["slug"] for p in data["pages"]]
+    assert "normal-page" in slugs
+    assert "AGENTS" not in slugs
+
+
+def test_agents_page_still_fetchable_via_get_page(client):
+    user_id, token = _setup_user()
+    save_page("AGENTS", "# Agents\n\nInstructions for AI", "unlisted", user_id)
+    r = _rpc(
+        client,
+        "tools/call",
+        {"name": "get_page", "arguments": {"slug": "AGENTS"}},
+        token=token,
+    )
+    text = r.get_json()["result"]["content"][0]["text"]
+    page = json.loads(text)
+    assert page["title"] == "Agents"
+    assert "Instructions for AI" in page["content"]
+
+
 def test_update_page_requires_auth(client):
     # Create without auth
     r = _rpc(

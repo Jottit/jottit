@@ -26,6 +26,10 @@
     </div>
     <footer class="editor-footer">
         <a href="https://commonmark.org/help/" target="_blank" class="editor-markdown-link" tabindex="-1">Markdown</a>
+        <div class="editor-actions">
+            <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
+            <a href="{% if is_new %}/{% else %}{{ url_prefix }}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>
+        </div>
         <div class="popover-wrapper">
             <button type="button" class="chip" id="slug-chip">{{ ('/' + slug) if slug else '/set-slug' }}</button>
             <div class="popover" id="slug-popover" hidden>
@@ -38,10 +42,6 @@
                     <div class="form-error" id="slug-error" hidden></div>
                 </form>
             </div>
-        </div>
-        <div class="editor-actions">
-            <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
-            <a href="{% if is_new %}/{% else %}{{ url_prefix }}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>
         </div>
     </footer>
 </div>
