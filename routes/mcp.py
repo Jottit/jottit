@@ -16,7 +16,14 @@ from db import (
 )
 from routes import VISIBILITY_OPTIONS
 from routes.api import _require_auth, _serialize_page
-from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
+from utils import (
+    generate_slug,
+    get_title,
+    is_special_slug,
+    slugify,
+    SPECIAL_SLUG_META,
+    MAX_CONTENT_LENGTH,
+)
 
 mcp_bp = Blueprint("mcp", __name__)
 
@@ -138,8 +145,17 @@ def _call_tool(name, args, user):
                 "updated_at": p["updated_at"].isoformat(),
             }
             for p in pages
+            if not is_special_slug(p["slug"])
         ]
-        return _text_result(json.dumps({"pages": result}, indent=2))
+        return _text_result(
+            json.dumps(
+                {
+                    "pages": result,
+                    "conventions": {"special_pages": SPECIAL_SLUG_META},
+                },
+                indent=2,
+            )
+        )
 
     if name == "get_page":
         if not user:
@@ -291,6 +307,7 @@ def _call_tool(name, args, user):
             }
             for p in pages
             if p["visibility"] in ("listed", "pinned")
+            and not is_special_slug(p["slug"])
         ]
         return _text_result(
             json.dumps(

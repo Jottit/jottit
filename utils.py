@@ -84,12 +84,12 @@ def is_random_slug(slug):
     return bool(re.fullmatch(r"[a-z0-9]{6}", slug))
 
 
-SPECIAL_SLUGS = {"AGENTS.md"}
+SPECIAL_SLUGS = {"AGENTS"}
 
 SPECIAL_SLUG_META = {
-    "AGENTS.md": {
+    "AGENTS": {
         "kind": "agents",
-        "description": "Site's AGENTS page — instructions for AI agents interacting with this site",
+        "description": "Site's AGENTS page — instructions for AI agents interacting with this site. Access as markdown at /@username/AGENTS.md",
     },
 }
 

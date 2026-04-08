@@ -9,7 +9,7 @@ from psycopg import errors as pg_errors
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-from utils import generate_slug, valid_slug
+from utils import SPECIAL_SLUGS, generate_slug, valid_slug
 
 DATABASE = os.environ.get("DATABASE_URL", "dbname=jottit_dev")
 
@@ -520,11 +520,12 @@ def get_feed_entries_for_user(user_id):
                    FROM pages p
                    JOIN revisions r ON r.page_id = p.id
                    WHERE p.user_id = %s AND p.visibility IN ('listed', 'pinned')
+                   AND p.slug != ALL(%s)
                    ORDER BY p.id, r.revision DESC
                ) sub
                ORDER BY created_at DESC
                LIMIT 20""",
-            (user_id,),
+            (user_id, list(SPECIAL_SLUGS)),
         ).fetchall()
 
 
@@ -534,8 +535,9 @@ def get_public_pages():
             """SELECT p.slug, p.updated_at, u.username
                FROM pages p
                LEFT JOIN users u ON p.user_id = u.id
-               WHERE p.visibility != 'private'
+               WHERE p.visibility != 'private' AND p.slug != ALL(%s)
                ORDER BY p.updated_at DESC""",
+            (list(SPECIAL_SLUGS),),
         ).fetchall()
 
 

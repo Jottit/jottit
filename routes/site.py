@@ -40,6 +40,7 @@ from utils import (
     RESERVED_USERNAMES,
     SPECIAL_SLUGS,
     generate_slug,
+    is_special_slug,
     get_body,
     get_title,
     is_random_slug,
@@ -154,7 +155,10 @@ def new_page():
     if not slug:
         slug = generate_slug()
 
-    visibility = "listed" if owner_id else "unlisted"
+    if is_special_slug(slug):
+        visibility = "unlisted"
+    else:
+        visibility = "listed" if owner_id else "unlisted"
     slug = save_page(slug, content, visibility, subdomain_user_id)
 
     new_page_meta = get_page_meta(slug, subdomain_user_id)
@@ -242,7 +246,11 @@ def edit_page(slug):
     is_new = page_meta is None
     subdomain_user_id = subdomain_user["id"] if subdomain_user else None
     # Preserve existing visibility on edit; default to "listed" for new pages
-    visibility = page_meta["visibility"] if page_meta else "listed"
+    # Special slugs are always unlisted
+    if is_special_slug(slug):
+        visibility = "unlisted"
+    else:
+        visibility = page_meta["visibility"] if page_meta else "listed"
     slug = save_page(slug, content, visibility, subdomain_user_id)
 
     if is_new:
@@ -332,6 +340,8 @@ def rename_page_route(slug, username=None):
         return jsonify(error="That slug is already taken."), 400
 
     rename_page(page_meta["id"], new_slug)
+    if is_special_slug(new_slug):
+        update_page_visibility(page_meta["id"], "unlisted")
     return jsonify(ok=True, slug=new_slug)
 
 

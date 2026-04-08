@@ -18,7 +18,7 @@ from db import (
     verify_page_secret,
 )
 from routes import VISIBILITY_OPTIONS
-from utils import generate_slug, get_title, slugify, MAX_CONTENT_LENGTH
+from utils import generate_slug, get_title, is_special_slug, slugify, MAX_CONTENT_LENGTH
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -84,7 +84,7 @@ def get_user_profile(username):
             "updated_at": p["updated_at"].isoformat(),
         }
         for p in pages
-        if p["visibility"] in ("listed", "pinned")
+        if p["visibility"] in ("listed", "pinned") and not is_special_slug(p["slug"])
     ]
     return jsonify(
         {
@@ -113,6 +113,7 @@ def list_pages():
                     "updated_at": p["updated_at"].isoformat(),
                 }
                 for p in pages
+                if not is_special_slug(p["slug"])
             ],
         }
     )

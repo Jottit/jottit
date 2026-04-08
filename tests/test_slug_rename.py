@@ -208,27 +208,27 @@ def test_ambiguous_old_slug_returns_404(client):
     assert r.status_code == 404
 
 
-# Special slug AGENTS.md is allowed
+# Special slug AGENTS is allowed
 def test_rename_to_agents_md(client):
     user_id = create_user_with_username(client, "ag@example.com", "aguser", "agtest")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@aguser/agtest/rename", data={"new_slug": "AGENTS.md"})
+    r = client.post("/@aguser/agtest/rename", data={"new_slug": "AGENTS"})
     assert r.status_code == 200
     data = r.get_json()
     assert data["ok"] is True
-    assert data["slug"] == "AGENTS.md"
-    page = get_page_meta("AGENTS.md", user_id)
+    assert data["slug"] == "AGENTS"
+    page = get_page_meta("AGENTS", user_id)
     assert page is not None
 
 
-# AGENTS.md is viewable at its canonical URL (not treated as .md representation)
+# AGENTS is viewable at its canonical URL (not treated as .md representation)
 def test_agents_md_viewable_at_canonical_url(client):
     user_id = create_user_with_username(client, "av@example.com", "avuser", "avtest")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@avuser/avtest/rename", data={"new_slug": "AGENTS.md"})
-    r = client.get("/@avuser/AGENTS.md")
+    client.post("/@avuser/avtest/rename", data={"new_slug": "AGENTS"})
+    r = client.get("/@avuser/AGENTS")
     assert r.status_code == 200
     assert b"Test" in r.data
 
@@ -267,3 +267,36 @@ def test_new_page_without_custom_slug(client):
     assert r.status_code == 302
     slug = r.headers["Location"].lstrip("/")
     assert len(slug) == 6
+
+
+# AGENTS is excluded from profile page listing
+def test_agents_md_excluded_from_profile(client):
+    user_id = create_user_with_username(client, "pf@example.com", "pfuser", "pfpage")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/@pfuser/pfpage/rename", data={"new_slug": "AGENTS"})
+    r = client.get("/@pfuser")
+    assert r.status_code == 200
+    assert b"AGENTS" not in r.data
+
+
+# Renaming to AGENTS forces unlisted visibility
+def test_agents_md_forced_unlisted(client):
+    user_id = create_user_with_username(client, "ul@example.com", "uluser", "ulpage")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/@uluser/ulpage/rename", data={"new_slug": "AGENTS"})
+    page = get_page_meta("AGENTS", user_id)
+    assert page["visibility"] == "unlisted"
+
+
+# Renaming away from AGENTS makes it ordinary again
+def test_rename_away_from_agents_md(client):
+    user_id = create_user_with_username(client, "ra@example.com", "rauser", "rapage")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/@rauser/rapage/rename", data={"new_slug": "AGENTS"})
+    client.post("/@rauser/AGENTS/rename", data={"new_slug": "normal-page"})
+    # Should now appear in profile listing
+    r = client.get("/@rauser")
+    assert b"normal-page" in r.data

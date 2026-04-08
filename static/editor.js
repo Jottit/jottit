@@ -161,7 +161,7 @@ var editorEl = document.querySelector('.editor');
 var currentSlug = editorEl ? editorEl.dataset.slug : '';
 
 if (slugChip && slugPopover) {
-    var SPECIAL_SLUGS = ['AGENTS.md'];
+    var SPECIAL_SLUGS = ['AGENTS'];
     var saveBtn = slugForm.querySelector('button[type="submit"]');
 
     function validateSlug(value) {

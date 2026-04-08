@@ -79,7 +79,7 @@ def home():
         return render_template("home.html", **account_link_vars())
 
     pages = get_pages_for_user(session["user_id"])
-    all_items = [_build_page_item(p) for p in pages]
+    all_items = [_build_page_item(p) for p in pages if not is_special_slug(p["slug"])]
 
     counts = Counter(i["visibility"] for i in all_items)
     counts["all"] = len(all_items)
@@ -124,12 +124,16 @@ def sidebar_vars(user_id, username, active_slug=None):
     recent = []
     pinned_slugs = set()
     for p in pages:
+        if is_special_slug(p["slug"]):
+            continue
         title = get_title(p["content"]) if p["content"] else None
         item = {"slug": p["slug"], "title": title or "Untitled"}
         if p["visibility"] == "pinned":
             pinned.append(item)
             pinned_slugs.add(p["slug"])
     for p in pages:
+        if is_special_slug(p["slug"]):
+            continue
         title = get_title(p["content"]) if p["content"] else None
         recent.append({"slug": p["slug"], "title": title or "Untitled"})
         if len(recent) >= 5:
@@ -148,6 +152,8 @@ def subdomain_home(user):
     pinned = []
     listed = []
     for p in pages:
+        if is_special_slug(p["slug"]):
+            continue
         if p["visibility"] not in ("listed", "pinned"):
             continue
         item = _build_page_item(p)
@@ -205,16 +211,12 @@ def profile_view_page(username, slug):
 @bp.route("/@<username>/<slug>.md")
 def profile_view_page_md(username, slug):
     _set_profile_user(username)
-    if is_special_slug(f"{slug}.md"):
-        return view_page(f"{slug}.md")
     return view_page_md(slug)
 
 
 @bp.route("/@<username>/<slug>.txt")
 def profile_view_page_txt(username, slug):
     _set_profile_user(username)
-    if is_special_slug(f"{slug}.txt"):
-        return view_page(f"{slug}.txt")
     return view_page_txt(slug)
 
 
@@ -372,8 +374,6 @@ def _format_response(page_meta, row, content_type, body):
 
 @bp.route("/<slug>.md")
 def view_page_md(slug):
-    if is_special_slug(f"{slug}.md"):
-        return view_page(f"{slug}.md")
     result = _resolve_page(slug, suffix=".md")
     if not isinstance(result, tuple):
         return result
@@ -385,8 +385,6 @@ def view_page_md(slug):
 
 @bp.route("/<slug>.txt")
 def view_page_txt(slug):
-    if is_special_slug(f"{slug}.txt"):
-        return view_page(f"{slug}.txt")
     result = _resolve_page(slug, suffix=".txt")
     if not isinstance(result, tuple):
         return result
