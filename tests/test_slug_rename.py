@@ -187,3 +187,22 @@ def test_find_slug_redirect_with_owner(client):
     assert redir is not None
     assert redir["slug"] == "renamed"
     assert redir["user_id"] == user_id
+
+
+# Ambiguous old slug shared by two owners returns 404 on root domain
+def test_ambiguous_old_slug_returns_404(client):
+    # User A: astart -> shared -> a-final
+    user_a = create_user_with_username(client, "aa@example.com", "auser", "astart")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_a
+    client.post("/@auser/astart/rename", data={"new_slug": "shared"})
+    client.post("/@auser/shared/rename", data={"new_slug": "a-final"})
+    # User B: bstart -> shared -> b-final
+    user_b = create_user_with_username(client, "bb@example.com", "buser", "bstart")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_b
+    client.post("/@buser/bstart/rename", data={"new_slug": "shared"})
+    client.post("/@buser/shared/rename", data={"new_slug": "b-final"})
+    # Root-domain /shared is ambiguous — two different owners had it
+    r = client.get("/shared")
+    assert r.status_code == 404

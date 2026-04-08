@@ -400,14 +400,15 @@ def find_slug_redirect(slug, user_id=None):
 
 def find_slug_redirect_with_owner(slug):
     with get_db() as conn:
-        row = conn.execute(
-            """SELECT p.slug, p.user_id FROM slug_redirects sr
+        rows = conn.execute(
+            """SELECT DISTINCT p.slug, p.user_id FROM slug_redirects sr
                JOIN pages p ON p.id = sr.page_id
-               WHERE sr.old_slug = %s
-               ORDER BY sr.created_at DESC LIMIT 1""",
+               WHERE sr.old_slug = %s LIMIT 2""",
             (slug,),
-        ).fetchone()
-        return row
+        ).fetchall()
+        if len(rows) == 1:
+            return rows[0]
+        return None
 
 
 def get_pages_for_user(user_id):
