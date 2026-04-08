@@ -408,12 +408,27 @@
 .editor-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    max-width: calc((var(--content-width) + var(--space-8) * 2) * 2);
-    margin: 0 auto;
-    width: 100%;
+    justify-content: center;
     padding: var(--space-3) var(--space-8);
     border-top: 1px solid var(--border);
+}
+
+.editor-footer > .popover-wrapper {
+    display: none;
+}
+
+@media (min-width: 864px) {
+    .editor-footer {
+        justify-content: space-between;
+        max-width: calc((var(--content-width) + var(--space-8) * 2) * 2);
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .editor-footer > .popover-wrapper {
+        display: block;
+    }
+
 }
 
 .editor-draft {
@@ -427,7 +442,25 @@
 
 .editor-actions {
     display: flex;
+    flex-direction: column;
     gap: var(--space-2);
+    width: 100%;
+}
+
+.editor-actions > * {
+    width: 100%;
+    text-align: center;
+}
+
+@media (min-width: 864px) {
+    .editor-actions {
+        flex-direction: row;
+        width: auto;
+    }
+
+    .editor-actions > * {
+        width: auto;
+    }
 }
 
 .admin-banner .btn--outline {
@@ -447,6 +480,7 @@
 
 
 .editor-markdown-link {
+    display: none;
     font-size: var(--font-size-sm);
     color: var(--muted);
     text-decoration: none;
@@ -454,6 +488,12 @@
 
 .editor-markdown-link:hover {
     color: var(--text);
+}
+
+@media (min-width: 864px) {
+    .editor-markdown-link {
+        display: inline;
+    }
 }
 
 /* Chip — reusable pill component */
