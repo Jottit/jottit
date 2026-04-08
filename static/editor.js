@@ -209,7 +209,8 @@ if (slugChip && slugPopover) {
 
     slugForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        var newSlug = slugInput.value.trim().toLowerCase();
+        var rawSlug = slugInput.value.trim();
+        var newSlug = SPECIAL_SLUGS.indexOf(rawSlug) !== -1 ? rawSlug : rawSlug.toLowerCase();
         if (!newSlug || newSlug === currentSlug) {
             slugPopover.hidden = true;
             return;

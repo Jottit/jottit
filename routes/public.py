@@ -40,6 +40,7 @@ from utils import (
     get_description,
     get_title,
     html_to_text,
+    is_special_slug,
     render_bio,
     render_markdown,
 )
@@ -204,12 +205,16 @@ def profile_view_page(username, slug):
 @bp.route("/@<username>/<slug>.md")
 def profile_view_page_md(username, slug):
     _set_profile_user(username)
+    if is_special_slug(f"{slug}.md"):
+        return view_page(f"{slug}.md")
     return view_page_md(slug)
 
 
 @bp.route("/@<username>/<slug>.txt")
 def profile_view_page_txt(username, slug):
     _set_profile_user(username)
+    if is_special_slug(f"{slug}.txt"):
+        return view_page(f"{slug}.txt")
     return view_page_txt(slug)
 
 
@@ -367,6 +372,8 @@ def _format_response(page_meta, row, content_type, body):
 
 @bp.route("/<slug>.md")
 def view_page_md(slug):
+    if is_special_slug(f"{slug}.md"):
+        return view_page(f"{slug}.md")
     result = _resolve_page(slug, suffix=".md")
     if not isinstance(result, tuple):
         return result
@@ -378,6 +385,8 @@ def view_page_md(slug):
 
 @bp.route("/<slug>.txt")
 def view_page_txt(slug):
+    if is_special_slug(f"{slug}.txt"):
+        return view_page(f"{slug}.txt")
     result = _resolve_page(slug, suffix=".txt")
     if not isinstance(result, tuple):
         return result

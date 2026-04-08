@@ -220,3 +220,34 @@ def test_rename_to_agents_md(client):
     assert data["slug"] == "AGENTS.md"
     page = get_page_meta("AGENTS.md", user_id)
     assert page is not None
+
+
+# AGENTS.md is viewable at its canonical URL (not treated as .md representation)
+def test_agents_md_viewable_at_canonical_url(client):
+    user_id = create_user_with_username(client, "av@example.com", "avuser", "avtest")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post("/@avuser/avtest/rename", data={"new_slug": "AGENTS.md"})
+    r = client.get("/@avuser/AGENTS.md")
+    assert r.status_code == 200
+    assert b"Test" in r.data
+
+
+# Normal .md representation still works for ordinary slugs
+def test_normal_md_representation_still_works(client):
+    user_id = create_user_with_username(
+        client, "md@example.com", "mduser", "mypage"
+    )
+    r = client.get("/@mduser/mypage.md")
+    assert r.status_code == 200
+    assert r.content_type.startswith("text/markdown")
+
+
+# Normal .txt representation still works for ordinary slugs
+def test_normal_txt_representation_still_works(client):
+    user_id = create_user_with_username(
+        client, "tx@example.com", "txuser", "txpage"
+    )
+    r = client.get("/@txuser/txpage.txt")
+    assert r.status_code == 200
+    assert r.content_type.startswith("text/plain")
