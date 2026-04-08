@@ -305,8 +305,6 @@ def rename_page_route(slug, username=None):
         return jsonify(error="Slug cannot be empty."), 400
     if not re.fullmatch(r"[a-z0-9-]+", new_slug):
         return jsonify(error="Only letters, numbers, and hyphens allowed."), 400
-    if not valid_slug(new_slug):
-        return jsonify(error="Slug cannot contain dots."), 400
     if new_slug == slug:
         return jsonify(ok=True, slug=slug)
 

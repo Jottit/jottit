@@ -209,7 +209,6 @@ if (slugChip && slugPopover) {
                     currentSlug = data.slug;
                     slugChip.textContent = '/' + data.slug;
                     editorEl.dataset.slug = data.slug;
-                    var newEditUrl = form.action.replace('/' + encodeURIComponent(slugInput.dataset.prevSlug || newSlug) + '/edit', '/' + data.slug + '/edit');
                     form.action = form.action.replace(/\/[^/]+\/edit$/, '/' + data.slug + '/edit');
                     var newPath = window.location.pathname.replace(/\/[^/]+\/edit$/, '/' + data.slug + '/edit');
                     history.replaceState(null, '', newPath);

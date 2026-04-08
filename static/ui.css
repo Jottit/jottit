@@ -339,6 +339,9 @@
     flex: 1;
     display: flex;
     min-height: 0;
+    max-width: calc((var(--content-width) + var(--space-8) * 2) * 2);
+    margin: 0 auto;
+    width: 100%;
 }
 
 .editor-pane {
@@ -353,7 +356,6 @@
     flex-direction: column;
     max-width: var(--content-width);
     width: 100%;
-    margin: 0 auto;
     padding: var(--space-10) var(--space-8);
 }
 
@@ -400,7 +402,6 @@
 
     .editor-preview .page {
         max-width: var(--content-max-width);
-        margin: 0 auto;
     }
 }
 
@@ -408,6 +409,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    max-width: calc((var(--content-width) + var(--space-8) * 2) * 2);
+    margin: 0 auto;
+    width: 100%;
     padding: var(--space-3) var(--space-8);
     border-top: 1px solid var(--border);
 }
