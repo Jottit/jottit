@@ -74,6 +74,13 @@ CREATE TABLE IF NOT EXISTS page_secrets (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS slug_redirects (
+    old_slug TEXT NOT NULL,
+    page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
     filename TEXT PRIMARY KEY,
     applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -94,6 +101,7 @@ CREATE INDEX IF NOT EXISTS pages_visibility_updated_idx ON pages (visibility, up
 CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens (user_id);
 CREATE INDEX IF NOT EXISTS oauth_codes_expires_idx ON oauth_codes (expires_at);
 CREATE INDEX IF NOT EXISTS page_secrets_hash_idx ON page_secrets (secret_hash);
+CREATE INDEX IF NOT EXISTS slug_redirects_lookup ON slug_redirects (old_slug, user_id);
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
@@ -115,7 +123,9 @@ DO $$ BEGIN
             ('014_add_oauth.sql'),
             ('015_unify_visibility.sql'),
             ('016_add_page_secrets.sql'),
-            ('017_page_secret_expiry_and_index.sql')
+            ('017_page_secret_expiry_and_index.sql'),
+            ('018_remove_private_visibility.sql'),
+            ('019_slug_redirects.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

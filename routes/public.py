@@ -31,6 +31,7 @@ from db import (
     get_user,
     find_page_by_original_slug,
     find_page_owner_for_redirect,
+    find_slug_redirect,
     verify_page_secret,
 )
 from utils import (
@@ -287,6 +288,9 @@ def _resolve_page(slug, suffix=""):
             original = find_page_by_original_slug(slug, subdomain_user["id"])
             if original:
                 return redirect(f"{g.url_prefix}/{original['slug']}{suffix}", 301)
+            redir_slug = find_slug_redirect(slug, subdomain_user["id"])
+            if redir_slug:
+                return redirect(f"{g.url_prefix}/{redir_slug}{suffix}", 301)
             if not suffix and session.get("user_id") == subdomain_user["id"]:
                 return redirect(f"{g.url_prefix}/{slug}/edit")
             abort(404)
@@ -309,10 +313,15 @@ def _resolve_page(slug, suffix=""):
                     owner = get_user(original["user_id"])
                     if owner and owner.get("username"):
                         return redirect(
-                            profile_url(owner["username"], f"/{original['slug']}{suffix}"),
+                            profile_url(
+                                owner["username"], f"/{original['slug']}{suffix}"
+                            ),
                             301,
                         )
                 return redirect(f"/{original['slug']}{suffix}", 301)
+            redir_slug = find_slug_redirect(slug)
+            if redir_slug:
+                return redirect(f"/{redir_slug}{suffix}", 301)
             abort(404)
         if page_meta["user_id"] is not None:
             user = get_user(page_meta["user_id"])
@@ -346,6 +355,7 @@ def _format_response(page_meta, row, content_type, body):
 # Dots are disallowed in slugs (enforced by valid_slug / slugify) so there
 # is no ambiguity between e.g. a page named "notes.md" and the markdown
 # representation of a page named "notes".
+
 
 @bp.route("/<slug>.md")
 def view_page_md(slug):
@@ -457,7 +467,15 @@ def view_page(slug):
         visibility=page_meta["visibility"],
         ai_assisted=row.get("ai_assisted", False),
         page_source=row.get("source", "web"),
-        **(sidebar_vars(page_meta["user_id"], (subdomain_user or g.current_user or {}).get("username", ""), active_slug=slug) if is_owner else {}),
+        **(
+            sidebar_vars(
+                page_meta["user_id"],
+                (subdomain_user or g.current_user or {}).get("username", ""),
+                active_slug=slug,
+            )
+            if is_owner
+            else {}
+        ),
     )
     response = current_app.make_response(resp)
     if not is_owner and not show_actions and row["visibility"] != "private":

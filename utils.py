@@ -213,7 +213,9 @@ def html_to_text(html):
             return inner
         return f"{inner} ({href})"
 
-    text = _re.sub(r'<a[^>]+href="([^"]*)"[^>]*>(.*?)</a>', _link, text, flags=_re.DOTALL)
+    text = _re.sub(
+        r'<a[^>]+href="([^"]*)"[^>]*>(.*?)</a>', _link, text, flags=_re.DOTALL
+    )
 
     # Lists
     text = _re.sub(r"<li[^>]*>", "  - ", text)

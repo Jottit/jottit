@@ -123,11 +123,11 @@ def run_migrations():
 def _find_page_by_slug(conn, slug, user_id=None):
     if user_id is not None:
         return conn.execute(
-            "SELECT id, slug, user_id, visibility FROM pages WHERE slug = %s AND user_id = %s",
+            "SELECT id, slug, original_slug, user_id, visibility FROM pages WHERE slug = %s AND user_id = %s",
             (slug, user_id),
         ).fetchone()
     return conn.execute(
-        "SELECT id, slug, user_id, visibility FROM pages WHERE slug = %s AND user_id IS NULL",
+        "SELECT id, slug, original_slug, user_id, visibility FROM pages WHERE slug = %s AND user_id IS NULL",
         (slug,),
     ).fetchone()
 
@@ -357,12 +357,39 @@ def rename_page(page_id, new_slug):
     if not valid_slug(new_slug):
         raise ValueError(f"Invalid slug: {new_slug!r} (dots are not allowed)")
     with get_db() as conn:
+        old = conn.execute(
+            "SELECT slug, user_id FROM pages WHERE id = %s", (page_id,)
+        ).fetchone()
+        if old and old["slug"] != new_slug:
+            conn.execute(
+                "INSERT INTO slug_redirects (old_slug, page_id, user_id) VALUES (%s, %s, %s)",
+                (old["slug"], page_id, old["user_id"]),
+            )
         result = conn.execute(
             "UPDATE pages SET slug = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
             (new_slug, page_id),
         )
         conn.commit()
         return result.rowcount > 0
+
+
+def find_slug_redirect(slug, user_id=None):
+    with get_db() as conn:
+        if user_id is not None:
+            row = conn.execute(
+                """SELECT p.slug FROM slug_redirects sr
+                   JOIN pages p ON p.id = sr.page_id
+                   WHERE sr.old_slug = %s AND sr.user_id = %s""",
+                (slug, user_id),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                """SELECT p.slug FROM slug_redirects sr
+                   JOIN pages p ON p.id = sr.page_id
+                   WHERE sr.old_slug = %s AND sr.user_id IS NULL""",
+                (slug,),
+            ).fetchone()
+        return row["slug"] if row else None
 
 
 def get_pages_for_user(user_id):

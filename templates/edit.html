@@ -25,6 +25,21 @@
     </div>
     <footer class="editor-footer">
         <a href="https://commonmark.org/help/" target="_blank" class="editor-markdown-link" tabindex="-1">Markdown</a>
+        {% if slug and not is_new %}
+        <div class="popover-wrapper">
+            <button type="button" class="chip" id="slug-chip">/{{ slug }}</button>
+            <div class="popover" id="slug-popover" hidden>
+                <form id="slug-form" class="popover-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="popover-row">
+                        <input type="text" class="input--mono" id="slug-input" autocomplete="off" spellcheck="false">
+                        <button type="submit" class="btn btn--sm">Save</button>
+                    </div>
+                    <div class="form-error" id="slug-error" hidden></div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
         <div class="editor-actions">
             <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
             <a href="{% if is_new %}/{% else %}{{ url_prefix }}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>

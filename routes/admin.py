@@ -1,6 +1,6 @@
 import re
 
-from flask import flash, g, redirect, render_template, request, session
+from flask import flash, redirect, render_template, request, session
 
 from db import (
     check_username_available,
@@ -25,7 +25,15 @@ from storage import (
     validate_image,
 )
 from utils import RESERVED_USERNAMES, valid_email, valid_username
-from routes import bp, limiter, BASE_DOMAIN, LICENSES, profile_url, require_user, send_verification
+from routes import (
+    bp,
+    limiter,
+    BASE_DOMAIN,
+    LICENSES,
+    profile_url,
+    require_user,
+    send_verification,
+)
 
 
 @bp.route("/signin", methods=["GET", "POST"])

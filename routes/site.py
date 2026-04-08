@@ -1,10 +1,12 @@
 import io
+import re
 import zipfile
 
 from flask import (
     Response,
     abort,
     g,
+    jsonify,
     make_response,
     redirect,
     render_template,
@@ -23,7 +25,6 @@ from db import (
     get_export_pages_for_user,
     get_page,
     get_page_meta,
-    get_pages_for_user,
     get_user,
     rename_page,
     save_page,
@@ -250,7 +251,7 @@ def edit_page(slug):
                 ):
                     rename_page(new_page_meta["id"], nice_slug)
                     slug = nice_slug
-    elif title and is_random_slug(slug):
+    elif title and is_random_slug(slug) and slug == page_meta.get("original_slug"):
         effective_user_id = subdomain_user_id or session.get("user_id")
         if effective_user_id:
             nice_slug = slugify(title)
@@ -265,7 +266,11 @@ def edit_page(slug):
 
     resp = make_response(redirect(f"{g.url_prefix}/{slug}"))
     if is_new and not (subdomain_user_id or session.get("user_id")):
-        new_meta = get_page_meta(slug, subdomain_user_id) if not new_page_meta else new_page_meta
+        new_meta = (
+            get_page_meta(slug, subdomain_user_id)
+            if not new_page_meta
+            else new_page_meta
+        )
         if new_meta:
             secret = create_page_secret(new_meta["id"])
             resp.set_cookie(
@@ -276,6 +281,46 @@ def edit_page(slug):
                 max_age=30 * 24 * 3600,
             )
     return resp
+
+
+@bp.route("/@<username>/<slug>/rename", methods=["POST"])
+@bp.route("/<slug>/rename", methods=["POST"])
+def rename_page_route(slug, username=None):
+    subdomain_user = g.subdomain_user
+    if username:
+        _set_profile_user(username)
+        subdomain_user = g.subdomain_user
+
+    effective_user_id = (
+        subdomain_user["id"] if subdomain_user else session.get("user_id")
+    )
+    page_meta = get_page_meta(slug, effective_user_id)
+    if not page_meta:
+        page_meta = get_page_meta(slug)
+    if not page_meta or not can_edit(page_meta):
+        abort(403)
+
+    new_slug = request.form.get("new_slug", "").strip().lower()
+    if not new_slug:
+        return jsonify(error="Slug cannot be empty."), 400
+    if not re.fullmatch(r"[a-z0-9-]+", new_slug):
+        return jsonify(error="Only letters, numbers, and hyphens allowed."), 400
+    if not valid_slug(new_slug):
+        return jsonify(error="Slug cannot contain dots."), 400
+    if new_slug == slug:
+        return jsonify(ok=True, slug=slug)
+
+    reserved = RESERVED_SLUGS if not subdomain_user else set()
+    if new_slug in reserved:
+        return jsonify(error="That slug is reserved."), 400
+
+    owner_id = page_meta.get("user_id")
+    existing = get_page_meta(new_slug, owner_id)
+    if existing:
+        return jsonify(error="That slug is already taken."), 400
+
+    rename_page(page_meta["id"], new_slug)
+    return jsonify(ok=True, slug=new_slug)
 
 
 @bp.route("/<slug>/claim", methods=["GET", "POST"])

@@ -150,3 +150,79 @@ var cancelLink = document.querySelector('.editor-actions a');
 if (cancelLink) {
     cancelLink.addEventListener('click', clearDraft);
 }
+
+// Slug rename popover
+var slugChip = document.getElementById('slug-chip');
+var slugPopover = document.getElementById('slug-popover');
+var slugInput = document.getElementById('slug-input');
+var slugForm = document.getElementById('slug-form');
+var slugError = document.getElementById('slug-error');
+var editorEl = document.querySelector('.editor');
+var currentSlug = editorEl ? editorEl.dataset.slug : '';
+
+if (slugChip && slugPopover) {
+    slugInput.addEventListener('input', function() {
+        slugInput.value = slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    });
+
+    slugChip.addEventListener('click', function() {
+        slugInput.value = currentSlug;
+        slugPopover.hidden = false;
+        slugError.hidden = true;
+        slugInput.focus();
+        slugInput.select();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !slugPopover.hidden) {
+            slugPopover.hidden = true;
+        }
+    });
+
+    document.addEventListener('mousedown', function(e) {
+        if (!slugPopover.hidden && !slugPopover.contains(e.target) && e.target !== slugChip) {
+            slugPopover.hidden = true;
+        }
+    });
+
+    slugForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var newSlug = slugInput.value.trim().toLowerCase();
+        if (!newSlug || newSlug === currentSlug) {
+            slugPopover.hidden = true;
+            return;
+        }
+
+        var csrfToken = slugForm.querySelector('[name="csrf_token"]').value;
+        var formData = new FormData();
+        formData.append('new_slug', newSlug);
+        formData.append('csrf_token', csrfToken);
+
+        var renameUrl = form.action.replace(/\/edit$/, '/rename');
+
+        fetch(renameUrl, {
+            method: 'POST',
+            body: formData
+        }).then(function(response) {
+            return response.json().then(function(data) {
+                if (response.ok && data.ok) {
+                    currentSlug = data.slug;
+                    slugChip.textContent = '/' + data.slug;
+                    editorEl.dataset.slug = data.slug;
+                    var newEditUrl = form.action.replace('/' + encodeURIComponent(slugInput.dataset.prevSlug || newSlug) + '/edit', '/' + data.slug + '/edit');
+                    form.action = form.action.replace(/\/[^/]+\/edit$/, '/' + data.slug + '/edit');
+                    var newPath = window.location.pathname.replace(/\/[^/]+\/edit$/, '/' + data.slug + '/edit');
+                    history.replaceState(null, '', newPath);
+                    slugPopover.hidden = true;
+                    slugError.hidden = true;
+                } else {
+                    slugError.textContent = data.error || 'Rename failed.';
+                    slugError.hidden = false;
+                }
+            });
+        }).catch(function() {
+            slugError.textContent = 'Network error.';
+            slugError.hidden = false;
+        });
+    });
+}

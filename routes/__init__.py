@@ -4,7 +4,13 @@ from flask import Blueprint, abort, g, redirect, request, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from db import create_verification_code, get_page_meta, get_user, get_user_by_username, verify_page_secret
+from db import (
+    create_verification_code,
+    get_page_meta,
+    get_user,
+    get_user_by_username,
+    verify_page_secret,
+)
 from mail import send_verification_email
 
 limiter = Limiter(get_remote_address, storage_uri="memory://")

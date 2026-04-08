@@ -2,7 +2,6 @@ import pytest
 
 from conftest import create_user_with_username
 from db import (
-    claim_page,
     find_or_create_user,
     get_page_meta,
     rename_page,
@@ -10,7 +9,6 @@ from db import (
     set_user_username,
 )
 from utils import slugify, valid_slug
-
 
 # -- /{slug}.md --
 
