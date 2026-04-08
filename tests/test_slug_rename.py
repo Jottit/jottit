@@ -269,15 +269,15 @@ def test_new_page_without_custom_slug(client):
     assert len(slug) == 6
 
 
-# AGENTS is excluded from profile page listing
-def test_agents_md_excluded_from_profile(client):
+# AGENTS shown in sidebar special section
+def test_agents_shown_in_sidebar(client):
     user_id = create_user_with_username(client, "pf@example.com", "pfuser", "pfpage")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     client.post("/@pfuser/pfpage/rename", data={"new_slug": "AGENTS"})
     r = client.get("/@pfuser")
     assert r.status_code == 200
-    assert b"AGENTS" not in r.data
+    assert b"AGENTS" in r.data
 
 
 # Renaming to AGENTS forces unlisted visibility

@@ -21,4 +21,14 @@
         <a href="/pages" class="sidebar-see-all">See all</a>
         {% endif %}
     </nav>
+    {% if sidebar_special %}
+    <nav class="sidebar-section">
+        <h3 class="sidebar-heading">About</h3>
+        <ul class="sidebar-list">
+            {% for p in sidebar_special %}
+            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link sidebar-link--special"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="4"/><circle cx="9" cy="16" r="1" fill="currentColor"/><circle cx="15" cy="16" r="1" fill="currentColor"/></svg><span class="sidebar-link-text">{{ p.slug }}.md</span></a></li>
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
 </aside>

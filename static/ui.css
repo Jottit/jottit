@@ -1008,6 +1008,11 @@
     background: var(--subtle);
 }
 
+.sidebar-link--special {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+}
+
 .sidebar-create {
     display: inline-flex;
     align-items: center;
