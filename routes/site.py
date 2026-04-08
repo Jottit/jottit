@@ -135,8 +135,18 @@ def new_page():
     subdomain_user_id = subdomain_user["id"] if subdomain_user else None
     owner_id = subdomain_user_id or session.get("user_id")
     reserved = RESERVED_SLUGS if not subdomain_user else set()
+
+    requested_slug = request.form.get("slug", "").strip()
+    if requested_slug and requested_slug not in SPECIAL_SLUGS:
+        requested_slug = requested_slug.lower()
+
     slug = None
-    if owner_id and title:
+    if requested_slug and valid_slug(requested_slug):
+        if requested_slug not in reserved and not get_page_meta(
+            requested_slug, owner_id
+        ):
+            slug = requested_slug
+    if not slug and owner_id and title:
         nice_slug = slugify(title)
         if nice_slug and nice_slug not in reserved:
             if not get_page_meta(nice_slug, owner_id):

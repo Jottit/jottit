@@ -13,6 +13,7 @@
         <div class="editor-pane">
             <form id="editor-form" class="editor-form" method="post" action="{% if slug %}{{ url_prefix }}/{{ slug }}/edit{% else %}{{ url_prefix }}/new{% endif %}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if is_new %}<input type="hidden" name="slug" id="new-page-slug" value="">{% endif %}
                 <label for="title" class="sr-only">Title</label>
                 <input class="editor-title" id="title" type="text" name="title" placeholder="Title" value="{{ title }}" {% if not title %}autofocus{% endif %}>
                 <label for="content" class="sr-only">Content</label>
@@ -25,21 +26,19 @@
     </div>
     <footer class="editor-footer">
         <a href="https://commonmark.org/help/" target="_blank" class="editor-markdown-link" tabindex="-1">Markdown</a>
-        {% if slug and not is_new %}
         <div class="popover-wrapper">
-            <button type="button" class="chip" id="slug-chip">/{{ slug }}</button>
+            <button type="button" class="chip" id="slug-chip">{{ ('/' + slug) if slug else '/set-slug' }}</button>
             <div class="popover" id="slug-popover" hidden>
                 <form id="slug-form" class="popover-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="popover-row">
                         <input type="text" class="input--mono" id="slug-input" autocomplete="off" spellcheck="false">
-                        <button type="submit" class="btn btn--sm">Save</button>
+                        <button type="submit" class="btn btn--sm">{% if is_new %}Set{% else %}Save{% endif %}</button>
                     </div>
                     <div class="form-error" id="slug-error" hidden></div>
                 </form>
             </div>
         </div>
-        {% endif %}
         <div class="editor-actions">
             <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
             <a href="{% if is_new %}/{% else %}{{ url_prefix }}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>

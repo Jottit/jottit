@@ -247,3 +247,23 @@ def test_normal_txt_representation_still_works(client):
     r = client.get("/@txuser/txpage.txt")
     assert r.status_code == 200
     assert r.content_type.startswith("text/plain")
+
+
+# New page with custom slug uses that slug
+def test_new_page_with_custom_slug(client):
+    user_id = create_user_with_username(client, "cs@example.com", "csuser", "cspage")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.post(
+        "/new", data={"title": "My Page", "content": "Body", "slug": "custom-slug"}
+    )
+    assert r.status_code == 302
+    assert "/custom-slug" in r.headers["Location"]
+
+
+# New page without custom slug still auto-generates
+def test_new_page_without_custom_slug(client):
+    r = client.post("/new", data={"title": "Auto", "content": "Body"})
+    assert r.status_code == 302
+    slug = r.headers["Location"].lstrip("/")
+    assert len(slug) == 6

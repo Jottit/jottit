@@ -168,20 +168,17 @@ if (slugChip && slugPopover) {
         if (!value) return 'Slug cannot be empty.';
         if (value === currentSlug) return '';
         if (SPECIAL_SLUGS.indexOf(value) !== -1) return '';
-        if (!/^[a-z0-9-]+$/.test(value)) return 'Only lowercase letters, numbers, and hyphens.';
-        if (/\.md$|\.txt$/.test(value)) return 'Slug cannot end in .md or .txt.';
+        var normalized = value.toLowerCase();
+        if (!/^[a-z0-9-]+$/.test(normalized)) return 'Only letters, numbers, and hyphens.';
+        if (/\.md$|\.txt$/.test(normalized)) return 'Slug cannot end in .md or .txt.';
         return '';
     }
 
     function onSlugInput() {
         var error = validateSlug(slugInput.value.trim());
-        if (error) {
-            slugError.textContent = error;
-            slugError.hidden = false;
-            saveBtn.disabled = true;
-        } else {
+        saveBtn.disabled = !!error;
+        if (!error) {
             slugError.hidden = true;
-            saveBtn.disabled = false;
         }
     }
 
@@ -190,6 +187,7 @@ if (slugChip && slugPopover) {
     slugChip.addEventListener('click', function() {
         slugInput.value = currentSlug;
         slugPopover.hidden = false;
+        slugError.hidden = true;
         onSlugInput();
         slugInput.focus();
         slugInput.select();
@@ -207,12 +205,30 @@ if (slugChip && slugPopover) {
         }
     });
 
+    var newPageSlugInput = document.getElementById('new-page-slug');
+    var isNewPage = !!newPageSlugInput;
+
     slugForm.addEventListener('submit', function(e) {
         e.preventDefault();
         var rawSlug = slugInput.value.trim();
+        var error = validateSlug(rawSlug);
+        if (error) {
+            slugError.textContent = error;
+            slugError.hidden = false;
+            return;
+        }
         var newSlug = SPECIAL_SLUGS.indexOf(rawSlug) !== -1 ? rawSlug : rawSlug.toLowerCase();
         if (!newSlug || newSlug === currentSlug) {
             slugPopover.hidden = true;
+            return;
+        }
+
+        if (isNewPage) {
+            newPageSlugInput.value = newSlug;
+            currentSlug = newSlug;
+            slugChip.textContent = '/' + newSlug;
+            slugPopover.hidden = true;
+            slugError.hidden = true;
             return;
         }
 
