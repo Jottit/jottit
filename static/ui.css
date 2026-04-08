@@ -793,6 +793,7 @@
 }
 
 .site-header-spacer {
+    display: none;
     flex: 1;
     min-width: 0;
 }
@@ -814,7 +815,7 @@
 }
 
 .site-header-name {
-    font-size: var(--font-size-xl);
+    font-size: 20px;
     font-weight: 600;
     color: var(--site-color-text);
     text-decoration: none;
@@ -873,6 +874,14 @@
 }
 
 @media (min-width: 640px) {
+    .site-header-spacer {
+        display: block;
+    }
+
+    .site-header-name {
+        font-size: var(--font-size-xl);
+    }
+
     .site-header-inner {
         padding: var(--space-5) var(--space-10);
     }
