@@ -18,9 +18,18 @@ from db import (
     verify_page_secret,
 )
 from routes import VISIBILITY_OPTIONS
-from utils import generate_slug, get_title, is_special_slug, slugify, MAX_CONTENT_LENGTH
+from utils import (
+    generate_slug,
+    get_title,
+    is_special_slug,
+    slugify,
+    MAX_CONTENT_LENGTH,
+    SPECIAL_SLUG_META,
+)
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
+
+AGENTS_CONTENT_LIMIT = 2000
 
 
 def _require_auth():
@@ -103,6 +112,17 @@ def list_pages():
     if not user:
         return _error("Unauthorized", 401)
     pages = get_pages_for_user(user["id"])
+    conventions = {"special_pages": {k: dict(v) for k, v in SPECIAL_SLUG_META.items()}}
+    agents_page = next((p for p in pages if p["slug"] == "AGENTS"), None)
+    if agents_page:
+        content = agents_page["content"]
+        if len(content) <= AGENTS_CONTENT_LIMIT:
+            conventions["special_pages"]["AGENTS"]["content"] = content
+        else:
+            conventions["special_pages"]["AGENTS"]["content"] = content[
+                :AGENTS_CONTENT_LIMIT
+            ]
+            conventions["special_pages"]["AGENTS"]["truncated"] = True
     return jsonify(
         {
             "pages": [
@@ -115,6 +135,7 @@ def list_pages():
                 for p in pages
                 if not is_special_slug(p["slug"])
             ],
+            "conventions": conventions,
         }
     )
 

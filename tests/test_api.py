@@ -136,6 +136,21 @@ def test_list_pages(client):
     assert len(pages) == 2
 
 
+def test_list_pages_includes_agents_content_in_conventions(client):
+    user_id, token = _setup_user_with_token()
+    save_page("AGENTS", "# Agents\n\nBe concise.", "unlisted", user_id)
+    save_page("page1", "# One\n\nFirst", "listed", user_id)
+    r = client.get("/api/v1/pages", headers=_auth(token))
+    data = r.get_json()
+    assert "conventions" in data
+    agents = data["conventions"]["special_pages"]["AGENTS"]
+    assert agents["content"] == "# Agents\n\nBe concise."
+    assert "truncated" not in agents
+    slugs = [p["slug"] for p in data["pages"]]
+    assert "AGENTS" not in slugs
+    assert "page1" in slugs
+
+
 def test_update_page(client):
     user_id, token = _setup_user_with_token()
     save_page("updme", "# Old\n\nOld content", "listed", user_id)

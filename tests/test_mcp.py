@@ -197,13 +197,37 @@ def test_create_page_without_auth(client):
     assert "page_secret" in data
 
 
-def test_list_pages_includes_conventions(client):
+def test_list_pages_includes_conventions_without_agents(client):
     _, token = _setup_user()
     r = _rpc(client, "tools/call", {"name": "list_pages", "arguments": {}}, token=token)
     text = r.get_json()["result"]["content"][0]["text"]
     data = json.loads(text)
     assert "conventions" in data
     assert "AGENTS" in data["conventions"]["special_pages"]
+    assert "content" not in data["conventions"]["special_pages"]["AGENTS"]
+
+
+def test_list_pages_includes_agents_content_in_conventions(client):
+    user_id, token = _setup_user()
+    save_page("AGENTS", "# Agents\n\nBe helpful.", "unlisted", user_id)
+    r = _rpc(client, "tools/call", {"name": "list_pages", "arguments": {}}, token=token)
+    text = r.get_json()["result"]["content"][0]["text"]
+    data = json.loads(text)
+    agents = data["conventions"]["special_pages"]["AGENTS"]
+    assert agents["content"] == "# Agents\n\nBe helpful."
+    assert "truncated" not in agents
+
+
+def test_list_pages_truncates_long_agents_content(client):
+    user_id, token = _setup_user()
+    long_content = "# Agents\n\n" + "x" * 2500
+    save_page("AGENTS", long_content, "unlisted", user_id)
+    r = _rpc(client, "tools/call", {"name": "list_pages", "arguments": {}}, token=token)
+    text = r.get_json()["result"]["content"][0]["text"]
+    data = json.loads(text)
+    agents = data["conventions"]["special_pages"]["AGENTS"]
+    assert len(agents["content"]) == 2000
+    assert agents["truncated"] is True
 
 
 def test_agents_page_excluded_from_list_pages(client):

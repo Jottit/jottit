@@ -28,6 +28,7 @@ from utils import (
 mcp_bp = Blueprint("mcp", __name__)
 
 PROTOCOL_VERSION = "2025-03-26"
+AGENTS_CONTENT_LIMIT = 2000
 SERVER_INFO = {"name": "Jottit", "version": "1.0.0"}
 
 TOOLS = [
@@ -147,11 +148,24 @@ def _call_tool(name, args, user):
             for p in pages
             if not is_special_slug(p["slug"])
         ]
+        conventions = {
+            "special_pages": {k: dict(v) for k, v in SPECIAL_SLUG_META.items()}
+        }
+        agents_page = next((p for p in pages if p["slug"] == "AGENTS"), None)
+        if agents_page:
+            content = agents_page["content"]
+            if len(content) <= AGENTS_CONTENT_LIMIT:
+                conventions["special_pages"]["AGENTS"]["content"] = content
+            else:
+                conventions["special_pages"]["AGENTS"]["content"] = content[
+                    :AGENTS_CONTENT_LIMIT
+                ]
+                conventions["special_pages"]["AGENTS"]["truncated"] = True
         return _text_result(
             json.dumps(
                 {
                     "pages": result,
-                    "conventions": {"special_pages": SPECIAL_SLUG_META},
+                    "conventions": conventions,
                 },
                 indent=2,
             )
