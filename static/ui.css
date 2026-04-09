@@ -664,8 +664,7 @@
 }
 
 .profile-header .profile-bio {
-    margin: var(--space-3) auto 0;
-    max-width: var(--bio-max-width);
+    margin: 0;
 }
 
 .profile-header--avatar .profile-bio,
@@ -1051,33 +1050,53 @@
     font-size: var(--font-size-sm);
 }
 
-.sidebar-avatar {
-    width: 48px;
-    height: 48px;
+/* Profile header */
+
+.profile-header {
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--border);
+}
+
+.profile-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-6);
+    margin-bottom: var(--space-4);
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    max-width: 80px;
     border-radius: 50%;
     object-fit: cover;
-    margin-top: var(--space-6);
-    display: block;
-    margin-bottom: var(--space-3);
+    flex-shrink: 0;
 }
 
-.sidebar-name {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
+.profile-info {
+    min-width: 0;
+    flex-grow: 1;
+}
+
+.profile-name {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
     color: var(--text);
+    margin: 0;
+    line-height: 1.2;
 }
 
-.sidebar-username {
-    font-size: var(--font-size-xs);
+.profile-username {
+    font-size: var(--font-size-md);
     color: var(--muted);
-    margin-bottom: var(--space-2);
 }
 
-.sidebar-bio {
-    font-size: var(--font-size-sm);
-    color: var(--muted);
+.profile-bio {
+    font-size: var(--font-size-md);
+    color: var(--text-secondary);
     line-height: 1.5;
-    margin-bottom: var(--space-5);
 }
 
 .sidebar-settings {

@@ -33,14 +33,4 @@
     </nav>
     {% endif %}
     {% endif %}
-    {% if avatar_url %}
-    <img src="{{ avatar_url }}" alt="" class="sidebar-avatar">
-    {% endif %}
-    {% if site_title %}
-    <div class="sidebar-name">{{ site_title }}</div>
-    <div class="sidebar-username">@{{ sidebar_username }}</div>
-    {% endif %}
-    {% if bio_html %}
-    <div class="sidebar-bio">{{ bio_html | safe }}</div>
-    {% endif %}
 </aside>

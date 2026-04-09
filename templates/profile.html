@@ -11,6 +11,22 @@
 {% if is_owner %}{% include "_site_header.html" %}{% endif %}
 <div class="layout-with-sidebar{% if not is_owner %} no-header{% endif %}">
 <main class="page-main">
+    <header class="profile-header">
+        <div class="profile-identity">
+            {% if avatar_url %}
+            <img src="{{ avatar_url }}" alt="" class="profile-avatar">
+            {% endif %}
+            <div class="profile-info">
+                {% if site_title %}
+                <h1 class="profile-name">{{ site_title }}</h1>
+                <div class="profile-username">@{{ sidebar_username }}</div>
+                {% endif %}
+                {% if bio_html %}
+                <div class="profile-bio">{{ bio_html | safe }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
     <article class="page">
         {% if pages %}
         {% for page in pages %}
