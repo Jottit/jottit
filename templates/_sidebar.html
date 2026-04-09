@@ -1,4 +1,5 @@
 <aside class="sidebar">
+    {% if is_owner %}
     <a href="{{ url_prefix }}/new" class="btn btn-publish btn--sm sidebar-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Create a page</a>
     {% if sidebar_pinned %}
     <nav class="sidebar-section">
@@ -26,9 +27,20 @@
         <h3 class="sidebar-heading">About</h3>
         <ul class="sidebar-list">
             {% for p in sidebar_special %}
-            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link sidebar-link--special"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="4"/><circle cx="9" cy="16" r="1" fill="currentColor"/><circle cx="15" cy="16" r="1" fill="currentColor"/></svg><span class="sidebar-link-text">{{ p.slug }}.md</span></a></li>
+            <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link sidebar-link--special"><span class="sidebar-link-text">{{ p.slug }}.md</span></a></li>
             {% endfor %}
         </ul>
     </nav>
+    {% endif %}
+    {% endif %}
+    {% if avatar_url %}
+    <img src="{{ avatar_url }}" alt="" class="sidebar-avatar">
+    {% endif %}
+    {% if site_title %}
+    <div class="sidebar-name">{{ site_title }}</div>
+    <div class="sidebar-username">@{{ sidebar_username }}</div>
+    {% endif %}
+    {% if bio_html %}
+    <div class="sidebar-bio">{{ bio_html | safe }}</div>
     {% endif %}
 </aside>

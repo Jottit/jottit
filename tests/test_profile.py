@@ -173,12 +173,14 @@ def test_sidebar_visible_to_owner(client):
     assert b"sp1" in r.data
 
 
-# Visitor does not see sidebar
-def test_sidebar_hidden_from_visitor(client):
+# Visitor sees sidebar with identity but no pages list or create button
+def test_sidebar_identity_visible_to_visitor(client):
     create_user_with_username(client, "side2@example.com", "sideuser2", "sp2")
     r = client.get("/@sideuser2")
     assert r.status_code == 200
-    assert b"sidebar" not in r.data
+    assert b"sidebar" in r.data
+    assert b"Create a page" not in r.data
+    assert b"PAGES" not in r.data
 
 
 # Sidebar shown on individual page views for owner

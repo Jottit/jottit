@@ -35,7 +35,7 @@
     </article>
     {% if show_actions %}
     <div class="page-actions">
-        {% if is_owner %}
+        {% if is_owner and not is_special %}
         <form method="post" action="{{ url_prefix }}/{{ slug }}/visibility" class="listing-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="listing-select-wrap">

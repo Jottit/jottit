@@ -130,7 +130,7 @@ table {
     /* Published page typography */
     --site-font-body: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --site-font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --site-font-size: 1.25rem;
+    --site-font-size: 1rem;
     --site-line-height: 1.7;
     --site-max-width: 1024px;
     --site-color-text: #333;

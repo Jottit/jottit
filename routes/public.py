@@ -118,9 +118,11 @@ def _build_page_item(p):
     }
 
 
-def sidebar_vars(user_id, username, active_slug=None):
+def sidebar_vars(user_id, username, active_slug=None, is_owner=False):
     all_pages = get_pages_for_user(user_id)
     pages = [p for p in all_pages if not is_special_slug(p["slug"])]
+    if not is_owner:
+        pages = [p for p in pages if p["visibility"] in ("listed", "pinned")]
     special = [
         {"slug": p["slug"], "title": get_title(p["content"]) or p["slug"]}
         for p in all_pages
@@ -167,7 +169,6 @@ def subdomain_home(user):
     page_list = pinned + listed
 
     site_title = user.get("name") or user.get("username")
-    sidebar = sidebar_vars(user["id"], user.get("username", ""))
     is_owner = session.get("user_id") == user["id"]
     owner_initials = None
     owner_avatar_url = None
@@ -184,6 +185,7 @@ def subdomain_home(user):
         user=user,
         pages=page_list,
         site_title=site_title,
+        site_username=user.get("username", ""),
         is_owner=is_owner,
         owner_initials=owner_initials,
         owner_avatar_url=owner_avatar_url,
@@ -193,11 +195,7 @@ def subdomain_home(user):
         license_info=LICENSES.get(user.get("license") or ""),
         profile_url=profile_url(user["username"]) if user.get("username") else None,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
-        **(
-            sidebar
-            if is_owner
-            else {"sidebar_special": sidebar.get("sidebar_special", [])}
-        ),
+        **sidebar_vars(user["id"], user.get("username", ""), is_owner=is_owner),
     )
 
 
@@ -484,9 +482,11 @@ def view_page(slug):
         page_title=page_title,
         page_description=page_description,
         site_title=site_title,
+        site_username=(subdomain_user or g.current_user or {}).get("username", ""),
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
         is_subdomain=subdomain_user is not None,
         license_info=license_info,
+        is_special=is_special_slug(slug),
         visibility=page_meta["visibility"],
         ai_assisted=row.get("ai_assisted", False),
         page_source=row.get("source", "web"),
@@ -495,6 +495,7 @@ def view_page(slug):
                 page_meta["user_id"],
                 (subdomain_user or g.current_user or {}).get("username", ""),
                 active_slug=slug,
+                is_owner=True,
             )
             if is_owner
             else {}

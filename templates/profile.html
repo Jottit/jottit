@@ -8,10 +8,8 @@
 {% endblock %}
 
 {% block body %}
-{% include "_site_header.html" %}
-{% if is_owner %}
-<div class="layout-with-sidebar">
-{% endif %}
+{% if is_owner %}{% include "_site_header.html" %}{% endif %}
+<div class="layout-with-sidebar{% if not is_owner %} no-header{% endif %}">
 <main class="page-main">
     <article class="page">
         {% if pages %}
@@ -23,7 +21,7 @@
                 {% if page.description %}
                 <p class="page-listing-desc">{{ page.description }}</p>
                 {% endif %}
-                <span class="page-listing-readmore"><span class="btn btn--outline btn--sm">Read more</span></span>
+
             </a>
         </div>
         {% endfor %}
@@ -33,8 +31,6 @@
     </article>
     {% include "_page_footer.html" %}
 </main>
-{% if is_owner %}
 {% include "_sidebar.html" %}
 </div>
-{% endif %}
 {% endblock %}

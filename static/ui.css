@@ -858,8 +858,19 @@
     text-decoration: none;
 }
 
-.site-header-name {
+.site-header-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     font-size: var(--font-size-lg);
+}
+
+.site-header-identity .site-header-avatar {
+    width: 28px;
+    height: 28px;
+}
+
+.site-header-name {
     font-weight: 600;
     color: var(--site-color-text);
     text-decoration: none;
@@ -867,6 +878,11 @@
 
 .site-header-name:hover {
     color: var(--site-color-muted);
+}
+
+.site-header-slug {
+    font-weight: 400;
+    color: var(--muted);
 }
 
 .site-header-actions {
@@ -891,6 +907,19 @@
 }
 
 .site-header-settings:hover {
+    color: var(--text);
+}
+
+.site-header-settings-link {
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+}
+
+.site-header-settings-link:hover {
     color: var(--text);
 }
 
@@ -922,10 +951,6 @@
         display: block;
     }
 
-    .site-header-name {
-        font-size: var(--font-size-xl);
-    }
-
     .site-header-inner {
         padding: var(--space-5) var(--space-10);
     }
@@ -941,6 +966,10 @@
     column-gap: var(--space-8);
 }
 
+.layout-with-sidebar.no-header {
+    padding-top: var(--space-8);
+}
+
 .sidebar {
     position: sticky;
     top: 0;
@@ -950,17 +979,16 @@
 }
 
 .sidebar-section {
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-5);
 }
 
 .sidebar-heading {
-    font-size: var(--font-size-sm);
-    font-weight: 500;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     color: var(--muted);
     margin: 0 0 var(--space-1);
-    padding-left: var(--space-2);
 }
 
 .sidebar-list {
@@ -982,10 +1010,10 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     color: var(--text-secondary);
     text-decoration: none;
-    padding: var(--space-1) var(--space-2);
+    padding: 5px 0;
     border-radius: var(--radius-sm);
     overflow: hidden;
     min-width: 0;
@@ -1016,9 +1044,40 @@
 .sidebar-create {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-8);
-    padding: var(--space-2) var(--space-4);
+    gap: var(--space-1);
+    margin-top: var(--space-4);
+    margin-bottom: var(--space-6);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-sm);
+}
+
+.sidebar-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-top: var(--space-6);
+    display: block;
+    margin-bottom: var(--space-3);
+}
+
+.sidebar-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sidebar-username {
+    font-size: var(--font-size-xs);
+    color: var(--muted);
+    margin-bottom: var(--space-2);
+}
+
+.sidebar-bio {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: var(--space-5);
 }
 
 .sidebar-settings {
@@ -1152,6 +1211,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-3);
     border-top: 1px solid var(--border);
     padding-top: var(--space-4);
 }
@@ -1173,6 +1233,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    margin-left: auto;
 }
 
 .page-actions-buttons .inline-form {
