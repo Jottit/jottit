@@ -8,8 +8,8 @@
 {% endblock %}
 
 {% block body %}
-{% if is_owner %}{% include "_site_header.html" %}{% endif %}
-<div class="{% if is_owner %}layout-with-sidebar{% else %}layout-single no-header{% endif %}">
+{% include "_site_header.html" %}
+<div class="{% if is_owner %}layout-with-sidebar{% else %}layout-single{% endif %}">
 <main class="page-main">
     <header class="profile-header">
         <div class="profile-identity">

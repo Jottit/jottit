@@ -122,8 +122,8 @@ table {
     --radius-pill: 50px;
 
     /* Content width */
-    --content-width: 720px;
-    --content-max-width: 720px;
+    --content-width: 850px;
+    --content-max-width: 850px;
     --bio-max-width: 480px;
     --measure: 70em;
 
@@ -244,7 +244,7 @@ a {
 }
 
 .btn-publish {
-    background: var(--brand-2);
+    background: var(--brand-1);
     color: #0a3d2a;
 }
 

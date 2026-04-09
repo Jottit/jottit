@@ -719,6 +719,7 @@
     color: var(--site-color-text);
 }
 
+
 /* Home page separator */
 
 .page-separator {
@@ -857,29 +858,41 @@
     text-decoration: none;
 }
 
-.site-header-identity {
+.page-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: var(--space-2);
     font-size: var(--font-size-lg);
+    margin-bottom: var(--space-10);
 }
 
-.site-header-identity .site-header-avatar {
+.page-header-meta {
+    width: 100%;
+    font-size: var(--font-size-xs);
+    color: var(--muted);
+    text-align: center;
+}
+
+.page-header-avatar {
     width: 28px;
     height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
-.site-header-name {
+.page-header-name {
     font-weight: 600;
     color: var(--site-color-text);
     text-decoration: none;
 }
 
-.site-header-name:hover {
+.page-header-name:hover {
     color: var(--site-color-muted);
 }
 
-.site-header-slug {
+.page-header-slug {
     font-weight: 400;
     color: var(--muted);
 }
@@ -907,6 +920,32 @@
 
 .site-header-settings:hover {
     color: var(--text);
+}
+
+.site-header-avatar-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.site-header-user-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.site-header-user-initials {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: var(--subtle);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
 }
 
 .site-header-settings-link {
@@ -960,7 +999,7 @@
 .layout-with-sidebar {
     display: grid;
     grid-template-columns: 1fr 220px;
-    max-width: 1100px;
+    max-width: calc(var(--content-max-width) + 220px + var(--space-8));
     margin: 0 auto;
     column-gap: var(--space-8);
 }
@@ -971,7 +1010,7 @@
 }
 
 .layout-single {
-    max-width: 1100px;
+    max-width: var(--content-max-width);
     margin: 0 auto;
 }
 
@@ -1114,6 +1153,7 @@
     text-decoration: none;
     margin-top: var(--space-5);
 }
+
 
 .sidebar-settings:hover {
     color: var(--text);

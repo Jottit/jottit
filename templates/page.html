@@ -19,18 +19,18 @@
     <a href="/{{ slug }}/claim" class="btn btn--primary btn--sm">Claim page</a>
 </div>
 {% endif %}
-{% if is_owner %}
-<div class="layout-with-sidebar">
-{% endif %}
 <main class="page-main">
+    <div class="page-header">
+        {% if slug %}{% if avatar_url %}<a href="{{ url_prefix }}"><img src="{{ avatar_url }}" alt="" class="page-header-avatar"></a>{% endif %}<a href="{{ url_prefix }}" class="page-header-name h-card p-name u-url">{{ site_username }}</a><span class="page-header-slug"> / {{ slug }}</span>{% endif %}
+        {% if updated_at %}<time class="page-header-meta dt-published" datetime="{{ updated_at | isoformat }}">{{ 'Created' if revision_count is defined and revision_count <= 1 else 'Updated' }} {{ updated_at | relative_time }}</time>{% endif %}
+    </div>
+    {% if is_owner %}
+    <div class="layout-with-sidebar">
+    <div class="page-content">
+    {% endif %}
     <article class="page h-entry">
-        {% if content_title %}<div class="e-content-title">{{ content_title | safe }}</div>
-        <time class="page-meta dt-published" datetime="{{ updated_at | isoformat }}">Updated {{ updated_at | relative_time }}</time>
-        {% endif %}
+        {% if content_title %}<div class="e-content-title">{{ content_title | safe }}</div>{% endif %}
         <div class="e-content">{{ content_body | safe }}</div>
-        {% if not content_title %}
-        <time class="page-meta page-meta--footer dt-published" datetime="{{ updated_at | isoformat }}">Updated {{ updated_at | relative_time }}</time>
-        {% endif %}
         <a class="u-url" href="{{ url_prefix }}/{{ slug }}" hidden></a>
     </article>
     {% if show_actions %}
@@ -55,10 +55,11 @@
     </div>
     {% endif %}
     {% include "_page_footer.html" %}
+    {% if is_owner %}
+    </div>
+    {% include "_sidebar.html" %}
+    </div>
+    <script src="/static/listing.js?v={{ asset_v }}"></script>
+    {% endif %}
 </main>
-{% if is_owner %}
-{% include "_sidebar.html" %}
-</div>
-<script src="/static/listing.js?v={{ asset_v }}"></script>
-{% endif %}
 {% endblock %}

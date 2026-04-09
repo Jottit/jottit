@@ -464,6 +464,8 @@ def view_page(slug):
             if user.get("username"):
                 owner_profile_url = profile_url(user["username"])
 
+    revision_count = get_revision_count(page_meta["id"])
+
     resp = render_template(
         "page.html",
         content_title=content_title,
@@ -479,6 +481,7 @@ def view_page(slug):
         avatar_url=avatar_url,
         bio_html=bio_html,
         updated_at=row["created_at"],
+        revision_count=revision_count,
         page_title=page_title,
         page_description=page_description,
         site_title=site_title,

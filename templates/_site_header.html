@@ -2,17 +2,19 @@
 <header class="site-header">
     <div class="site-header-inner">
         <div class="site-header-spacer">
-            {% if is_owner %}
             <a href="{{ base_url|default('/', true) }}" class="site-header-logo">Jottit</a>
-            {% endif %}
         </div>
-        <div class="site-header-identity">
-            {% if slug %}{% if avatar_url %}<a href="{{ url_prefix }}"><img src="{{ avatar_url }}" alt="" class="site-header-avatar"></a>{% endif %}<a href="{{ url_prefix }}" class="site-header-name h-card p-name u-url">{{ site_username }}</a><span class="site-header-slug"> / {{ slug }}</span>{% endif %}
-        </div>
+        <div class="site-header-center"></div>
         <div class="site-header-spacer">
             {% if is_owner %}
             <div class="site-header-actions">
-                <a href="{{ base_url|default('', true) }}/settings" class="site-header-settings-link" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Settings</a>
+                <a href="{{ url_prefix }}/new" class="btn btn-publish btn--sm site-header-create">Create a page</a>
+                <a href="{{ base_url|default('', true) }}/settings" class="site-header-avatar-link" title="Settings">{% if owner_avatar_url %}<img src="{{ owner_avatar_url }}" alt="" class="site-header-user-avatar">{% elif owner_initials %}<span class="site-header-user-initials">{{ owner_initials }}</span>{% endif %}</a>
+            </div>
+            {% else %}
+            <div class="site-header-actions">
+                <a href="{{ base_url|default('', true) }}/signin" class="site-header-settings-link">Sign in</a>
+                <a href="{{ base_url|default('', true) }}/new" class="btn btn--outline btn--sm">Create a page</a>
             </div>
             {% endif %}
         </div>

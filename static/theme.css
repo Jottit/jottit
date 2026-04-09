@@ -6,6 +6,14 @@
     padding: var(--space-10) var(--space-5) var(--space-12);
 }
 
+.page-main:has(.layout-with-sidebar) {
+    max-width: none;
+}
+
+.page-content {
+    max-width: var(--content-max-width);
+}
+
 @media (min-width: 640px) {
     .page-main {
         padding: var(--space-10) var(--space-10) var(--space-12);
@@ -37,8 +45,6 @@
     display: block;
     font-size: var(--font-size-xs);
     font-family: var(--site-font-heading);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--site-color-muted);
     margin-bottom: 1.5rem;
 }
