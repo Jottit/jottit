@@ -1522,17 +1522,28 @@
 /* Claim banner */
 
 .claim-banner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-5);
-    background: #000;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    padding: var(--space-2) var(--space-6);
+    background: var(--subtle);
+    border-radius: var(--radius-pill);
+    width: fit-content;
+    margin: var(--space-8) auto 0;
+}
+
+.claim-banner:hover {
+    background: var(--subtle-hover);
 }
 
 .claim-banner-text {
     font-size: var(--font-size-md);
-    color: var(--text-secondary);
+    color: var(--muted);
+}
+
+.claim-banner-arrow {
+    color: var(--text);
+    font-weight: 700;
 }
 
 /* Settings hub */
