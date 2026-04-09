@@ -122,8 +122,6 @@ def _build_page_item(p):
 def sidebar_vars(user_id, username, active_slug=None, is_owner=False):
     all_pages = get_pages_for_user(user_id)
     pages = [p for p in all_pages if not is_special_slug(p["slug"])]
-    if not is_owner:
-        pages = [p for p in pages if p["visibility"] in ("listed", "pinned")]
     special = [
         {"slug": p["slug"], "title": get_title(p["content"]) or p["slug"]}
         for p in all_pages

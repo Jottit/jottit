@@ -116,7 +116,7 @@ def user_pages():
         license_info=LICENSES.get(user.get("license") or ""),
         profile_url=profile_url(username) if username else None,
         base_url=request.scheme + "://" + BASE_DOMAIN,
-        **sidebar_vars(user_id, username),
+        **sidebar_vars(user_id, username, is_owner=True),
     )
 
 
