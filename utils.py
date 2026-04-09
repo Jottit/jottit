@@ -93,6 +93,23 @@ SPECIAL_SLUG_META = {
     },
 }
 
+AGENTS_CONTENT_LIMIT = 2000
+
+
+def build_conventions(pages):
+    conventions = {"special_pages": {k: dict(v) for k, v in SPECIAL_SLUG_META.items()}}
+    agents_page = next((p for p in pages if p["slug"] == "AGENTS"), None)
+    if agents_page:
+        content = agents_page["content"]
+        if len(content) <= AGENTS_CONTENT_LIMIT:
+            conventions["special_pages"]["AGENTS"]["content"] = content
+        else:
+            conventions["special_pages"]["AGENTS"]["content"] = content[
+                :AGENTS_CONTENT_LIMIT
+            ]
+            conventions["special_pages"]["AGENTS"]["truncated"] = True
+    return conventions
+
 
 def is_special_slug(slug):
     return slug in SPECIAL_SLUGS

@@ -17,18 +17,17 @@ from db import (
 from routes import VISIBILITY_OPTIONS
 from routes.api import _require_auth, _serialize_page
 from utils import (
+    build_conventions,
     generate_slug,
     get_title,
     is_special_slug,
     slugify,
-    SPECIAL_SLUG_META,
     MAX_CONTENT_LENGTH,
 )
 
 mcp_bp = Blueprint("mcp", __name__)
 
 PROTOCOL_VERSION = "2025-03-26"
-AGENTS_CONTENT_LIMIT = 2000
 SERVER_INFO = {"name": "Jottit", "version": "1.0.0"}
 
 TOOLS = [
@@ -148,24 +147,11 @@ def _call_tool(name, args, user):
             for p in pages
             if not is_special_slug(p["slug"])
         ]
-        conventions = {
-            "special_pages": {k: dict(v) for k, v in SPECIAL_SLUG_META.items()}
-        }
-        agents_page = next((p for p in pages if p["slug"] == "AGENTS"), None)
-        if agents_page:
-            content = agents_page["content"]
-            if len(content) <= AGENTS_CONTENT_LIMIT:
-                conventions["special_pages"]["AGENTS"]["content"] = content
-            else:
-                conventions["special_pages"]["AGENTS"]["content"] = content[
-                    :AGENTS_CONTENT_LIMIT
-                ]
-                conventions["special_pages"]["AGENTS"]["truncated"] = True
         return _text_result(
             json.dumps(
                 {
                     "pages": result,
-                    "conventions": conventions,
+                    "conventions": build_conventions(pages),
                 },
                 indent=2,
             )
