@@ -21,7 +21,7 @@
 {% endif %}
 <main class="page-main">
     <div class="page-header">
-        {% if slug %}{% if avatar_url %}<a href="{{ url_prefix }}"><img src="{{ avatar_url }}" alt="" class="page-header-avatar"></a>{% endif %}<a href="{{ url_prefix }}" class="page-header-name h-card p-name u-url">{{ site_username }}</a><span class="page-header-slug"> / {{ slug }}</span>{% endif %}
+        {% if slug %}{% if avatar_url %}<a href="{{ url_prefix }}"><img src="{{ avatar_url }}" alt="" class="page-header-avatar"></a>{% endif %}{% if site_username %}<a href="{{ url_prefix }}" class="page-header-name h-card p-name u-url">{{ site_username }}</a>{% else %}<a href="{{ base_url|default('/', true) }}" class="page-header-name">Jottit</a>{% endif %}<span class="page-header-slug"> / {{ slug }}</span>{% endif %}
         {% if updated_at %}<time class="page-header-meta dt-published" datetime="{{ updated_at | isoformat }}">{{ 'Created' if revision_count is defined and revision_count <= 1 else 'Updated' }} {{ updated_at | relative_time }}</time>{% endif %}
     </div>
     {% if is_owner %}
