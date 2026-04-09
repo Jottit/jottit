@@ -1043,6 +1043,7 @@
 
 .sidebar-list li {
     margin-bottom: 0;
+    padding-left: 6px;
 }
 
 .sidebar-icon {
@@ -1165,7 +1166,7 @@
     font-weight: 600;
     color: var(--text-secondary);
     text-decoration: none;
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-1) 0;
     margin-top: var(--space-1);
 }
 
