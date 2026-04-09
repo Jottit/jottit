@@ -965,8 +965,14 @@
     column-gap: var(--space-8);
 }
 
-.layout-with-sidebar.no-header {
+.layout-with-sidebar.no-header,
+.layout-single.no-header {
     padding-top: var(--space-8);
+}
+
+.layout-single {
+    max-width: 1100px;
+    margin: 0 auto;
 }
 
 .sidebar {
