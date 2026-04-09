@@ -307,7 +307,11 @@
 
 .page a.page-listing-link {
     text-decoration: none;
-    display: block;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
 }
 
 .page a.page-listing-link:hover .page-listing-title {
@@ -321,7 +325,7 @@
     font-weight: 700;
     line-height: 1.25;
     color: var(--site-color-heading);
-    margin: 0 0 0.4rem;
+    margin: 0;
 }
 
 .page h2.page-listing-title {
@@ -331,6 +335,7 @@
 .page .page-listing-desc {
     color: var(--site-color-text);
     margin: 0 0 0.4rem;
+    width: 100%;
 }
 
 .page .page-listing-desc--oneline {
@@ -345,30 +350,9 @@
     padding: var(--space-4) 0;
 }
 
-.pages-listing a.page-listing-link {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-2);
-}
-
 .pages-listing .page-listing-title {
     font-size: var(--font-size-lg);
     margin: 0;
-}
-
-.pages-listing .page-listing-date {
-    display: inline;
-    text-transform: none;
-    letter-spacing: normal;
-    margin-bottom: 0;
-    white-space: nowrap;
-}
-
-.pages-listing .page-listing-desc {
-    margin: 0;
-    width: 100%;
 }
 
 
@@ -380,14 +364,11 @@
 }
 
 .page-listing-date {
-    display: block;
     font-size: var(--font-size-xs);
     font-family: var(--site-font-heading);
     line-height: 1;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--site-color-muted);
-    margin-bottom: var(--space-2);
+    white-space: nowrap;
 }
 
 .page-listing-readmore {
