@@ -1,26 +1,36 @@
 {% extends "base.html" %}
 
-{% block title %}Your pages — Jottit{% endblock %}
+{% block title %}My pages — Jottit{% endblock %}
 
 {% block body %}
-<div class="panel-page">
-    <a href="/" class="panel-back">&larr; Back</a>
-    <h1 class="title">My pages</h1>
-    <div class="panel panel--wide">
-        {% if pages %}
-        <ul class="menu-list">
-            {% for page in pages %}
-            <li>
-                <a href="{% if username %}/@{{ username }}/{{ page.slug }}{% else %}/{{ page.slug }}{% endif %}" class="menu-list-link">
-                    <span class="menu-list-name">{{ page.title }}</span>
-                    <span class="menu-list-url">{% if username %}jottit.org/@{{ username }}/{{ page.slug }}{% else %}jottit.org/{{ page.slug }}{% endif %}</span>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p class="subtitle">You haven't created any pages yet.</p>
-        {% endif %}
+{% include "_site_header.html" %}
+<main class="page-main">
+    <div class="page-header">
+        {% if avatar_url %}<a href="{{ profile_url }}"><img src="{{ avatar_url }}" alt="" class="page-header-avatar"></a>{% endif %}<a href="{{ profile_url }}" class="page-header-name">{{ sidebar_username }}</a><span class="page-header-slug"> / All pages</span>
+        {% if pages %}<time class="page-header-meta" datetime="{{ pages[0].updated_at | isoformat }}">Latest update {{ pages[0].updated_at | relative_time }}</time>{% endif %}
     </div>
-</div>
+    <div class="layout-with-sidebar">
+    <div class="page-content">
+    <article class="page pages-listing">
+        {% if pages %}
+        {% for page in pages %}
+        <div class="page-listing-item">
+            <a href="{{ url_prefix }}/{{ page.slug }}" class="page-listing-link">
+                <h2 class="page-listing-title">{% if page.pinned %}<svg class="pin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Pinned"><path d="M12 17v5"/><path d="M9 11l-4 4h14l-4-4V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg> {% endif %}{{ page.title or 'Untitled page' }}{% if page.visibility == 'unlisted' %} <span class="pill pill--muted">unlisted</span>{% endif %}{% if page.is_special %} <span class="pill pill--muted">system</span>{% endif %}</h2>
+                <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">Updated {{ page.updated_at | relative_time }}</time>
+                {% if page.description %}
+                <p class="page-listing-desc page-listing-desc--oneline">{{ page.description }}</p>
+                {% endif %}
+            </a>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No pages yet.</p>
+        {% endif %}
+    </article>
+    {% include "_page_footer.html" %}
+    </div>
+    {% include "_sidebar.html" %}
+    </div>
+</main>
 {% endblock %}

@@ -1,6 +1,7 @@
 /* Published page styling */
 
 .page-main {
+    width: 100%;
     max-width: var(--content-max-width);
     margin: 0 auto;
     padding: var(--space-10) var(--space-5) var(--space-12);
@@ -330,6 +331,44 @@
 .page .page-listing-desc {
     color: var(--site-color-text);
     margin: 0 0 0.4rem;
+}
+
+.page .page-listing-desc--oneline {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Compact listing for /pages */
+
+.pages-listing .page-listing-item {
+    padding: var(--space-4) 0;
+}
+
+.pages-listing a.page-listing-link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.pages-listing .page-listing-title {
+    font-size: var(--font-size-lg);
+    margin: 0;
+}
+
+.pages-listing .page-listing-date {
+    display: inline;
+    text-transform: none;
+    letter-spacing: normal;
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.pages-listing .page-listing-desc {
+    margin: 0;
+    width: 100%;
 }
 
 

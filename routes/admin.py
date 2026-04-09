@@ -105,10 +105,11 @@ def user_pages():
     username = user.get("username")
     site_title = user.get("name") or username
     return render_template(
-        "profile.html",
+        "pages.html",
         pages=page_list,
         site_title=site_title,
         is_owner=True,
+        avatar_url=user.get("avatar"),
         owner_initials=compute_initials(user),
         owner_avatar_url=user.get("avatar"),
         profile_incomplete=not user.get("avatar") and not user.get("bio"),

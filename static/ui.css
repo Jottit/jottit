@@ -858,6 +858,21 @@
     text-decoration: none;
 }
 
+.pill {
+    display: inline-block;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    padding: 1px var(--space-2);
+    border-radius: var(--radius-pill);
+    vertical-align: middle;
+    line-height: 1.5;
+}
+
+.pill--muted {
+    background: var(--subtle);
+    color: var(--muted);
+}
+
 .page-header {
     display: flex;
     flex-wrap: wrap;

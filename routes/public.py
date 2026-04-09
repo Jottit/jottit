@@ -115,6 +115,7 @@ def _build_page_item(p):
         "updated_at": p["updated_at"],
         "visibility": p["visibility"],
         "pinned": p["visibility"] == "pinned",
+        "is_special": is_special_slug(p["slug"]),
     }
 
 
