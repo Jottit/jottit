@@ -589,8 +589,14 @@
 /* Profile header (subdomain pages) */
 
 .profile-header {
-    max-width: var(--content-max-width);
+    max-width: calc(var(--content-max-width) + 220px + var(--space-8));
     margin: 0 auto;
+    padding-left: var(--space-10);
+    padding-right: var(--space-10);
+}
+
+.profile-header:has(+ .layout-single) {
+    max-width: var(--content-max-width);
 }
 
 .profile-avatar {
@@ -1114,9 +1120,8 @@
 /* Profile header */
 
 .profile-header {
+    padding-top: var(--space-8);
     margin-bottom: var(--space-8);
-    padding-bottom: var(--space-8);
-    border-bottom: 1px solid var(--border);
 }
 
 .profile-identity {
