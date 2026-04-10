@@ -4,3 +4,4 @@ instance/
 mcp-server/.venv/
 .claude/
 .DS_STORE
+.gstack/
