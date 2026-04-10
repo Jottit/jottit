@@ -32,7 +32,6 @@ from db import (
     get_page_meta,
     get_user,
     hide_comment,
-    pin_comment,
     rename_page,
     save_page,
     set_user_username,
@@ -641,12 +640,6 @@ def profile_verify_comment(username, slug):
     return verify_comment(slug)
 
 
-@bp.route("/@<username>/<slug>/comment/<int:comment_id>/pin", methods=["POST"])
-def profile_toggle_pin_comment(username, slug, comment_id):
-    _set_profile_user(username)
-    return toggle_pin_comment(slug, comment_id)
-
-
 @bp.route("/@<username>/<slug>/comment/<int:comment_id>/hide", methods=["POST"])
 def profile_toggle_hide_comment(username, slug, comment_id):
     _set_profile_user(username)
@@ -695,14 +688,12 @@ def submit_comment(slug):
     # Signed-in users skip email verification
     user = g.current_user
     if user:
-        ip = _ip_hash()
         result = create_comment(page_meta["id"], user["id"], body, ip, parent_id)
         if not result:
             abort(400)
 
         if page_meta["user_id"] and page_meta["user_id"] != user["id"]:
-            page = get_page(page_meta["id"])
-            if page and page.get("notify_on_comments", True):
+            if page.get("notify_on_comments", True):
                 owner = get_user(page_meta["user_id"])
                 if owner:
                     page_url = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}/{slug}"
@@ -804,18 +795,6 @@ def verify_comment(slug):
                 send_comment_notification(owner["email"], page_url, display_name, body)
 
     return redirect(redirect_url)
-
-
-@bp.route("/<slug>/comment/<int:comment_id>/pin", methods=["POST"])
-def toggle_pin_comment(slug, comment_id):
-    page_meta = find_page(slug)
-    if not page_meta:
-        abort(404)
-    if not can_edit(page_meta):
-        abort(403)
-
-    pin_comment(comment_id, page_meta["id"])
-    return redirect(f"{g.url_prefix}/{slug}#comment-{comment_id}")
 
 
 @bp.route("/<slug>/comment/<int:comment_id>/hide", methods=["POST"])

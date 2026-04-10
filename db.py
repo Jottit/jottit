@@ -723,12 +723,12 @@ def get_comments(page_id, include_hidden=False):
         hidden_filter = "" if include_hidden else "AND c.is_hidden = FALSE"
         rows = conn.execute(
             f"""SELECT c.id, c.parent_id, c.body,
-                       c.is_pinned, c.is_hidden, c.created_at,
+                       c.is_hidden, c.created_at,
                        u.name AS author_name, u.username, u.avatar
                 FROM comments c
                 JOIN users u ON c.user_id = u.id
                 WHERE c.page_id = %s {hidden_filter}
-                ORDER BY c.is_pinned DESC, c.created_at ASC""",
+                ORDER BY c.created_at ASC""",
             (page_id,),
         ).fetchall()
         return rows
@@ -740,15 +740,6 @@ def get_comment(comment_id):
             "SELECT id, page_id, parent_id FROM comments WHERE id = %s",
             (comment_id,),
         ).fetchone()
-
-
-def pin_comment(comment_id, page_id):
-    with get_db() as conn:
-        conn.execute(
-            "UPDATE comments SET is_pinned = NOT is_pinned WHERE id = %s AND page_id = %s",
-            (comment_id, page_id),
-        )
-        conn.commit()
 
 
 def hide_comment(comment_id, page_id):

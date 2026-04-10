@@ -19,7 +19,7 @@
     {% if comments %}
     <div class="comments-list">
         {% for comment in comments %}
-        <div class="comment {% if comment.is_pinned %}comment--pinned{% endif %}{% if comment.is_hidden %} comment--hidden{% endif %}" id="comment-{{ comment.id }}">
+        <div class="comment {% if comment.is_hidden %}comment--hidden{% endif %}" id="comment-{{ comment.id }}">
             <div class="comment-layout">
                 {% if comment.avatar %}<img src="{{ comment.avatar }}" alt="" class="comment-avatar comment-avatar--img">{% else %}<div class="comment-avatar">{{ (comment.author_name or comment.username or 'A')[0] | upper }}</div>{% endif %}
                 <div class="comment-content">
@@ -27,7 +27,6 @@
                         <span class="comment-author">{{ comment.author_name or comment.username or 'Anonymous' }}</span>
                         <span class="comment-dot">&middot;</span>
                         <time class="comment-time" datetime="{{ comment.created_at | isoformat }}">{{ comment.created_at | relative_time }}</time>
-                        {% if comment.is_pinned %}<span class="comment-badge">pinned</span>{% endif %}
                         {% if comment.is_hidden %}<span class="comment-badge comment-badge--hidden">hidden</span>{% endif %}
                     </div>
                     <div class="comment-body">{{ comment.body | autolink | safe }}</div>

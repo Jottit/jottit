@@ -82,7 +82,6 @@ CREATE TABLE IF NOT EXISTS comments (
     parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     body TEXT NOT NULL,
-    is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
     is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
     ip_hash TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -147,7 +146,8 @@ DO $$ BEGIN
             ('020_slug_redirects_unique.sql'),
             ('021_add_comments.sql'),
             ('022_add_comment_user_id.sql'),
-            ('024_drop_comment_author_fields.sql')
+            ('024_drop_comment_author_fields.sql'),
+            ('025_drop_comment_is_pinned.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

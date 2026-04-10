@@ -242,21 +242,6 @@ def test_reply_to_form_shown(client):
 # -- Author moderation --
 
 
-def test_owner_can_pin_comment(client):
-    page_meta, user_id = _create_claimed_page(client)
-    uid = _commenter()
-    create_comment(page_meta["id"], uid, "Pin me", "abc")
-    comments = get_comments(page_meta["id"])
-    comment_id = comments[0]["id"]
-
-    _login(client, user_id)
-    r = client.post(f"/@owner/testpage/comment/{comment_id}/pin")
-    assert r.status_code == 302
-
-    comments = get_comments(page_meta["id"])
-    assert comments[0]["is_pinned"] is True
-
-
 def test_owner_can_hide_comment(client):
     page_meta, user_id = _create_claimed_page(client)
     uid = _commenter()
@@ -274,17 +259,6 @@ def test_owner_can_hide_comment(client):
     all_comments = get_comments(page_meta["id"], include_hidden=True)
     assert len(all_comments) == 1
     assert all_comments[0]["is_hidden"] is True
-
-
-def test_non_owner_cannot_pin(client):
-    page_meta, user_id = _create_claimed_page(client)
-    uid = _commenter()
-    create_comment(page_meta["id"], uid, "Test", "abc")
-    comments = get_comments(page_meta["id"])
-    comment_id = comments[0]["id"]
-
-    r = client.post(f"/@owner/testpage/comment/{comment_id}/pin")
-    assert r.status_code == 403
 
 
 def test_non_owner_cannot_hide(client):
