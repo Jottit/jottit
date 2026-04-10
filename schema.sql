@@ -80,9 +80,7 @@ CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
     page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
     parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    author_name TEXT NOT NULL DEFAULT '',
-    author_email TEXT NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     body TEXT NOT NULL,
     is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
     is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
@@ -148,7 +146,8 @@ DO $$ BEGIN
             ('019_slug_redirects.sql'),
             ('020_slug_redirects_unique.sql'),
             ('021_add_comments.sql'),
-            ('022_add_comment_user_id.sql')
+            ('022_add_comment_user_id.sql'),
+            ('024_drop_comment_author_fields.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

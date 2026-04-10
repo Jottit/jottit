@@ -21,10 +21,10 @@
         {% for comment in comments %}
         <div class="comment {% if comment.is_pinned %}comment--pinned{% endif %}{% if comment.is_hidden %} comment--hidden{% endif %}" id="comment-{{ comment.id }}">
             <div class="comment-layout">
-                {% if comment.avatar %}<img src="{{ comment.avatar }}" alt="" class="comment-avatar comment-avatar--img">{% else %}<div class="comment-avatar">{{ (comment.author_name or 'A')[0] | upper }}</div>{% endif %}
+                {% if comment.avatar %}<img src="{{ comment.avatar }}" alt="" class="comment-avatar comment-avatar--img">{% else %}<div class="comment-avatar">{{ (comment.author_name or comment.username or 'A')[0] | upper }}</div>{% endif %}
                 <div class="comment-content">
                     <div class="comment-meta">
-                        <span class="comment-author">{{ comment.author_name or 'Anonymous' }}</span>
+                        <span class="comment-author">{{ comment.author_name or comment.username or 'Anonymous' }}</span>
                         <span class="comment-dot">&middot;</span>
                         <time class="comment-time" datetime="{{ comment.created_at | isoformat }}">{{ comment.created_at | relative_time }}</time>
                         {% if comment.is_pinned %}<span class="comment-badge">pinned</span>{% endif %}
@@ -62,10 +62,10 @@
                 {% for reply in replies_by_parent[comment.id] %}
                 <div class="comment comment--reply {% if reply.is_hidden %}comment--hidden{% endif %}" id="comment-{{ reply.id }}">
                     <div class="comment-layout">
-                        {% if reply.avatar %}<img src="{{ reply.avatar }}" alt="" class="comment-avatar comment-avatar--sm comment-avatar--img">{% else %}<div class="comment-avatar comment-avatar--sm">{{ (reply.author_name or 'A')[0] | upper }}</div>{% endif %}
+                        {% if reply.avatar %}<img src="{{ reply.avatar }}" alt="" class="comment-avatar comment-avatar--sm comment-avatar--img">{% else %}<div class="comment-avatar comment-avatar--sm">{{ (reply.author_name or reply.username or 'A')[0] | upper }}</div>{% endif %}
                         <div class="comment-content">
                             <div class="comment-meta">
-                                <span class="comment-author">{{ reply.author_name or 'Anonymous' }}</span>
+                                <span class="comment-author">{{ reply.author_name or reply.username or 'Anonymous' }}</span>
                                 <span class="comment-dot">&middot;</span>
                                 <time class="comment-time" datetime="{{ reply.created_at | isoformat }}">{{ reply.created_at | relative_time }}</time>
                                 {% if reply.is_hidden %}<span class="comment-badge comment-badge--hidden">hidden</span>{% endif %}

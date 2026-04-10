@@ -696,16 +696,7 @@ def submit_comment(slug):
     user = g.current_user
     if user:
         ip = _ip_hash()
-        author_name = user.get("name") or user.get("username") or ""
-        result = create_comment(
-            page_meta["id"],
-            author_name,
-            user["email"],
-            body,
-            ip,
-            parent_id,
-            user_id=user["id"],
-        )
+        result = create_comment(page_meta["id"], user["id"], body, ip, parent_id)
         if not result:
             abort(400)
 
@@ -715,8 +706,9 @@ def submit_comment(slug):
                 owner = get_user(page_meta["user_id"])
                 if owner:
                     page_url = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}/{slug}"
+                    display_name = user.get("name") or user.get("username") or "Someone"
                     send_comment_notification(
-                        owner["email"], page_url, author_name, body
+                        owner["email"], page_url, display_name, body
                     )
 
         return redirect(f"{g.url_prefix}/{slug}#comment-{result['id']}")
@@ -791,9 +783,7 @@ def verify_comment(slug):
     session["user_id"] = user_id
 
     ip = _ip_hash()
-    result = create_comment(
-        page_meta["id"], author_name, email, body, ip, parent_id, user_id=user_id
-    )
+    result = create_comment(page_meta["id"], user_id, body, ip, parent_id)
     if not result:
         abort(400)
 
@@ -803,7 +793,8 @@ def verify_comment(slug):
             owner = get_user(page_meta["user_id"])
             if owner:
                 page_url = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}/{slug}"
-                send_comment_notification(owner["email"], page_url, author_name, body)
+                display_name = author_name or email.split("@")[0]
+                send_comment_notification(owner["email"], page_url, display_name, body)
 
     return redirect(f"{g.url_prefix}/{slug}#comment-{result['id']}")
 

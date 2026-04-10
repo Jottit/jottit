@@ -697,9 +697,7 @@ def get_user_by_token_hash(token_hash):
 # --- Comments ---
 
 
-def create_comment(
-    page_id, author_name, author_email, body, ip_hash, parent_id=None, user_id=None
-):
+def create_comment(page_id, user_id, body, ip_hash, parent_id=None):
     with get_db() as conn:
         if parent_id is not None:
             parent = conn.execute(
@@ -711,10 +709,10 @@ def create_comment(
             if parent["parent_id"] is not None:
                 return None
         row = conn.execute(
-            """INSERT INTO comments (page_id, parent_id, user_id, author_name, author_email, body, ip_hash)
-               VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """INSERT INTO comments (page_id, parent_id, user_id, body, ip_hash)
+               VALUES (%s, %s, %s, %s, %s)
                RETURNING id, created_at""",
-            (page_id, parent_id, user_id, author_name, author_email, body, ip_hash),
+            (page_id, parent_id, user_id, body, ip_hash),
         ).fetchone()
         conn.commit()
         return row
@@ -724,10 +722,11 @@ def get_comments(page_id, include_hidden=False):
     with get_db() as conn:
         hidden_filter = "" if include_hidden else "AND c.is_hidden = FALSE"
         rows = conn.execute(
-            f"""SELECT c.id, c.parent_id, c.author_name, c.author_email, c.body,
-                       c.is_pinned, c.is_hidden, c.created_at, u.avatar
+            f"""SELECT c.id, c.parent_id, c.body,
+                       c.is_pinned, c.is_hidden, c.created_at,
+                       u.name AS author_name, u.username, u.avatar
                 FROM comments c
-                LEFT JOIN users u ON c.user_id = u.id
+                JOIN users u ON c.user_id = u.id
                 WHERE c.page_id = %s {hidden_filter}
                 ORDER BY c.is_pinned DESC, c.created_at ASC""",
             (page_id,),
