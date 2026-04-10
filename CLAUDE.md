@@ -143,6 +143,12 @@ Features from the original and their status:
 | Custom site address | **Drop for v1** |
 | Atom export | **Maybe later** |
 
+## gstack
+
+Use `/browse` from gstack for all web browsing. Never use `mcp__Claude_in_Chrome__*` tools.
+
+Available skills: `/office-hours`, `/plan-ceo-review`, `/plan-eng-review`, `/plan-design-review`, `/design-consultation`, `/design-shotgun`, `/design-html`, `/review`, `/ship`, `/land-and-deploy`, `/canary`, `/benchmark`, `/browse`, `/connect-chrome`, `/qa`, `/qa-only`, `/design-review`, `/setup-browser-cookies`, `/setup-deploy`, `/retro`, `/investigate`, `/document-release`, `/codex`, `/cso`, `/autoplan`, `/plan-devex-review`, `/devex-review`, `/careful`, `/freeze`, `/guard`, `/unfreeze`, `/gstack-upgrade`, `/learn`.
+
 ## Key Reference
 
 The target reading experience for published pages is Medium's article typography: serif font, generous line height, proper reading width, drop caps, lots of whitespace — but with zero UI chrome around it.
