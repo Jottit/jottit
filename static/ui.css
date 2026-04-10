@@ -2017,6 +2017,10 @@
     color: var(--text);
 }
 
+.comment-action--danger:hover {
+    color: var(--danger);
+}
+
 .comment-action-form {
     display: inline;
     line-height: 1;

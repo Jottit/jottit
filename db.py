@@ -722,7 +722,7 @@ def get_comments(page_id, include_hidden=False):
     with get_db() as conn:
         hidden_filter = "" if include_hidden else "AND c.is_hidden = FALSE"
         rows = conn.execute(
-            f"""SELECT c.id, c.parent_id, c.body,
+            f"""SELECT c.id, c.parent_id, c.user_id, c.body,
                        c.is_hidden, c.created_at,
                        u.name AS author_name, u.username, u.avatar
                 FROM comments c
@@ -737,9 +737,18 @@ def get_comments(page_id, include_hidden=False):
 def get_comment(comment_id):
     with get_db() as conn:
         return conn.execute(
-            "SELECT id, page_id, parent_id FROM comments WHERE id = %s",
+            "SELECT id, page_id, parent_id, user_id FROM comments WHERE id = %s",
             (comment_id,),
         ).fetchone()
+
+
+def delete_comment(comment_id, user_id):
+    with get_db() as conn:
+        conn.execute(
+            "DELETE FROM comments WHERE id = %s AND user_id = %s",
+            (comment_id, user_id),
+        )
+        conn.commit()
 
 
 def hide_comment(comment_id, page_id):

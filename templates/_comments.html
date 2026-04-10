@@ -40,6 +40,12 @@
                             <button type="submit" class="comment-action">{{ 'Unhide' if comment.is_hidden else 'Hide' }}</button>
                         </form>
                         {% endif %}
+                        {% if is_owner or (session.get('user_id') and session.get('user_id') == comment.user_id) %}
+                        <form method="post" action="{{ url_prefix }}/{{ slug }}/comment/{{ comment.id }}/delete" class="comment-action-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="comment-action comment-action--danger">Delete</button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -70,11 +76,17 @@
                                 {% if reply.is_hidden %}<span class="comment-badge comment-badge--hidden">hidden</span>{% endif %}
                             </div>
                             <div class="comment-body">{{ reply.body | autolink | safe }}</div>
-                            {% if is_owner %}
+                            {% if is_owner or (session.get('user_id') and session.get('user_id') == reply.user_id) %}
                             <div class="comment-actions">
+                                {% if is_owner %}
                                 <form method="post" action="{{ url_prefix }}/{{ slug }}/comment/{{ reply.id }}/hide" class="comment-action-form">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="comment-action">{{ 'Unhide' if reply.is_hidden else 'Hide' }}</button>
+                                </form>
+                                {% endif %}
+                                <form method="post" action="{{ url_prefix }}/{{ slug }}/comment/{{ reply.id }}/delete" class="comment-action-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="comment-action comment-action--danger">Delete</button>
                                 </form>
                             </div>
                             {% endif %}

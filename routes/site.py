@@ -22,6 +22,7 @@ from db import (
     create_comment,
     create_page_secret,
     create_verification_code,
+    delete_comment,
     delete_page,
     find_or_create_user,
     find_page_owner_for_redirect,
@@ -644,6 +645,34 @@ def profile_verify_comment(username, slug):
 def profile_toggle_hide_comment(username, slug, comment_id):
     _set_profile_user(username)
     return toggle_hide_comment(slug, comment_id)
+
+
+@bp.route("/@<username>/<slug>/comment/<int:comment_id>/delete", methods=["POST"])
+def profile_delete_comment(username, slug, comment_id):
+    _set_profile_user(username)
+    return delete_comment_route(slug, comment_id)
+
+
+@bp.route("/<slug>/comment/<int:comment_id>/delete", methods=["POST"])
+def delete_comment_route(slug, comment_id):
+    page_meta = find_page(slug)
+    if not page_meta:
+        abort(404)
+
+    user_id = session.get("user_id")
+    if not user_id:
+        abort(403)
+
+    comment = get_comment(comment_id)
+    if not comment or comment["page_id"] != page_meta["id"]:
+        abort(404)
+
+    # Author of comment or page owner can delete
+    if comment.get("user_id") != user_id and not can_edit(page_meta):
+        abort(403)
+
+    delete_comment(comment_id, comment["user_id"])
+    return redirect(f"{g.url_prefix}/{slug}#comments")
 
 
 @bp.route("/<slug>/comment", methods=["POST"])
