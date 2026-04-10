@@ -158,6 +158,10 @@ def test_verify_and_save_comment(client):
     assert len(comments) == 1
     assert comments[0]["body"] == "Verified comment!"
 
+    # Verify user is signed in after commenting
+    with client.session_transaction() as sess:
+        assert sess.get("user_id") is not None
+
 
 def test_verify_invalid_code(client):
     _create_page(client)

@@ -787,6 +787,13 @@ def verify_comment(slug):
     if not result:
         abort(400)
 
+    # Build redirect URL — use @username path if page is claimed
+    redirect_url = f"{g.url_prefix}/{slug}#comment-{result['id']}"
+    if not g.url_prefix and page_meta["user_id"]:
+        owner = get_user(page_meta["user_id"])
+        if owner and owner.get("username"):
+            redirect_url = f"/@{owner['username']}/{slug}#comment-{result['id']}"
+
     if page_meta["user_id"] and page_meta["user_id"] != user_id:
         page = get_page(page_meta["id"])
         if page and page.get("notify_on_comments", True):
@@ -796,7 +803,7 @@ def verify_comment(slug):
                 display_name = author_name or email.split("@")[0]
                 send_comment_notification(owner["email"], page_url, display_name, body)
 
-    return redirect(f"{g.url_prefix}/{slug}#comment-{result['id']}")
+    return redirect(redirect_url)
 
 
 @bp.route("/<slug>/comment/<int:comment_id>/pin", methods=["POST"])
