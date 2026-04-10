@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{% if step == 'code' %}Check your email{% else %}Almost there{% endif %} — Jottit{% endblock %}
+
+{% block body %}
+<div class="shell shell-centered">
+    {% if step == 'code' %}
+    <h1 class="title">Check your email</h1>
+    <p class="subtitle">We sent a 6-digit code to {{ email }}.</p>
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+    <form class="auth-form" method="post" action="{{ url_prefix }}/{{ slug }}/comment/verify">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="step" value="code">
+        <input type="hidden" name="code" id="code-value">
+        <input type="hidden" name="body" value="{{ body }}">
+        <input type="hidden" name="email" value="{{ email }}">
+        <input type="hidden" name="author_name" value="{{ author_name }}">
+        <input type="hidden" name="parent_id" value="{{ parent_id }}">
+        <div class="code-inputs">
+            <label for="code-digit-1" class="sr-only">Digit 1</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-1" inputmode="numeric" maxlength="1" pattern="[0-9]" required autofocus>
+            <label for="code-digit-2" class="sr-only">Digit 2</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-2" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-3" class="sr-only">Digit 3</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-3" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-4" class="sr-only">Digit 4</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-4" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-5" class="sr-only">Digit 5</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-5" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+            <label for="code-digit-6" class="sr-only">Digit 6</label>
+            <input class="auth-input auth-code-digit" type="text" id="code-digit-6" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
+        </div>
+        <button class="btn btn--outline" type="submit">Verify</button>
+    </form>
+    <script src="/static/verify.js?v={{ asset_v }}"></script>
+    {% else %}
+    <h1 class="title">Almost there</h1>
+    <p class="subtitle">Enter your email to publish your comment.</p>
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+    <form class="auth-form" method="post" action="{{ url_prefix }}/{{ slug }}/comment/verify">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="step" value="email">
+        <input type="hidden" name="body" value="{{ body }}">
+        <input type="hidden" name="parent_id" value="{{ parent_id }}">
+        <input class="auth-input" type="text" name="author_name" placeholder="Name (optional)" value="{{ author_name }}" autofocus>
+        <input class="auth-input" type="email" name="email" placeholder="Email" required value="{{ email }}">
+        <button class="btn btn--outline" type="submit">Send code</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

@@ -319,3 +319,14 @@ def describe_change(prev, curr):
             return f"Changed \u201c{old_snip[:40]}\u201d to \u201c{new_snip[:40]}\u201d"
 
     return "Edited page"
+
+
+_URL_RE = re.compile(r"(https?://[^\s<>\[\]()]+)", re.IGNORECASE)
+
+
+def autolink(text):
+    escaped = html_escape(text)
+    return _URL_RE.sub(
+        r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>',
+        escaped,
+    )

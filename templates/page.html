@@ -53,6 +53,9 @@
         </div>
     </div>
     {% endif %}
+    {% if comments_enabled %}
+    {% include "_comments.html" %}
+    {% endif %}
     {% include "_page_footer.html" %}
     {% if is_owner %}
     </div>

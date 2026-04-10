@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS pages (
     original_slug TEXT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     visibility TEXT NOT NULL DEFAULT 'unlisted',
+    comments_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    notify_on_comments BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -36,7 +38,7 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     id SERIAL PRIMARY KEY,
     email TEXT NOT NULL,
     code TEXT NOT NULL,
-    purpose TEXT NOT NULL CHECK (purpose IN ('claim', 'signin', 'email_change', 'oauth')),
+    purpose TEXT NOT NULL CHECK (purpose IN ('claim', 'signin', 'email_change', 'oauth', 'comment')),
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (email, purpose)
@@ -74,6 +76,20 @@ CREATE TABLE IF NOT EXISTS page_secrets (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS comments (
+    id SERIAL PRIMARY KEY,
+    page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    author_name TEXT NOT NULL DEFAULT '',
+    author_email TEXT NOT NULL,
+    body TEXT NOT NULL,
+    is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+    is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
+    ip_hash TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS slug_redirects (
     old_slug TEXT NOT NULL,
     page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
@@ -103,6 +119,9 @@ CREATE INDEX IF NOT EXISTS oauth_codes_expires_idx ON oauth_codes (expires_at);
 CREATE INDEX IF NOT EXISTS page_secrets_hash_idx ON page_secrets (secret_hash);
 CREATE UNIQUE INDEX IF NOT EXISTS slug_redirects_lookup ON slug_redirects (old_slug, user_id) WHERE user_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS slug_redirects_lookup_unclaimed ON slug_redirects (old_slug) WHERE user_id IS NULL;
+CREATE INDEX IF NOT EXISTS comments_page_id_idx ON comments (page_id);
+CREATE INDEX IF NOT EXISTS comments_ip_created_idx ON comments (ip_hash, created_at);
+CREATE INDEX IF NOT EXISTS comments_user_id_idx ON comments (user_id);
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
@@ -127,7 +146,9 @@ DO $$ BEGIN
             ('017_page_secret_expiry_and_index.sql'),
             ('018_remove_private_visibility.sql'),
             ('019_slug_redirects.sql'),
-            ('020_slug_redirects_unique.sql')
+            ('020_slug_redirects_unique.sql'),
+            ('021_add_comments.sql'),
+            ('022_add_comment_user_id.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;

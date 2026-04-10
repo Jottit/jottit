@@ -12,7 +12,7 @@ from routes import bp, limiter
 from routes.api import api_bp
 from routes.mcp import mcp_bp
 from routes.oauth import oauth_bp
-from utils import relative_time, render_bio
+from utils import autolink, relative_time, render_bio
 
 dsn = os.environ.get("SENTRY_DSN")
 if dsn:
@@ -113,6 +113,7 @@ def set_security_headers(response):
 
 app.template_filter("render_bio")(lambda v: render_bio(v) if v else "")
 app.template_filter("relative_time")(relative_time)
+app.template_filter("autolink")(autolink)
 
 
 @app.template_filter("isoformat")
