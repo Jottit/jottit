@@ -58,7 +58,7 @@
             <div class="setup-section">
                 <h3 class="setup-section-title">...or connect an AI agent via MCP</h3>
                 <p class="setup-section-desc">Add this to your MCP client config:</p>
-                <div class="setup-code" id="mcp-config-output" style="display:none">
+                <div class="setup-code setup-hidden" id="mcp-config-output">
                     <pre id="mcp-config-text"></pre>
                     <button class="setup-code-copy" id="mcp-copy-btn" title="Copy to clipboard">&#x2398;</button>
                 </div>
@@ -88,7 +88,7 @@ jottit publish page.md</pre>
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         text.textContent = data.config_text;
-                        output.style.display = 'block';
+                        output.classList.remove('setup-hidden');
                         btn.style.display = 'none';
                         if (navigator.clipboard) {
                             navigator.clipboard.writeText(data.config_text);
