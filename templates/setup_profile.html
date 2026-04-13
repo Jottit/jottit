@@ -12,16 +12,18 @@
     <p class="subtitle">Add a photo and name so people know who you are.</p>
     <form class="auth-form" method="post" action="/setup/profile" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="setup-avatar-upload">
-            <div class="setup-avatar-preview" id="avatar-preview">
-                <span class="setup-avatar-initials">{{ username[0] | upper }}</span>
+        <div class="setup-profile-card">
+            <div class="setup-avatar-upload">
+                <div class="setup-avatar-preview" id="avatar-preview">
+                    <span class="setup-avatar-initials">{{ username[0] | upper }}</span>
+                </div>
+                <label class="setup-avatar-label" for="avatar-file">Upload photo</label>
+                <input type="file" id="avatar-file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
             </div>
-            <label class="btn btn--outline btn-sm setup-avatar-btn" for="avatar-file">Upload photo</label>
-            <input type="file" id="avatar-file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
-        </div>
-        <div class="setup-profile-field">
-            <label class="setup-profile-label" for="name">Display name</label>
-            <input class="auth-input" type="text" id="name" name="name" placeholder="Your name" autofocus>
+            <div class="setup-profile-fields">
+                <input class="setup-name-input" type="text" name="name" placeholder="Your name" autofocus>
+                <div class="setup-username-display">@{{ username }}</div>
+            </div>
         </div>
         <div class="setup-profile-actions">
             <button class="btn btn-solid" type="submit">Save and continue</button>
