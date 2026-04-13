@@ -132,7 +132,27 @@ def setup_username():
 
     set_user_username(user_id, username)
     update_user_settings(user_id, name="", username=username, bio="", license=None)
-    return redirect(profile_url(username))
+    return redirect("/setup/profile")
+
+
+@bp.route("/setup/profile", methods=["GET", "POST"])
+def setup_profile():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/signin")
+    user = get_user(user_id)
+    if not user or not user.get("username"):
+        return redirect("/setup/username")
+
+    if request.method == "GET":
+        return render_template("setup_profile.html", username=user["username"])
+
+    name = request.form.get("name", "").strip()
+    bio = request.form.get("bio", "").strip()
+    update_user_settings(
+        user_id, name=name, username=user["username"], bio=bio, license=None
+    )
+    return redirect(profile_url(user["username"]))
 
 
 @bp.route("/setup/mcp-config", methods=["POST"])

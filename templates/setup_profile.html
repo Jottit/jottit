@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Set up your profile — Jottit{% endblock %}
+
+{% block body %}
+<div class="shell shell-centered">
+    <header class="home-header">
+        <a href="/" class="home-header-logo logo">Jottit</a>
+        <span class="signin-link">Already have an account? <a href="/signin">Sign in</a></span>
+    </header>
+    <h1 class="title">Almost there, @{{ username }}</h1>
+    <p class="subtitle">Add a name and bio so people know who you are. You can skip this and do it later in settings.</p>
+    <form class="auth-form" method="post" action="/setup/profile">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="setup-profile-field">
+            <label class="setup-profile-label" for="name">Display name</label>
+            <input class="auth-input" type="text" id="name" name="name" placeholder="Your name" autofocus>
+        </div>
+        <div class="setup-profile-field">
+            <label class="setup-profile-label" for="bio">Bio</label>
+            <input class="auth-input" type="text" id="bio" name="bio" placeholder="A short bio" maxlength="160">
+        </div>
+        <div class="setup-profile-actions">
+            <button class="btn btn-solid" type="submit">Save and continue</button>
+            <a href="/@{{ username }}" class="setup-skip-link">Skip for now →</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

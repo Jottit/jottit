@@ -449,7 +449,24 @@ def test_signup_full_flow(client):
 
     r = client.post("/setup/username", data={"username": "newuser"})
     assert r.status_code == 302
+    assert r.headers["Location"] == "/setup/profile"
+
+    r = client.get("/setup/profile")
+    assert r.status_code == 200
+
+    r = client.post("/setup/profile", data={"name": "New User", "bio": "Hello"})
+    assert r.status_code == 302
     assert r.headers["Location"] == "/@newuser"
+
+
+def test_setup_profile_skip(client):
+    user_id = find_or_create_user("skipper@example.com")
+    set_user_username(user_id, "skipper")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/@skipper")
+    assert r.status_code == 200
 
 
 def test_setup_username_requires_signin(client):
