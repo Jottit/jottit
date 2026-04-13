@@ -18,15 +18,12 @@
         <div class="profile-info">
             {% if site_title %}
             <h1 class="profile-name">{{ site_title }}</h1>
-            <div class="profile-username">@{{ sidebar_username }}</div>
+            <div class="profile-username">@{{ sidebar_username }}{% if is_owner %} · <a href="/settings/profile" class="action-link">Edit profile</a>{% endif %}</div>
             {% endif %}
             {% if bio_html %}
             <div class="profile-bio">{{ bio_html | safe }}</div>
             {% endif %}
         </div>
-        {% if is_owner %}
-        <a href="/settings/profile" class="action-link profile-edit">Edit profile</a>
-        {% endif %}
     </div>
 </header>
 {% endif %}
