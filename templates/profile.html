@@ -23,10 +23,10 @@
             {% if bio_html %}
             <div class="profile-bio">{{ bio_html | safe }}</div>
             {% endif %}
-            {% if is_owner %}
-            <a href="/settings/profile" class="action-link">Edit profile</a>
-            {% endif %}
         </div>
+        {% if is_owner %}
+        <a href="/settings/profile" class="action-link profile-edit">Edit profile</a>
+        {% endif %}
     </div>
 </header>
 {% endif %}

@@ -1039,9 +1039,9 @@
     text-decoration: underline;
 }
 
-.profile-header .action-link {
-    margin-top: var(--space-2);
-    display: inline-block;
+.profile-edit {
+    margin-left: auto;
+    align-self: flex-start;
 }
 
 .profile-header--avatar .profile-bio,
@@ -1494,6 +1494,11 @@
 .profile-header {
     padding-top: var(--space-10);
     margin-bottom: var(--space-8);
+    max-width: calc(var(--content-max-width) + 220px + var(--space-8));
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--space-5);
+    padding-right: var(--space-5);
 }
 
 .profile-identity {
