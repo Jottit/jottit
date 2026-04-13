@@ -397,7 +397,8 @@
     margin: 0;
     font-size: var(--font-size-sm);
     line-height: 1.6;
-    white-space: pre;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .setup-code-copy {

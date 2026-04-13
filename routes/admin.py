@@ -184,11 +184,18 @@ def setup_mcp_config():
         token, _ = create_api_token(user_id, "mcp-default")
 
     base_url = request.url_root.rstrip("/")
-    config_text = f"API token: {token}\nAPI endpoint: {base_url}/api/v1"
-    log_event(user_id, "token_generated")
-    return jsonify(
-        {"token": token, "api_url": f"{base_url}/api/v1", "config_text": config_text}
+    username = user.get("username", "")
+    prompt = (
+        f"Connect to my Jottit account so you can create and manage my pages. "
+        f"My username is @{username}. "
+        f"API token: {token} — "
+        f"Base URL: {base_url}/api/v1 — "
+        f"Use Authorization: Bearer header. "
+        f"Content is markdown. "
+        f"List my pages to confirm it works."
     )
+    log_event(user_id, "token_generated")
+    return jsonify({"config_text": prompt})
 
 
 @bp.route("/pages")
