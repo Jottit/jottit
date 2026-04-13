@@ -1029,6 +1029,18 @@
     margin: 0;
 }
 
+.profile-edit-link {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--brand-1);
+    margin-top: var(--space-2);
+    display: inline-block;
+}
+
+.profile-edit-link:hover {
+    text-decoration: underline;
+}
+
 .profile-header--avatar .profile-bio,
 .profile-header--full .profile-bio {
     margin: var(--space-1) 0 0;
