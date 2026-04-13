@@ -83,7 +83,7 @@ def make_session_permanent():
 _CSP = (
     "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com;"
     " connect-src 'self' https://cloudflareinsights.com; style-src 'self';"
-    " img-src 'self' https://*.fly.storage.tigris.dev"
+    " img-src 'self' blob: https://*.fly.storage.tigris.dev"
 )
 
 
