@@ -1691,6 +1691,24 @@ button.setup-item-title:hover {
     gap: var(--space-3);
 }
 
+.verify-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-decoration: none;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-5);
+}
+
+.verify-hint {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    margin-top: var(--space-4);
+}
+
+.verify-hint a {
+    color: var(--text-secondary);
+}
+
 .shell-centered .auth-form {
     flex-direction: column;
     align-items: center;

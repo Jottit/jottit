@@ -4,8 +4,13 @@
 
 {% block body %}
 <div class="shell shell-centered">
+    <a href="/" class="verify-logo logo">Jottit</a>
     <h1 class="title">Check your email</h1>
+    {% if email %}
+    <p class="subtitle">We sent a 6-digit code to <strong>{{ email }}</strong></p>
+    {% else %}
     <p class="subtitle">We sent you a 6-digit code.</p>
+    {% endif %}
     {% if error %}
     <p class="error">{{ error }}</p>
     {% endif %}
@@ -29,6 +34,7 @@
         </div>
         <button class="btn btn--outline" type="submit">Verify</button>
     </form>
+    <p class="verify-hint">Didn't get the code? Check your spam folder or <a href="/signin">try again</a>.</p>
     <script src="/static/verify.js?v={{ asset_v }}"></script>
 </div>
 {% endblock %}
