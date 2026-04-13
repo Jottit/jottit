@@ -505,6 +505,7 @@
     color: var(--muted);
     margin-top: var(--space-1);
     padding-left: var(--space-2);
+    text-align: left;
 }
 
 .setup-profile-actions {
