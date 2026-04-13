@@ -179,8 +179,6 @@
     justify-content: space-between;
     padding: var(--space-3) var(--space-5);
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
 }
 
 .home-header-logo {
