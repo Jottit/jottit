@@ -9,6 +9,7 @@
 
 {% block body %}
 {% include "_site_header.html" %}
+{% if not checklist %}
 <header class="profile-header">
     <div class="profile-identity">
         {% if avatar_url %}
@@ -25,6 +26,7 @@
         </div>
     </div>
 </header>
+{% endif %}
 <div class="{% if is_owner %}layout-with-sidebar{% else %}layout-single{% endif %}">
 <main class="page-main">
     <article class="page">
@@ -49,8 +51,8 @@
         {% elif is_owner and checklist %}
         <div class="setup-quickstart">
             <div class="setup-section setup-section-highlight">
-                <h3 class="setup-section-title">Quick setup</h3>
-                <p class="setup-section-desc">Get started by <a href="{{ url_prefix }}/new-page/edit">creating a page</a> in the editor.</p>
+                <h2 class="setup-welcome">Welcome to Jottit, @{{ sidebar_username }}</h2>
+                <p class="setup-section-desc">This is your home for ideas. Get started by <a href="{{ url_prefix }}/new-page/edit">creating a page</a> in the editor, or connect an agent below.</p>
             </div>
 
             <div class="setup-section">

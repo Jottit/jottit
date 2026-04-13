@@ -357,6 +357,12 @@
     margin-bottom: var(--space-2);
 }
 
+.setup-welcome {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    margin: 0 0 var(--space-2) 0;
+}
+
 .setup-section-title {
     font-size: var(--font-size-base);
     font-weight: 600;
