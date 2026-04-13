@@ -1,6 +1,7 @@
+import json
 import re
 
-from flask import flash, redirect, render_template, request, session
+from flask import flash, jsonify, redirect, render_template, request, session
 
 from db import (
     check_username_available,
@@ -8,6 +9,7 @@ from db import (
     delete_api_token,
     delete_user,
     find_or_create_user,
+    get_or_create_api_token,
     set_user_username,
     get_api_tokens,
     get_pages_for_user,
@@ -128,6 +130,35 @@ def setup_username():
     set_user_username(user_id, username)
     update_user_settings(user_id, name="", username=username, bio="", license=None)
     return redirect(profile_url(username))
+
+
+@bp.route("/setup/mcp-config", methods=["POST"])
+def setup_mcp_config():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    user = get_user(user_id)
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    token, _ = get_or_create_api_token(user_id, "mcp-default")
+    # If token already existed, we can't show the value (not stored).
+    # Create a new one with a unique name instead.
+    if token is None:
+        token, _ = create_api_token(user_id, "mcp-default")
+
+    username = user.get("username", "")
+    config = {
+        "mcpServers": {
+            "jottit": {
+                "command": "jottit-mcp",
+                "env": {
+                    "JOTTIT_API_TOKEN": token,
+                },
+            }
+        }
+    }
+    return jsonify({"config": config, "config_text": json.dumps(config, indent=2)})
 
 
 @bp.route("/pages")

@@ -577,6 +577,41 @@ def create_api_token(user_id, name):
     return token, row["id"]
 
 
+def get_or_create_api_token(user_id, name):
+    """Return an existing token by name, or create one. Returns (token_str, token_id).
+    token_str is None if the token already existed (value not stored)."""
+    with get_db() as conn:
+        existing = conn.execute(
+            "SELECT id FROM api_tokens WHERE user_id = %s AND name = %s LIMIT 1",
+            (user_id, name),
+        ).fetchone()
+        if existing:
+            return None, existing["id"]
+    return create_api_token(user_id, name)
+
+
+def get_setup_checklist(user_id):
+    """Return checklist status for the getting-started flow."""
+    with get_db() as conn:
+        page_count = conn.execute(
+            "SELECT COUNT(*) AS c FROM pages WHERE user_id = %s",
+            (user_id,),
+        ).fetchone()["c"]
+        token_count = conn.execute(
+            "SELECT COUNT(*) AS c FROM api_tokens WHERE user_id = %s",
+            (user_id,),
+        ).fetchone()["c"]
+        mcp_used = conn.execute(
+            "SELECT EXISTS(SELECT 1 FROM revisions r JOIN pages p ON r.page_id = p.id WHERE p.user_id = %s AND r.source = 'mcp') AS e",
+            (user_id,),
+        ).fetchone()["e"]
+    return {
+        "has_pages": page_count > 0,
+        "has_token": token_count > 0,
+        "has_mcp": bool(mcp_used),
+    }
+
+
 def get_api_tokens(user_id):
     with get_db() as conn:
         return conn.execute(

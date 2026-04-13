@@ -26,6 +26,7 @@ from db import (
     get_page_meta,
     get_pages_for_user,
     get_public_pages,
+    get_setup_checklist,
     get_revision,
     get_revision_count,
     get_revisions_paginated,
@@ -190,6 +191,7 @@ def subdomain_home(user):
         owner_avatar_url = user.get("avatar")
         if not user.get("avatar") and not user.get("bio"):
             profile_incomplete = True
+    checklist = get_setup_checklist(user["id"]) if is_owner and not page_list and not index_html else None
     bio = user.get("bio")
     bio_html = render_bio(bio, g.url_prefix) if bio else ""
     return render_template(
@@ -197,6 +199,7 @@ def subdomain_home(user):
         user=user,
         pages=page_list,
         index_html=index_html,
+        checklist=checklist,
         site_title=site_title,
         site_username=user.get("username", ""),
         is_owner=is_owner,
