@@ -25,19 +25,18 @@
         <p class="sidebar-empty">No pages yet</p>
         {% endif %}
     </nav>
-    {% if not sidebar_has_token %}
-    <nav class="sidebar-section">
-        <a href="/settings/mcp" class="action-link">Connect an agent →</a>
-    </nav>
-    {% endif %}
     {% if sidebar_special %}
     <nav class="sidebar-section">
-        <h3 class="sidebar-heading">About</h3>
         <ul class="sidebar-list">
             {% for p in sidebar_special %}
             <li><a href="/@{{ sidebar_username }}/{{ p.slug }}" class="sidebar-link sidebar-link--special"><span class="sidebar-link-text">{{ p.slug }}.md</span></a></li>
             {% endfor %}
         </ul>
+    </nav>
+    {% endif %}
+    {% if not sidebar_has_token %}
+    <nav class="sidebar-section">
+        <a href="/settings/mcp" class="action-link">Connect an agent →</a>
     </nav>
     {% endif %}
     {% endif %}
