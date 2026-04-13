@@ -193,7 +193,7 @@ def subdomain_home(user):
             profile_incomplete = True
     checklist = (
         get_setup_checklist(user["id"])
-        if is_owner and not page_list and not index_html
+        if is_owner and not pages and not index_html
         else None
     )
     bio = user.get("bio")

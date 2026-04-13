@@ -1478,6 +1478,12 @@ button.setup-item-title:hover {
     color: var(--text);
 }
 
+.sidebar-empty {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    padding: 0 var(--space-2);
+}
+
 @media (max-width: 639px) {
     .layout-with-sidebar {
         grid-template-columns: 1fr;
