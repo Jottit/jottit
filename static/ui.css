@@ -190,6 +190,10 @@
     letter-spacing: -0.02em;
 }
 
+.home-header .signin-link {
+    position: static;
+}
+
 .home-headline {
     font-size: clamp(2.2rem, 5vw, 3.2rem);
     font-weight: 800;
