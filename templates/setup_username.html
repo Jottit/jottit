@@ -4,7 +4,10 @@
 
 {% block body %}
 <div class="shell shell-centered">
-    <a href="/" class="verify-logo logo">Jottit</a>
+    <header class="home-header">
+        <a href="/" class="home-header-logo logo">Jottit</a>
+        <span class="signin-link">Already have an account? <a href="/signin">Sign in</a></span>
+    </header>
     <h1 class="title">Choose your username</h1>
     <p class="auth-subtitle">This is your home for ideas on Jottit.</p>
     <form class="auth-form" method="post" action="/setup/username">

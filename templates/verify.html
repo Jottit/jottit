@@ -4,7 +4,10 @@
 
 {% block body %}
 <div class="shell shell-centered">
-    <a href="/" class="verify-logo logo">Jottit</a>
+    <header class="home-header">
+        <a href="/" class="home-header-logo logo">Jottit</a>
+        <span class="signin-link">Already have an account? <a href="/signin">Sign in</a></span>
+    </header>
     <h1 class="title">Check your email</h1>
     {% if email %}
     <p class="subtitle">We sent a 6-digit code to <strong>{{ email }}</strong></p>
