@@ -81,6 +81,10 @@ def home():
     if "user_id" not in session:
         return render_template("home.html", **account_link_vars())
 
+    user = g.current_user
+    if user and user.get("username"):
+        return redirect(profile_url(user["username"]))
+
     pages = get_pages_for_user(session["user_id"])
     all_items = [_build_page_item(p) for p in pages if not is_special_slug(p["slug"])]
 
