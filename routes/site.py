@@ -25,6 +25,7 @@ from db import (
     delete_comment,
     delete_page,
     find_or_create_user,
+    log_event,
     find_page_owner_for_redirect,
     get_comment,
     get_export_pages,
@@ -266,6 +267,8 @@ def edit_page(slug):
         visibility = "listed"
     slug = save_page(slug, content, visibility, subdomain_user_id)
 
+    if is_new and session.get("user_id"):
+        log_event(session["user_id"], "page_create", {"slug": slug})
     if is_new:
         new_page_meta = get_page_meta(slug, subdomain_user_id)
         if new_page_meta and session.get("user_id") and not subdomain_user_id:

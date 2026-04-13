@@ -10,6 +10,7 @@ from db import (
     delete_user,
     find_or_create_user,
     get_or_create_api_token,
+    log_event,
     set_user_username,
     get_api_tokens,
     get_pages_for_user,
@@ -83,7 +84,9 @@ def signin_verify():
     session["user_id"] = user_id
     user = get_user(user_id)
     if user and user.get("username"):
+        log_event(user_id, "signin")
         return redirect(profile_url(user["username"]))
+    log_event(user_id, "signup")
     return redirect("/setup/username")
 
 
@@ -157,6 +160,7 @@ def setup_mcp_config():
             }
         }
     }
+    log_event(user_id, "mcp_config_copy")
     return jsonify({"config": config, "config_text": json.dumps(config, indent=2)})
 
 

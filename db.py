@@ -1,5 +1,6 @@
 import hashlib
 import importlib.util
+import json
 import os
 import secrets
 import threading
@@ -610,6 +611,18 @@ def get_setup_checklist(user_id):
         "has_token": token_count > 0,
         "has_mcp": bool(mcp_used),
     }
+
+
+def log_event(user_id, event, metadata=None):
+    try:
+        with get_db() as conn:
+            conn.execute(
+                "INSERT INTO user_events (user_id, event, metadata) VALUES (%s, %s, %s)",
+                (user_id, event, json.dumps(metadata) if metadata else None),
+            )
+            conn.commit()
+    except Exception:
+        pass
 
 
 def get_api_tokens(user_id):

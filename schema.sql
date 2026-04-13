@@ -94,6 +94,14 @@ CREATE TABLE IF NOT EXISTS slug_redirects (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS user_events (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    event TEXT NOT NULL,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
     filename TEXT PRIMARY KEY,
     applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -119,6 +127,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS slug_redirects_lookup_unclaimed ON slug_redire
 CREATE INDEX IF NOT EXISTS comments_page_id_idx ON comments (page_id);
 CREATE INDEX IF NOT EXISTS comments_ip_created_idx ON comments (ip_hash, created_at);
 CREATE INDEX IF NOT EXISTS comments_user_id_idx ON comments (user_id);
+CREATE INDEX IF NOT EXISTS user_events_user_id_idx ON user_events (user_id);
+CREATE INDEX IF NOT EXISTS user_events_event_idx ON user_events (event, created_at DESC);
 
 -- On fresh DBs (no sites table), seed historical migrations as already applied
 DO $$ BEGIN
@@ -147,7 +157,9 @@ DO $$ BEGIN
             ('021_add_comments.sql'),
             ('022_add_comment_user_id.sql'),
             ('024_drop_comment_author_fields.sql'),
-            ('025_drop_comment_is_pinned.sql')
+            ('025_drop_comment_is_pinned.sql'),
+            ('026_add_private_visibility.sql'),
+            ('027_add_user_events.sql')
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;
