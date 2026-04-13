@@ -150,12 +150,14 @@ def setup_mcp_config():
     if token is None:
         token, _ = create_api_token(user_id, "mcp-default")
 
+    base_url = request.url_root.rstrip("/")
     config = {
         "mcpServers": {
             "jottit": {
                 "command": "jottit-mcp",
                 "env": {
                     "JOTTIT_API_TOKEN": token,
+                    "JOTTIT_BASE_URL": base_url,
                 },
             }
         }
