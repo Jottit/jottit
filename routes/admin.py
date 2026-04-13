@@ -186,13 +186,10 @@ def setup_mcp_config():
     base_url = request.url_root.rstrip("/")
     username = user.get("username", "")
     prompt = (
-        f"Connect to my Jottit account so you can create and manage my pages. "
-        f"My username is @{username}. "
-        f"API token: {token} — "
-        f"Base URL: {base_url}/api/v1 — "
-        f"Use Authorization: Bearer header. "
-        f"Content is markdown. "
-        f"List my pages to confirm it works."
+        f"Connect to my Jottit account. "
+        f"Fetch {base_url}/api/v1/agent-setup with the header "
+        f"'Authorization: Bearer {token}' to learn how the API works. "
+        f"Then list my pages to confirm it works."
     )
     log_event(user_id, "token_generated")
     return jsonify({"config_text": prompt})

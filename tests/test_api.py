@@ -62,6 +62,22 @@ def test_get_user_profile_not_found(client):
     assert r.status_code == 404
 
 
+def test_agent_setup(client):
+    _, token = _setup_user_with_token()
+    r = client.get("/api/v1/agent-setup", headers=_auth(token))
+    assert r.status_code == 200
+    data = r.get_json()
+    assert "welcome" in data
+    assert "endpoints" in data
+    assert "create_page" in data["endpoints"]
+    assert "@" in data["welcome"]
+
+
+def test_agent_setup_requires_auth(client):
+    r = client.get("/api/v1/agent-setup")
+    assert r.status_code == 401
+
+
 def test_create_page(client):
     _, token = _setup_user_with_token()
     r = client.post(
