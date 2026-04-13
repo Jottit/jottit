@@ -145,10 +145,12 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-1);
-    max-width: var(--content-max-width);
+    gap: var(--space-2);
+    max-width: 680px;
     margin: 0 auto;
     padding: 0 var(--space-5);
+    padding-bottom: 10vh;
+    text-align: center;
 }
 
 .logo {
@@ -177,57 +179,79 @@
     justify-content: space-between;
     padding: var(--space-3) var(--space-5);
     width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .home-header-logo {
-    font-size: var(--font-size-lg);
+    font-size: 1.25rem;
+    font-weight: 800;
     text-decoration: none;
+    letter-spacing: -0.02em;
 }
 
 .home-headline {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
     color: var(--text-primary);
-    margin: 0;
+    margin: 0 0 var(--space-2) 0;
 }
 
 .home-subtitle {
     font-size: var(--font-size-lg);
     color: var(--text-secondary);
-    line-height: 1.5;
-    max-width: 500px;
-    text-align: center;
-    margin-bottom: var(--space-4);
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto var(--space-5) auto;
 }
 
 .home-signup-form {
     display: flex;
-    gap: var(--space-2);
+    gap: 0;
     align-items: stretch;
-    flex-wrap: wrap;
     justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-primary);
+    max-width: 440px;
+    width: 100%;
 }
 
 .home-email-input {
-    padding: var(--space-2) var(--space-3);
+    flex: 1;
+    padding: 14px 16px;
     font-size: var(--font-size-base);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    min-width: 240px;
-    background: var(--bg-primary);
+    border: none;
+    background: transparent;
     color: var(--text-primary);
+    outline: none;
+    min-width: 0;
 }
 
 .home-email-input::placeholder {
     color: var(--muted);
 }
 
+.home-signup-form .btn {
+    border-radius: 0;
+    white-space: nowrap;
+    padding: 14px 20px;
+    font-weight: 600;
+    border: none;
+    border-left: 1px solid var(--border);
+}
+
 .home-create-link {
     font-size: var(--font-size-sm);
     color: var(--muted);
-    margin-top: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.home-create-link:hover {
+    color: var(--text-secondary);
 }
 
 .home-hint {
