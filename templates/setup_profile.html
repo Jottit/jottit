@@ -14,9 +14,9 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="setup-profile-card">
             <div class="setup-avatar-upload">
-                <label class="setup-avatar-preview" id="avatar-preview" for="avatar-file">
+                <div class="setup-avatar-preview" id="avatar-preview" onclick="document.getElementById('avatar-file').click()">
                     <span class="setup-avatar-initials">{{ username[0] | upper }}</span>
-                </label>
+                </div>
                 <label class="setup-avatar-label" for="avatar-file">Upload photo</label>
                 <input type="file" id="avatar-file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
             </div>
