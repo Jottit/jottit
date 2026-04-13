@@ -156,10 +156,23 @@ def sidebar_vars(user_id, username, active_slug=None, is_owner=False):
 def subdomain_home(user):
     pages = get_pages_for_user(user["id"])
     is_owner = session.get("user_id") == user["id"]
+
+    # INDEX.md: if user has a page with slug "index", render it on the profile
+    index_page = None
+    index_html = None
+    for p in pages:
+        if p["slug"] == "index":
+            # Owner sees their index regardless of visibility;
+            # visitors only see it if listed or unlisted
+            if is_owner or p["visibility"] in ("listed", "unlisted", "pinned"):
+                index_page = p
+                index_html = render_markdown(p["content"])
+            break
+
     pinned = []
     listed = []
     for p in pages:
-        if is_special_slug(p["slug"]):
+        if is_special_slug(p["slug"]) or p["slug"] == "index":
             continue
         if not is_owner and p["visibility"] not in ("listed", "pinned"):
             continue
@@ -185,6 +198,7 @@ def subdomain_home(user):
         "profile.html",
         user=user,
         pages=page_list,
+        index_html=index_html,
         site_title=site_title,
         site_username=user.get("username", ""),
         is_owner=is_owner,

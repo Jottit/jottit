@@ -341,3 +341,47 @@ def test_subdomain_redirects_to_profile(client):
     r = client.get("/lp1", headers={"Host": "legacyuser.jottit.localhost:8000"})
     assert r.status_code == 301
     assert "/@legacyuser" in r.headers["Location"]
+
+
+# INDEX.md: page with slug "index" renders as profile content
+def test_index_page_renders_on_profile(client):
+    user_id = find_or_create_user("idx@example.com")
+    set_user_username(user_id, "idxuser")
+    save_page("index", "# Welcome\n\nThis is my profile.", "listed")
+    page_meta = get_page_meta("index")
+    claim_page(page_meta["id"], user_id)
+    r = client.get("/@idxuser")
+    assert r.status_code == 200
+    assert b"This is my profile" in r.data
+
+
+# INDEX.md: private index page visible to owner but not visitors
+def test_index_page_private_hidden_from_visitors(client):
+    from db import update_page_visibility
+
+    user_id = find_or_create_user("idxp@example.com")
+    set_user_username(user_id, "idxpriv")
+    save_page("index", "# Secret\n\nPrivate index.", "listed")
+    page_meta = get_page_meta("index")
+    claim_page(page_meta["id"], user_id)
+    update_page_visibility(page_meta["id"], "private")
+    with client.session_transaction() as sess:
+        sess.clear()
+    r = client.get("/@idxpriv")
+    assert b"Private index" not in r.data
+
+
+# INDEX.md: private index page visible to owner
+def test_index_page_private_visible_to_owner(client):
+    from db import update_page_visibility
+
+    user_id = find_or_create_user("idxo@example.com")
+    set_user_username(user_id, "idxown")
+    save_page("index", "# My Index\n\nOwner sees this.", "listed")
+    page_meta = get_page_meta("index")
+    claim_page(page_meta["id"], user_id)
+    update_page_visibility(page_meta["id"], "private")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/@idxown")
+    assert b"Owner sees this" in r.data

@@ -1,17 +1,61 @@
 {% extends "base.html" %} {% block body %}
+{% if not signed_in %}
 <div class="home">
   {% include "_account_link.html" %}
   <main class="home-main">
     <h1 class="logo">Jottit</h1>
-    <p class="tagline">Put your ideas on the web</p>
-    <a href="/new" class="btn btn-solid btn-lg">Create a page</a>
-    {% if not signed_in %}
-    <p class="home-hint">no sign-up required</p>
-    {% endif %}
+    <p class="home-headline">Where ideas live</p>
+    <p class="home-subtitle">Capture insights, refine your thinking, share when ready.<br>For humans and AI agents. Markdown in, beautiful page out.</p>
+    <form class="home-signup-form" method="post" action="/signin">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="home-email-input" type="email" name="email" placeholder="Enter your email" required>
+      <button class="btn btn-solid btn-lg" type="submit">Sign up for Jottit</button>
+    </form>
+    <a href="/new" class="home-create-link">or create a page without signing up</a>
   </main>
 
   {% include "_footer.html" %}
 </div>
+{% else %}
+<div class="home home-dashboard">
+  {% include "_account_link.html" %}
+  <main class="home-main">
+    {% if display_name %}
+    <h1 class="home-greeting">{{ display_name }}</h1>
+    {% else %}
+    <h1 class="home-greeting">Your pages</h1>
+    {% endif %}
+    {% if pages %}
+    <div class="home-tabs">
+      {% for t in ["all", "private", "unlisted", "listed", "pinned"] %}
+      {% set count = counts.get(t, 0) %}
+      {% if t == "all" or count > 0 %}
+      <a href="?tab={{ t }}" class="home-tab{% if tab == t %} home-tab-active{% endif %}">{{ t | capitalize }} ({{ count }})</a>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <div class="home-pages">
+      {% for page in pages %}
+      <div class="page-listing-item">
+        <a href="/{{ page.slug }}" class="page-listing-link">
+          <h2 class="page-listing-title">{{ page.title or "Untitled" }}</h2>
+          <div class="page-listing-meta">
+            {% if page.visibility == "private" %}<span class="vis-badge vis-private">Private</span>{% endif %}
+            {% if page.visibility == "unlisted" %}<span class="vis-badge vis-unlisted">Unlisted</span>{% endif %}
+            {% if page.visibility == "pinned" %}<span class="vis-badge vis-pinned">Pinned</span>{% endif %}
+            <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">{{ page.updated_at | relative_time }}</time>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="home-empty">No pages yet. <a href="/new">Create your first page</a>.</p>
+    {% endif %}
+  </main>
+  {% include "_footer.html" %}
+</div>
+{% endif %}
 {% endblock %}
 {% block head %}
 <script src="/static/tabs.js?v={{ asset_v }}" defer></script>

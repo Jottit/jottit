@@ -28,12 +28,18 @@
 <div class="{% if is_owner %}layout-with-sidebar{% else %}layout-single{% endif %}">
 <main class="page-main">
     <article class="page">
-        {% if pages %}
+        {% if index_html %}
+        <div class="e-content">{{ index_html | safe }}</div>
+        {% elif pages %}
         {% for page in pages %}
         <div class="page-listing-item">
             <a href="{{ url_prefix }}/{{ page.slug }}" class="page-listing-link">
                 <h2 class="page-listing-title">{% if page.pinned %}<svg class="pin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Pinned"><path d="M12 17v5"/><path d="M9 11l-4 4h14l-4-4V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg> {% endif %}{{ page.title }}</h2>
-                <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">Updated {{ page.updated_at | relative_time }}</time>
+                <div class="page-listing-meta">
+                    {% if is_owner and page.visibility == "private" %}<span class="vis-badge vis-private">Private</span>{% endif %}
+                    {% if is_owner and page.visibility == "unlisted" %}<span class="vis-badge vis-unlisted">Unlisted</span>{% endif %}
+                    <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">Updated {{ page.updated_at | relative_time }}</time>
+                </div>
                 {% if page.description %}
                 <p class="page-listing-desc">{{ page.description }}</p>
                 {% endif %}

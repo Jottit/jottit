@@ -266,7 +266,7 @@ def test_homepage_logged_out_shows_landing(client):
     r = client.get("/")
     body = r.data.decode()
     assert "tab--active" not in body
-    assert "Create a page" in body
+    assert "Sign up for Jottit" in body
 
 
 # /pages requires sign-in
