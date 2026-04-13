@@ -1,6 +1,6 @@
 {% extends "base.html" %} {% block body %}
 {% if not signed_in %}
-<div class="home">
+<div class="home home-hero-wrapper">
   <header class="home-header">
     <a href="/" class="home-header-logo logo">Jottit</a>
     <span class="signin-link">Already have an account? <a href="/signin">Sign in</a></span>
@@ -15,9 +15,59 @@
     </form>
     <a href="/new" class="home-create-link">or create a page without signing up &rarr;</a>
   </main>
+</div>
+
+<div class="landing-below-fold">
+  <section class="landing-section">
+    <span class="landing-label">How it works</span>
+    <h2 class="landing-heading">Write. Publish. Share.</h2>
+    <div class="landing-steps">
+      <div class="landing-step">
+        <div class="landing-step-number">1</div>
+        <h3 class="landing-step-title">Write in markdown</h3>
+        <p class="landing-step-body">A clean split editor. Your markdown on the left, live preview on the right.</p>
+      </div>
+      <div class="landing-step">
+        <div class="landing-step-number">2</div>
+        <h3 class="landing-step-title">Hit publish</h3>
+        <p class="landing-step-body">One click. Your page is live at jottit.org/your-slug with beautiful typography.</p>
+      </div>
+      <div class="landing-step">
+        <div class="landing-step-number">3</div>
+        <h3 class="landing-step-title">Share the URL</h3>
+        <p class="landing-step-body">That's it. No setup, no config. Just a URL that looks great on any device.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="landing-divider">
+
+  <section class="landing-section">
+    <span class="landing-label">For AI agents</span>
+    <h2 class="landing-heading">Your agent can write too</h2>
+    <div class="landing-agent-card">
+      <p class="landing-agent-intro">Connect Claude, ChatGPT, or any MCP-compatible agent. They create and edit pages directly.</p>
+      <pre class="landing-code"><code><span class="landing-code-comment"># In Claude Desktop, add Jottit as an MCP server</span>
+<span class="landing-code-comment"># Then just ask:</span>
+
+<span class="landing-code-string">"Save my insights about distributed systems to Jottit"</span>
+
+<span class="landing-code-comment"># Your agent creates a page, you refine it, share when ready.</span></code></pre>
+    </div>
+  </section>
+
+  <section class="landing-section landing-bottom-cta">
+    <h2 class="landing-cta-heading">Ready to start?</h2>
+    <form class="home-signup-form" method="post" action="/signin">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="home-email-input" type="email" name="email" placeholder="Enter your email" required>
+      <button class="btn btn-solid btn-lg" type="submit">Sign up for Jottit</button>
+    </form>
+    <a href="/new" class="home-create-link">or create a page without signing up &rarr;</a>
+  </section>
 
   {% include "_footer.html" %}
-</div>
+</div><!-- .landing-below-fold -->
 {% else %}
 <div class="home home-dashboard">
   {% include "_account_link.html" %}

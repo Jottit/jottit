@@ -139,6 +139,12 @@
     flex-direction: column;
 }
 
+.home-hero-wrapper {
+    min-height: auto;
+    padding-top: 200px;
+    padding-bottom: var(--space-12);
+}
+
 .home-main {
     flex: 1;
     display: flex;
@@ -151,6 +157,10 @@
     padding: 0 var(--space-5);
     padding-bottom: 10vh;
     text-align: center;
+}
+
+.home-hero-wrapper .home-main {
+    padding-bottom: 0;
 }
 
 .logo {
@@ -268,6 +278,140 @@
 .home-hint {
     font-size: var(--font-size-xs);
     color: var(--muted);
+}
+
+/* Landing page below-fold sections */
+
+.landing-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 80px var(--space-5);
+}
+
+.landing-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand-1);
+    font-weight: 600;
+    margin-bottom: var(--space-3);
+}
+
+.landing-heading {
+    font-size: 1.625rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    color: var(--text);
+    margin-bottom: var(--space-8);
+}
+
+.landing-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Section 1: How it works */
+
+.landing-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-10);
+}
+
+.landing-step {
+    text-align: center;
+}
+
+.landing-step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-raised);
+    color: var(--brand-1);
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-3);
+}
+
+.landing-step-title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: var(--space-2);
+}
+
+.landing-step-body {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .landing-steps {
+        grid-template-columns: 1fr;
+        gap: var(--space-6);
+    }
+}
+
+/* Section 2: Agent angle */
+
+.landing-agent-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+}
+
+.landing-agent-intro {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-5);
+}
+
+.landing-code {
+    background: var(--code-bg);
+    padding: var(--space-5);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    line-height: 1.7;
+    overflow-x: auto;
+}
+
+.landing-code code {
+    background: none;
+}
+
+.landing-code-comment {
+    color: var(--muted);
+}
+
+.landing-code-string {
+    color: var(--brand-1);
+}
+
+/* Bottom CTA */
+
+.landing-bottom-cta {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.landing-cta-heading {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: var(--space-5);
 }
 
 .home-greeting {
