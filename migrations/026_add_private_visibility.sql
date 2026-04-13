@@ -1,0 +1,4 @@
+-- Re-add 'private' as a valid visibility state.
+-- Private pages are only visible to their owner.
+-- Lifecycle: private → unlisted → listed → pinned
+-- (Previously removed in migration 018.)

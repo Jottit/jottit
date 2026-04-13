@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Choose your username — Jottit{% endblock %}
+
+{% block body %}
+<div class="shell shell-centered">
+    <h1 class="title">Choose your username</h1>
+    <p class="auth-subtitle">This is your home for ideas on Jottit.</p>
+    <form class="auth-form" method="post" action="/setup/username">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="auth-subdomain-row">
+            <span class="auth-subdomain-prefix">jottit.org/@</span>
+            <input class="auth-input" type="text" name="username" value="{{ username or '' }}" required autofocus>
+        </div>
+        <p class="auth-subdomain-notice">{% if error %}{{ error }}{% endif %}</p>
+        <button class="btn btn-solid" type="submit">Get started</button>
+    </form>
+    <script src="/static/check-username.js?v={{ asset_v }}"></script>
+</div>
+{% endblock %}

@@ -43,7 +43,7 @@ LICENSES = {
     },
 }
 
-VISIBILITY_OPTIONS = ("unlisted", "listed", "pinned")
+VISIBILITY_OPTIONS = ("private", "unlisted", "listed", "pinned")
 
 
 def _get_subdomain():
@@ -104,6 +104,15 @@ def can_edit(page_meta):
     if page_meta["user_id"] is not None:
         return session.get("user_id") == page_meta["user_id"]
     return is_creator(page_meta)
+
+
+def check_page_visibility(page_meta):
+    """Abort 404 if page is private and current user is not the owner."""
+    if not page_meta:
+        return
+    if page_meta.get("visibility") == "private":
+        if session.get("user_id") != page_meta["user_id"]:
+            abort(404)
 
 
 def send_verification(email, purpose):

@@ -116,11 +116,21 @@ def test_old_slug_redirects_unclaimed_page(client):
 # -- Visibility --
 
 
-# New pages default to "listed" visibility (via create_user_with_username)
-def test_visibility_default_is_listed(client):
-    user_id = create_user_with_username(client, "list1@example.com", "listuser1", "lp1")
-    page_meta = get_page_meta("lp1", user_id)
-    assert page_meta["visibility"] == "listed"
+# New pages by signed-in users default to "private" visibility
+def test_visibility_default_is_private(client):
+    from db import find_or_create_user, set_user_username
+
+    user_id = find_or_create_user("list1@example.com")
+    set_user_username(user_id, "listuser1")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    client.post(
+        "/@listuser1/newpage/edit",
+        data={"content": "# Test\n\nContent"},
+    )
+    page_meta = get_page_meta("newpage", user_id)
+    assert page_meta is not None
+    assert page_meta["visibility"] == "private"
 
 
 # Owner can change a page's visibility to "unlisted"
@@ -132,6 +142,51 @@ def test_update_visibility(client):
     assert r.status_code == 302
     page_meta = get_page_meta("lp2", user_id)
     assert page_meta["visibility"] == "unlisted"
+
+
+# Private pages are blocked for non-owners
+def test_private_page_blocked_for_non_owner(client):
+    from db import update_page_visibility
+
+    user_id = create_user_with_username(
+        client, "priv@example.com", "privuser", "privpage"
+    )
+    page_meta = get_page_meta("privpage", user_id)
+    update_page_visibility(page_meta["id"], "private")
+    with client.session_transaction() as sess:
+        sess.clear()
+    r = client.get("/@privuser/privpage")
+    assert r.status_code == 404
+
+
+# Private pages are accessible to the owner
+def test_private_page_accessible_for_owner(client):
+    from db import update_page_visibility
+
+    user_id = create_user_with_username(
+        client, "privo@example.com", "privowner", "privownpage"
+    )
+    page_meta = get_page_meta("privownpage", user_id)
+    update_page_visibility(page_meta["id"], "private")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+    r = client.get("/@privowner/privownpage")
+    assert r.status_code == 200
+
+
+# Private pages don't appear on the profile for visitors
+def test_private_page_hidden_from_profile(client):
+    from db import update_page_visibility
+
+    user_id = create_user_with_username(
+        client, "privh@example.com", "privhidden", "privhpage"
+    )
+    page_meta = get_page_meta("privhpage", user_id)
+    update_page_visibility(page_meta["id"], "private")
+    with client.session_transaction() as sess:
+        sess.clear()
+    r = client.get("/@privhidden")
+    assert b"privhpage" not in r.data
 
 
 # Unlisted pages don't appear on the profile homepage

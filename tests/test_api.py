@@ -73,7 +73,7 @@ def test_create_page(client):
     data = r.get_json()
     assert data["title"] == "My Page"
     assert data["content"] == "# My Page\n\nHello world"
-    assert data["visibility"] == "unlisted"
+    assert data["visibility"] == "private"
 
 
 def test_create_page_with_custom_slug(client):

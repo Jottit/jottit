@@ -390,12 +390,10 @@ def test_signin_page(client):
 
 
 # Sign-in with unknown email is rejected
-def test_signin_rejects_unknown_email(client):
+def test_signin_accepts_unknown_email_for_signup(client):
     r = client.post("/signin", data={"email": "nobody@example.com"})
-    assert r.status_code == 200
-    assert b"Email not found" in r.data
-    assert b"Create a page" in r.data
-    assert b"Try another email" in r.data
+    assert r.status_code == 302
+    assert "/signin/verify" in r.headers["Location"]
 
 
 # Full sign-in: submit email, verify code, session contains user_id
@@ -414,7 +412,7 @@ def test_signin_full_flow(client):
 
     r = client.post("/signin/verify", data={"code": code, "email": "user@example.com"})
     assert r.status_code == 302
-    assert r.headers["Location"] == "/"
+    assert r.headers["Location"] == "/setup/username"
 
     with client.session_transaction() as sess:
         assert "user_id" in sess
@@ -432,6 +430,56 @@ def test_signin_with_username_redirects_to_profile(client):
     )
     assert r.status_code == 302
     assert r.headers["Location"] == "/@signinuser"
+
+
+# Full signup: new email, verify code, pick username, land on profile
+def test_signup_full_flow(client):
+    r = client.post("/signin", data={"email": "newuser@example.com"})
+    assert r.status_code == 302
+
+    code = create_verification_code("newuser@example.com", "signin")
+    r = client.post(
+        "/signin/verify", data={"code": code, "email": "newuser@example.com"}
+    )
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/setup/username"
+
+    r = client.get("/setup/username")
+    assert r.status_code == 200
+
+    r = client.post("/setup/username", data={"username": "newuser"})
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/@newuser"
+
+
+def test_setup_username_requires_signin(client):
+    r = client.get("/setup/username")
+    assert r.status_code == 302
+    assert "/signin" in r.headers["Location"]
+
+
+def test_setup_username_rejects_taken(client):
+    user_id = find_or_create_user("existing@example.com")
+    set_user_username(user_id, "taken")
+
+    new_id = find_or_create_user("newperson@example.com")
+    with client.session_transaction() as sess:
+        sess["user_id"] = new_id
+
+    r = client.post("/setup/username", data={"username": "taken"})
+    assert r.status_code == 200
+    assert b"already taken" in r.data
+
+
+def test_setup_username_skips_if_already_set(client):
+    user_id = find_or_create_user("hasname@example.com")
+    set_user_username(user_id, "hasname")
+    with client.session_transaction() as sess:
+        sess["user_id"] = user_id
+
+    r = client.get("/setup/username")
+    assert r.status_code == 302
+    assert "/@hasname" in r.headers["Location"]
 
 
 # Invalid sign-in code shows an error

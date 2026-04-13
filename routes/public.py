@@ -51,6 +51,7 @@ from routes import (
     LICENSES,
     _set_profile_user,
     account_link_vars,
+    check_page_visibility,
     compute_initials,
     find_page,
     is_creator,
@@ -71,7 +72,7 @@ def install_cli():
     return send_from_directory("static", "install-cli.sh", mimetype="text/plain")
 
 
-_VISIBILITY_TABS = ("all", "unlisted", "listed", "pinned")
+_VISIBILITY_TABS = ("all", "private", "unlisted", "listed", "pinned")
 
 
 @bp.route("/")
@@ -154,12 +155,13 @@ def sidebar_vars(user_id, username, active_slug=None, is_owner=False):
 
 def subdomain_home(user):
     pages = get_pages_for_user(user["id"])
+    is_owner = session.get("user_id") == user["id"]
     pinned = []
     listed = []
     for p in pages:
         if is_special_slug(p["slug"]):
             continue
-        if p["visibility"] not in ("listed", "pinned"):
+        if not is_owner and p["visibility"] not in ("listed", "pinned"):
             continue
         item = _build_page_item(p)
         if p["visibility"] == "pinned":
@@ -169,7 +171,6 @@ def subdomain_home(user):
     page_list = pinned + listed
 
     site_title = user.get("name") or user.get("username")
-    is_owner = session.get("user_id") == user["id"]
     owner_initials = None
     owner_avatar_url = None
     profile_incomplete = False
@@ -355,6 +356,8 @@ def _resolve_page(slug, suffix=""):
     row = get_page_full(page_meta["id"])
     if not row:
         abort(404)
+
+    check_page_visibility(page_meta)
 
     return page_meta, row
 
@@ -546,6 +549,7 @@ def page_history(slug):
     page_meta = find_page(slug)
     if not page_meta:
         abort(404)
+    check_page_visibility(page_meta)
 
     total = get_revision_count(page_meta["id"])
     if total == 0:

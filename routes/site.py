@@ -254,12 +254,16 @@ def edit_page(slug):
 
     is_new = page_meta is None
     subdomain_user_id = subdomain_user["id"] if subdomain_user else None
-    # Preserve existing visibility on edit; default to "listed" for new pages
-    # Special slugs are always unlisted
+    # Preserve existing visibility on edit; default to "private" for signed-in
+    # users, "listed" for anonymous. Special slugs are always unlisted.
     if is_special_slug(slug):
         visibility = "unlisted"
+    elif page_meta:
+        visibility = page_meta["visibility"]
+    elif session.get("user_id") or subdomain_user:
+        visibility = "private"
     else:
-        visibility = page_meta["visibility"] if page_meta else "listed"
+        visibility = "listed"
     slug = save_page(slug, content, visibility, subdomain_user_id)
 
     if is_new:

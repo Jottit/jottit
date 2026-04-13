@@ -59,7 +59,7 @@ TOOLS = [
                 },
                 "visibility": {
                     "type": "string",
-                    "enum": ["unlisted", "listed", "pinned"],
+                    "enum": ["private", "unlisted", "listed", "pinned"],
                     "default": "unlisted",
                 },
             },
@@ -76,7 +76,7 @@ TOOLS = [
                 "content": {"type": "string", "description": "Markdown content"},
                 "visibility": {
                     "type": "string",
-                    "enum": ["unlisted", "listed", "pinned"],
+                    "enum": ["private", "unlisted", "listed", "pinned"],
                 },
             },
             "required": ["slug"],

@@ -8,6 +8,7 @@ from db import (
     delete_api_token,
     delete_user,
     find_or_create_user,
+    set_user_username,
     get_api_tokens,
     get_pages_for_user,
     get_user,
@@ -50,9 +51,6 @@ def signin():
             "signin.html", error="Please enter a valid email address."
         )
 
-    if not user_exists(email):
-        return render_template("signin.html", not_found=True)
-
     send_verification(email, "signin")
     return redirect("/signin/verify")
 
@@ -84,13 +82,52 @@ def signin_verify():
     user = get_user(user_id)
     if user and user.get("username"):
         return redirect(profile_url(user["username"]))
-    return redirect("/")
+    return redirect("/setup/username")
 
 
 @bp.route("/signout", methods=["POST"])
 def signout():
     session.pop("user_id", None)
     return redirect("/")
+
+
+@bp.route("/setup/username", methods=["GET", "POST"])
+def setup_username():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/signin")
+    user = get_user(user_id)
+    if user and user.get("username"):
+        return redirect(profile_url(user["username"]))
+
+    if request.method == "GET":
+        return render_template("setup_username.html")
+
+    username = request.form.get("username", "").strip().lower()
+    if not username:
+        return render_template("setup_username.html", error="Username is required.")
+    if not valid_username(username):
+        return render_template(
+            "setup_username.html",
+            error="Username must be lowercase letters, numbers, and hyphens only.",
+            username=username,
+        )
+    if username in RESERVED_USERNAMES:
+        return render_template(
+            "setup_username.html",
+            error="That username is reserved.",
+            username=username,
+        )
+    if not check_username_available(username):
+        return render_template(
+            "setup_username.html",
+            error="That username is already taken.",
+            username=username,
+        )
+
+    set_user_username(user_id, username)
+    update_user_settings(user_id, name="", username=username, bio="", license=None)
+    return redirect(profile_url(username))
 
 
 @bp.route("/pages")
