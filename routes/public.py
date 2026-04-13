@@ -490,7 +490,9 @@ def view_page(
 
     revision_count = get_revision_count(page_meta["id"])
 
-    comments_enabled = row.get("comments_enabled", True)
+    comments_enabled = (
+        row.get("comments_enabled", True) and page_meta.get("visibility") != "private"
+    )
     comments = []
     reply_to = None
     if comments_enabled:
