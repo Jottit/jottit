@@ -1474,10 +1474,24 @@
     background: var(--subtle);
 }
 
-.sidebar-link--special {
+.sidebar-meta {
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border);
+    margin-top: var(--space-2);
+}
+
+.sidebar-meta-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     font-family: var(--font-mono);
     font-size: var(--font-size-xs);
     color: var(--muted);
+    padding: 3px 0;
+}
+
+.sidebar-meta-link:hover {
+    color: var(--text-secondary);
 }
 
 .sidebar-create {
