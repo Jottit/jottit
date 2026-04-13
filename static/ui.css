@@ -1076,6 +1076,7 @@
 }
 
 .site-header {
+    background: var(--bg-raised);
     border-bottom: 1px solid var(--border);
 }
 
