@@ -11,38 +11,50 @@
     <a href="/settings" class="panel-back">&larr; Settings</a>
     <h1 class="title">Connect an Agent</h1>
 
-    <p class="settings-mcp-intro">Connect an AI agent to your Jottit account via <a href="https://modelcontextprotocol.io" target="_blank">MCP</a>. Your agent can create, read, and update pages on your profile.</p>
+    <p class="settings-mcp-intro">Give your AI agent these credentials. It can create, read, and update pages on your profile.</p>
 
     <div class="settings-mcp-step">
-        <h3>Claude Code</h3>
-        <p>Add Jottit as a remote MCP server. Claude Code will handle authentication via OAuth.</p>
-        <div class="setup-code">
-            <pre>claude mcp add jottit --transport sse {{ base_url }}/mcp</pre>
-        </div>
-    </div>
-
-    <div class="settings-mcp-step">
-        <h3>Claude Desktop and other MCP clients</h3>
-        <p>Generate a config with an API token and add it to your client's configuration file.</p>
+        <h3>Your credentials</h3>
         <div class="setup-code setup-hidden" id="mcp-config-output">
             <pre id="mcp-config-text"></pre>
             <button class="setup-code-copy" id="mcp-copy-btn" title="Copy to clipboard">&#x2398;</button>
         </div>
-        <button class="btn btn--outline btn-sm" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate MCP config</button>
+        <button class="btn btn-solid" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate API token</button>
+        <p class="settings-mcp-note">Creates a token and shows your API endpoint. Give both to your agent.</p>
     </div>
 
     <div class="settings-mcp-step">
-        <h3>CLI</h3>
-        <p>Publish pages from your terminal.</p>
+        <h3>Works with any agent</h3>
+        <p>Any AI agent that can make HTTP requests can use the Jottit API. Just give it your token and the <a href="/api-docs">API docs</a>.</p>
         <div class="setup-code">
-            <pre>curl -fsSL https://jottit.org/install-cli | sh
+            <pre>API: {{ base_url }}/api/v1
+Docs: {{ base_url }}/api-docs</pre>
+        </div>
+    </div>
+
+    <div class="settings-mcp-step">
+        <h3>Platform shortcuts</h3>
+        <div class="settings-platform">
+            <div class="settings-platform-item">
+                <strong>Claude Code</strong>
+                <div class="setup-code">
+                    <pre>claude mcp add jottit --transport sse {{ base_url }}/mcp</pre>
+                </div>
+                <p>Uses OAuth. No token needed.</p>
+            </div>
+            <div class="settings-platform-item">
+                <strong>CLI</strong>
+                <div class="setup-code">
+                    <pre>curl -fsSL https://jottit.org/install-cli | sh
 jottit login
 jottit publish page.md</pre>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="settings-mcp-footer">
-        <p>Manage your API tokens in <a href="/settings/tokens">Settings &gt; API tokens</a>.</p>
+        <p>Manage your tokens in <a href="/settings/tokens">Settings &gt; API tokens</a>.</p>
     </div>
 </div>
 {% endblock %}

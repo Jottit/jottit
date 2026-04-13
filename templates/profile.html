@@ -56,13 +56,9 @@
             </div>
 
             <div class="setup-section">
-                <h3 class="setup-section-title">...or connect an AI agent via MCP</h3>
-                <p class="setup-section-desc">Add this to your MCP client config:</p>
-                <div class="setup-code setup-hidden" id="mcp-config-output">
-                    <pre id="mcp-config-text"></pre>
-                    <button class="setup-code-copy" id="mcp-copy-btn" title="Copy to clipboard">&#x2398;</button>
-                </div>
-                <button class="btn btn--outline btn-sm" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate MCP config</button>
+                <h3 class="setup-section-title">...or connect an AI agent</h3>
+                <p class="setup-section-desc">Generate an API token and give it to your agent. Works with any AI that can make HTTP requests.</p>
+                <a href="/settings/mcp" class="btn btn--outline btn-sm">Set up agent access</a>
             </div>
 
             <div class="setup-section">
@@ -75,7 +71,6 @@ jottit publish page.md</pre>
             </div>
 
         </div>
-        <script src="/static/setup-mcp.js?v={{ asset_v }}" defer></script>
         {% else %}
         <p>No pages yet.</p>
         {% endif %}

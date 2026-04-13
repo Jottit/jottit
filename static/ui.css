@@ -1622,6 +1622,29 @@
     font-size: var(--font-size-xs);
 }
 
+.settings-mcp-note {
+    font-size: var(--font-size-xs);
+    color: var(--muted);
+    margin-top: var(--space-2);
+}
+
+.settings-platform {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.settings-platform-item strong {
+    display: block;
+    margin-bottom: var(--space-1);
+}
+
+.settings-platform-item p {
+    font-size: var(--font-size-xs);
+    color: var(--muted);
+    margin: var(--space-1) 0 0 0;
+}
+
 .settings-mcp-footer {
     margin-top: var(--space-3);
 }

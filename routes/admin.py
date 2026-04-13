@@ -1,4 +1,3 @@
-import json
 import re
 
 from flask import flash, jsonify, redirect, render_template, request, session
@@ -185,19 +184,11 @@ def setup_mcp_config():
         token, _ = create_api_token(user_id, "mcp-default")
 
     base_url = request.url_root.rstrip("/")
-    config = {
-        "mcpServers": {
-            "jottit": {
-                "command": "jottit-mcp",
-                "env": {
-                    "JOTTIT_API_TOKEN": token,
-                    "JOTTIT_BASE_URL": base_url,
-                },
-            }
-        }
-    }
-    log_event(user_id, "mcp_config_copy")
-    return jsonify({"config": config, "config_text": json.dumps(config, indent=2)})
+    config_text = f"API token: {token}\nAPI endpoint: {base_url}/api/v1"
+    log_event(user_id, "token_generated")
+    return jsonify(
+        {"token": token, "api_url": f"{base_url}/api/v1", "config_text": config_text}
+    )
 
 
 @bp.route("/pages")
