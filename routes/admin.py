@@ -184,7 +184,6 @@ def setup_mcp_config():
         token, _ = create_api_token(user_id, "mcp-default")
 
     base_url = request.url_root.rstrip("/")
-    username = user.get("username", "")
     prompt = (
         f"Connect to my Jottit account. "
         f"Fetch {base_url}/api/v1/agent-setup with the header "

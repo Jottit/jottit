@@ -63,43 +63,55 @@ def _serialize_page(meta, page_data):
 def agent_setup():
     user = _require_auth()
     if not user:
-        return _error("Unauthorized — include your API token as: Authorization: Bearer YOUR_TOKEN", 401)
+        return _error(
+            "Unauthorized — include your API token as: Authorization: Bearer YOUR_TOKEN",
+            401,
+        )
     base_url = request.url_root.rstrip("/")
     username = user.get("username", "")
-    return jsonify({
-        "welcome": f"You are connected to Jottit as @{username}.",
-        "about": "Jottit is a markdown publishing tool. Pages are written in markdown and get a beautiful URL.",
-        "api_base": f"{base_url}/api/v1",
-        "your_profile": f"{base_url}/@{username}",
-        "endpoints": {
-            "list_pages": {
-                "method": "GET",
-                "path": "/pages",
-                "description": "List all your pages. Returns slug, title, visibility, and updated_at.",
+    return jsonify(
+        {
+            "welcome": f"You are connected to Jottit as @{username}.",
+            "about": "Jottit is a markdown publishing tool. Pages are written in markdown and get a beautiful URL.",
+            "api_base": f"{base_url}/api/v1",
+            "your_profile": f"{base_url}/@{username}",
+            "endpoints": {
+                "list_pages": {
+                    "method": "GET",
+                    "path": "/pages",
+                    "description": "List all your pages. Returns slug, title, visibility, and updated_at.",
+                },
+                "create_page": {
+                    "method": "POST",
+                    "path": "/pages",
+                    "description": "Create a new page.",
+                    "body": {
+                        "content": "# Title\\n\\nMarkdown content here.",
+                        "slug": "(optional)",
+                        "visibility": "(optional: private, unlisted, listed, pinned)",
+                    },
+                },
+                "get_page": {
+                    "method": "GET",
+                    "path": "/pages/{slug}",
+                    "description": "Get a page by slug. Returns title, content (markdown), visibility, and updated_at.",
+                },
+                "update_page": {
+                    "method": "PUT",
+                    "path": "/pages/{slug}",
+                    "description": "Update a page. Send content and/or visibility.",
+                    "body": {
+                        "content": "(optional) full markdown",
+                        "visibility": "(optional)",
+                    },
+                },
             },
-            "create_page": {
-                "method": "POST",
-                "path": "/pages",
-                "description": "Create a new page.",
-                "body": {"content": "# Title\\n\\nMarkdown content here.", "slug": "(optional)", "visibility": "(optional: private, unlisted, listed, pinned)"},
-            },
-            "get_page": {
-                "method": "GET",
-                "path": "/pages/{slug}",
-                "description": "Get a page by slug. Returns title, content (markdown), visibility, and updated_at.",
-            },
-            "update_page": {
-                "method": "PUT",
-                "path": "/pages/{slug}",
-                "description": "Update a page. Send content and/or visibility.",
-                "body": {"content": "(optional) full markdown", "visibility": "(optional)"},
-            },
-        },
-        "auth": "Include your token in every request: Authorization: Bearer YOUR_TOKEN",
-        "content_format": "All content is markdown. Start with '# Title' on the first line.",
-        "default_visibility": "New pages are private by default. Change to 'listed' to show on your profile.",
-        "try_it": f"To verify this works, call GET {base_url}/api/v1/pages to list your pages.",
-    })
+            "auth": "Include your token in every request: Authorization: Bearer YOUR_TOKEN",
+            "content_format": "All content is markdown. Start with '# Title' on the first line.",
+            "default_visibility": "New pages are private by default. Change to 'listed' to show on your profile.",
+            "try_it": f"To verify this works, call GET {base_url}/api/v1/pages to list your pages.",
+        }
+    )
 
 
 @api_bp.route("/user")
