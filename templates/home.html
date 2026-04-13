@@ -1,9 +1,11 @@
 {% extends "base.html" %} {% block body %}
 {% if not signed_in %}
 <div class="home">
-  {% include "_account_link.html" %}
+  <header class="home-header">
+    <a href="/" class="home-header-logo logo">Jottit</a>
+    <span class="signin-link">Already have an account? <a href="/signin">Sign in</a></span>
+  </header>
   <main class="home-main">
-    <h1 class="logo">Jottit</h1>
     <p class="home-headline">Markdown pages for humans and agents</p>
     <p class="home-subtitle">Capture insights, refine your thinking, share when ready.<br>Markdown in, beautiful page out.</p>
     <form class="home-signup-form" method="post" action="/signin">

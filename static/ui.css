@@ -171,6 +171,19 @@
     margin-bottom: var(--space-3);
 }
 
+.home-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-5);
+    width: 100%;
+}
+
+.home-header-logo {
+    font-size: var(--font-size-lg);
+    text-decoration: none;
+}
+
 .home-headline {
     font-size: clamp(2rem, 5vw, 3.5rem);
     font-weight: 700;
