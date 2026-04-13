@@ -184,7 +184,7 @@
 }
 
 .home-header-logo {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 800;
     text-decoration: none;
     letter-spacing: -0.02em;
@@ -246,6 +246,12 @@
     font-weight: 600;
     border: none;
     border-left: 1px solid var(--border);
+    background: var(--brand-1);
+    color: #fff;
+}
+
+.home-signup-form .btn:hover {
+    opacity: 0.9;
 }
 
 .home-create-link {
