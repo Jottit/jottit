@@ -1451,7 +1451,7 @@
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     text-decoration: none;
-    padding: 5px 0;
+    padding: 5px var(--space-2);
     border-radius: var(--radius-sm);
     overflow: hidden;
     min-width: 0;
