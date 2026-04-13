@@ -10,29 +10,29 @@
 <div class="panel-page">
     <a href="/settings" class="panel-back">&larr; Settings</a>
     <h1 class="title">Connect an Agent</h1>
-
-    <p class="settings-mcp-intro">Copy this prompt and paste it into any AI agent. It will set up Jottit access automatically.</p>
-
-    <div class="settings-mcp-step">
-        <div class="setup-prompt setup-hidden" id="mcp-config-output">
-            <p id="mcp-config-text"></p>
-            <button class="setup-prompt-copy" id="mcp-copy-btn">Copy prompt</button>
+    <div class="panel">
+        <div class="settings-agent-section">
+            <p>Copy this prompt and paste it into any AI agent to connect it to your Jottit account.</p>
+            <div class="setup-prompt setup-hidden" id="mcp-config-output">
+                <p id="mcp-config-text"></p>
+                <button class="setup-prompt-copy" id="mcp-copy-btn">Copy prompt</button>
+            </div>
+            <button class="btn btn-solid" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate setup prompt</button>
         </div>
-        <button class="btn btn-solid" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate setup prompt</button>
-        <p class="settings-mcp-note">Creates an API token and generates a prompt you can paste into Claude, ChatGPT, Cursor, or any AI agent.</p>
-    </div>
 
-    <div class="settings-mcp-step">
-        <h3>Claude Code shortcut</h3>
-        <p>If you're using Claude Code, you can also add Jottit as an MCP server directly:</p>
-        <div class="setup-code">
-            <pre>claude mcp add jottit --transport sse {{ base_url }}/mcp</pre>
+        <div class="settings-agent-divider"></div>
+
+        <div class="settings-agent-section">
+            <h3>Claude Code</h3>
+            <p>Add Jottit as an MCP server directly. Uses OAuth, no token needed.</p>
+            <div class="setup-code">
+                <pre>claude mcp add jottit --transport sse {{ base_url }}/mcp</pre>
+            </div>
         </div>
-        <p class="settings-mcp-note">Uses OAuth. No token needed.</p>
-    </div>
 
-    <div class="settings-mcp-footer">
-        <p>Manage your tokens in <a href="/settings/tokens">Settings &gt; API tokens</a>.</p>
+        <div class="settings-agent-section settings-agent-footer">
+            <p>Manage tokens in <a href="/settings/tokens">API tokens</a></p>
+        </div>
     </div>
 </div>
 {% endblock %}

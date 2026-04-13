@@ -1578,58 +1578,37 @@
     color: var(--text);
 }
 
-.settings-mcp-intro {
-    color: var(--text-secondary);
-    margin-bottom: var(--space-5);
+.settings-agent-section {
+    padding: var(--space-4) var(--space-5);
 }
 
-.settings-mcp-step {
-    margin-bottom: var(--space-5);
-    padding-bottom: var(--space-5);
-    border-bottom: 1px solid var(--border);
-}
-
-.settings-mcp-step:last-of-type {
-    border-bottom: none;
-}
-
-.settings-mcp-step h3 {
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    margin: 0 0 var(--space-1) 0;
-}
-
-.settings-mcp-step p {
+.settings-agent-section p {
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin: 0 0 var(--space-3) 0;
 }
 
-.settings-mcp-step ul {
-    padding-left: var(--space-5);
+.settings-agent-section h3 {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    margin: 0 0 var(--space-1) 0;
+}
+
+.settings-agent-divider {
+    border-top: 1px solid var(--border);
+}
+
+.settings-agent-footer p {
     margin: 0;
-}
-
-.settings-mcp-step li {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-1);
-}
-
-.settings-mcp-step code {
-    background: var(--bg-raised);
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: var(--font-size-xs);
+    color: var(--muted);
 }
 
 .setup-prompt {
-    background: var(--bg-raised);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: var(--space-4);
     margin-bottom: var(--space-3);
-    text-align: left;
 }
 
 .setup-prompt p {
@@ -1653,46 +1632,6 @@
 .setup-prompt-copy:hover {
     color: var(--text-primary);
     border-color: var(--text-secondary);
-}
-
-.settings-mcp-note {
-    font-size: var(--font-size-xs);
-    color: var(--muted);
-    margin-top: var(--space-2);
-}
-
-.settings-platform {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.settings-platform-item strong {
-    display: block;
-    margin-bottom: var(--space-1);
-}
-
-.settings-platform-item p {
-    font-size: var(--font-size-xs);
-    color: var(--muted);
-    margin: var(--space-1) 0 0 0;
-}
-
-.settings-mcp-footer {
-    margin-top: var(--space-3);
-}
-
-.settings-mcp-footer p {
-    font-size: var(--font-size-sm);
-    color: var(--muted);
-    margin: 0 0 var(--space-1) 0;
-}
-
-.settings-mcp-footer code {
-    background: var(--bg-raised);
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: var(--font-size-xs);
 }
 
 .sidebar-empty {
