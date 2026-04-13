@@ -158,7 +158,6 @@ def subdomain_home(user):
     is_owner = session.get("user_id") == user["id"]
 
     # INDEX.md: if user has a page with slug "index", render it on the profile
-    index_page = None
     index_html = None
     for p in pages:
         if p["slug"] == "index":
