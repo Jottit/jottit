@@ -181,7 +181,7 @@ def setup_mcp_config():
     if token is None:
         # Token already exists but we can't show the stored value.
         # Rotate: delete old, create new.
-        delete_api_token(token_id)
+        delete_api_token(token_id, user_id)
         token, _ = create_api_token(user_id, "mcp-default")
 
     base_url = request.url_root.rstrip("/")
