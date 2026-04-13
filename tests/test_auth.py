@@ -536,28 +536,16 @@ def test_homepage_shows_signin_when_logged_out(client):
     assert b"Sign in" in r.data
 
 
-# Logged-in homepage shows settings link instead of sign in
+# Logged-in homepage shows avatar instead of sign in
 def test_homepage_shows_avatar_when_logged_in(client):
     user_id = find_or_create_user("logged@example.com")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
 
     r = client.get("/")
-    assert b"/settings" in r.data
+    assert b"Markdown pages for humans and agents" in r.data
     assert b"Sign in" not in r.data
-
-
-# -- Homepage pages list --
-
-
-# Homepage doesn't show a "My pages" link
-def test_homepage_no_my_pages_link(client):
-    user_id = find_or_create_user("pages@example.com")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/")
-    assert b"My pages" not in r.data
+    assert b"home-header-avatar-link" in r.data
 
 
 # -- Auto-claim for signed-in users --

@@ -1,6 +1,5 @@
 import json
 import os
-from collections import Counter
 from email.utils import format_datetime
 from xml.sax.saxutils import escape as xml_escape
 
@@ -73,44 +72,9 @@ def install_cli():
     return send_from_directory("static", "install-cli.sh", mimetype="text/plain")
 
 
-_VISIBILITY_TABS = ("all", "private", "unlisted", "listed", "pinned")
-
-
 @bp.route("/")
 def home():
-    if "user_id" not in session:
-        return render_template("home.html", **account_link_vars())
-
-    user = g.current_user
-    if user and user.get("username"):
-        return redirect(profile_url(user["username"]))
-
-    pages = get_pages_for_user(session["user_id"])
-    all_items = [_build_page_item(p) for p in pages if not is_special_slug(p["slug"])]
-
-    counts = Counter(i["visibility"] for i in all_items)
-    counts["all"] = len(all_items)
-
-    tab = request.args.get("tab", "all")
-    if tab not in _VISIBILITY_TABS:
-        tab = "all"
-
-    if tab == "all":
-        page_list = all_items
-    else:
-        page_list = [i for i in all_items if i["visibility"] == tab]
-
-    user = g.current_user
-    display_name = (user.get("name") or user.get("username")) if user else None
-
-    return render_template(
-        "home.html",
-        pages=page_list,
-        tab=tab,
-        counts=counts,
-        display_name=display_name,
-        **account_link_vars(),
-    )
+    return render_template("home.html", **account_link_vars())
 
 
 def _build_page_item(p):

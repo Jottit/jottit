@@ -187,11 +187,17 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-3) var(--space-5);
+    padding: var(--space-5) var(--space-5);
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
+}
+
+@media (min-width: 640px) {
+    .home-header {
+        padding: var(--space-5) var(--space-10);
+    }
 }
 
 .home-header-logo {
@@ -203,6 +209,31 @@
 
 .home-header .signin-link {
     position: static;
+}
+
+.home-header-avatar-link {
+    display: flex;
+    align-items: center;
+}
+
+.home-header-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.home-header-initials {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: var(--subtle);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
 }
 
 .home-headline {
