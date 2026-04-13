@@ -469,6 +469,14 @@ def settings_delete():
     return redirect("/")
 
 
+@bp.route("/settings/mcp")
+def settings_mcp():
+    user_id, user = require_user()
+    if not user:
+        return redirect("/signin")
+    return render_template("settings_mcp.html", user=user)
+
+
 @bp.route("/settings/tokens", methods=["GET", "POST"])
 @limiter.limit("5 per 5 minutes", methods=["POST"])
 def settings_tokens():

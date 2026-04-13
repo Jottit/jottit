@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Connect an Agent — Jottit{% endblock %}
+
+{% block head %}
+<script src="/static/setup-mcp.js?v={{ asset_v }}" defer></script>
+{% endblock %}
+
+{% block body %}
+<div class="panel-page">
+    <a href="/settings" class="panel-back">&larr; Settings</a>
+    <h1 class="title">Connect an Agent</h1>
+    <div class="panel">
+        <p>Connect an AI agent to your Jottit account via <a href="https://modelcontextprotocol.io" target="_blank">MCP</a>. Add the config below to your MCP client (Claude Desktop, Claude Code, or any MCP-compatible tool).</p>
+
+        <div class="setup-code setup-hidden" id="mcp-config-output">
+            <pre id="mcp-config-text"></pre>
+            <button class="setup-code-copy" id="mcp-copy-btn" title="Copy to clipboard">&#x2398;</button>
+        </div>
+        <button class="btn btn-solid" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate MCP config</button>
+
+        <div class="settings-mcp-help">
+            <h3>How it works</h3>
+            <ol>
+                <li>Click "Generate MCP config" to create an API token and get your config</li>
+                <li>Copy the JSON config to your MCP client's configuration file</li>
+                <li>Your agent can now create, read, and update pages on your Jottit profile</li>
+            </ol>
+            <p>You can also install the MCP server manually: <code>pip install jottit-mcp</code></p>
+            <p>Manage your API tokens in <a href="/settings/tokens">Settings &gt; API tokens</a>.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

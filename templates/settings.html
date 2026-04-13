@@ -53,18 +53,24 @@
                     <span class="settings-chevron">&rsaquo;</span>
                 </span>
             </a>
-            <a href="/settings/license" class="settings-row">
-                <span class="settings-row-label">License</span>
+            <a href="/settings/mcp" class="settings-row">
+                <span class="settings-row-label">Connect an agent</span>
                 <span class="settings-row-right">
-                    {% if user.license %}
-                    <span class="settings-row-value">{{ licenses[user.license].name if user.license in licenses else user.license }}</span>
-                    {% endif %}
                     <span class="settings-chevron">&rsaquo;</span>
                 </span>
             </a>
             <a href="/settings/tokens" class="settings-row">
                 <span class="settings-row-label">API tokens</span>
                 <span class="settings-row-right">
+                    <span class="settings-chevron">&rsaquo;</span>
+                </span>
+            </a>
+            <a href="/settings/license" class="settings-row">
+                <span class="settings-row-label">License</span>
+                <span class="settings-row-right">
+                    {% if user.license %}
+                    <span class="settings-row-value">{{ licenses[user.license].name if user.license in licenses else user.license }}</span>
+                    {% endif %}
                     <span class="settings-chevron">&rsaquo;</span>
                 </span>
             </a>

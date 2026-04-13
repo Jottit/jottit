@@ -25,6 +25,11 @@
         <p class="sidebar-empty">No pages yet</p>
         {% endif %}
     </nav>
+    {% if not sidebar_has_token %}
+    <nav class="sidebar-section">
+        <a href="/settings/mcp" class="sidebar-link sidebar-link--cta"><span class="sidebar-link-text">Connect an agent →</span></a>
+    </nav>
+    {% endif %}
     {% if sidebar_special %}
     <nav class="sidebar-section">
         <h3 class="sidebar-heading">About</h3>

@@ -127,6 +127,8 @@ def _build_page_item(p):
 
 
 def sidebar_vars(user_id, username, active_slug=None, is_owner=False):
+    from db import get_api_tokens
+
     all_pages = get_pages_for_user(user_id)
     pages = [p for p in all_pages if not is_special_slug(p["slug"])]
     special = [
@@ -148,6 +150,7 @@ def sidebar_vars(user_id, username, active_slug=None, is_owner=False):
         recent.append({"slug": p["slug"], "title": title or "Untitled"})
         if len(recent) >= 5:
             break
+    has_token = bool(get_api_tokens(user_id)) if is_owner else False
     return {
         "sidebar_pinned": pinned,
         "sidebar_recent": recent,
@@ -155,6 +158,7 @@ def sidebar_vars(user_id, username, active_slug=None, is_owner=False):
         "sidebar_total": len(pages),
         "sidebar_active_slug": active_slug,
         "sidebar_username": username,
+        "sidebar_has_token": has_token,
     }
 
 
