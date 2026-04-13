@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
     input.addEventListener('change', function() {
         if (!input.files || !input.files[0]) return;
         var url = URL.createObjectURL(input.files[0]);
-        preview.innerHTML = '<img src="' + url + '" class="setup-avatar-img">';
+        var img = document.createElement('img');
+        img.src = url;
+        img.className = 'setup-avatar-img';
+        preview.textContent = '';
+        preview.appendChild(img);
     });
 });
