@@ -9,16 +9,19 @@
         <span class="signin-link">Already have an account? <a href="/signin">Sign in</a></span>
     </header>
     <h1 class="title">Almost there, @{{ username }}</h1>
-    <p class="subtitle">Add a name and bio so people know who you are. You can skip this and do it later in settings.</p>
-    <form class="auth-form" method="post" action="/setup/profile">
+    <p class="subtitle">Add a photo and name so people know who you are.</p>
+    <form class="auth-form" method="post" action="/setup/profile" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="setup-avatar-upload">
+            <div class="setup-avatar-preview" id="avatar-preview">
+                <span class="setup-avatar-initials">{{ username[0] | upper }}</span>
+            </div>
+            <label class="btn btn--outline btn-sm setup-avatar-btn" for="avatar-file">Upload photo</label>
+            <input type="file" id="avatar-file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
+        </div>
         <div class="setup-profile-field">
             <label class="setup-profile-label" for="name">Display name</label>
             <input class="auth-input" type="text" id="name" name="name" placeholder="Your name" autofocus>
-        </div>
-        <div class="setup-profile-field">
-            <label class="setup-profile-label" for="bio">Bio</label>
-            <input class="auth-input" type="text" id="bio" name="bio" placeholder="A short bio" maxlength="160">
         </div>
         <div class="setup-profile-actions">
             <button class="btn btn-solid" type="submit">Save and continue</button>
@@ -26,4 +29,19 @@
         </div>
     </form>
 </div>
+<script>
+(function() {
+    var input = document.getElementById('avatar-file');
+    var preview = document.getElementById('avatar-preview');
+    if (!input || !preview) return;
+    input.addEventListener('change', function() {
+        if (!input.files || !input.files[0]) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = '<img src="' + e.target.result + '" class="setup-avatar-img">';
+        };
+        reader.readAsDataURL(input.files[0]);
+    });
+})();
+</script>
 {% endblock %}

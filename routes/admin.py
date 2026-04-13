@@ -148,10 +148,24 @@ def setup_profile():
         return render_template("setup_profile.html", username=user["username"])
 
     name = request.form.get("name", "").strip()
-    bio = request.form.get("bio", "").strip()
-    update_user_settings(
-        user_id, name=name, username=user["username"], bio=bio, license=None
-    )
+    if name:
+        update_user_settings(
+            user_id, name=name, username=user["username"], bio="", license=None
+        )
+
+    file = request.files.get("avatar")
+    if file and file.filename:
+        error = validate_image(file)
+        if not error:
+            ext = ALLOWED_IMAGE_TYPES[file.content_type]
+            fmt = file.content_type.split("/")[-1].upper()
+            if fmt == "JPG":
+                fmt = "JPEG"
+            cropped = crop_square(file, fmt)
+            key = f"{user_id}/avatar.{ext}"
+            url = upload_image(key, cropped, file.content_type)
+            update_user_avatar(user_id, url)
+
     return redirect(profile_url(user["username"]))
 
 

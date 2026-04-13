@@ -454,7 +454,7 @@ def test_signup_full_flow(client):
     r = client.get("/setup/profile")
     assert r.status_code == 200
 
-    r = client.post("/setup/profile", data={"name": "New User", "bio": "Hello"})
+    r = client.post("/setup/profile", data={"name": "New User"})
     assert r.status_code == 302
     assert r.headers["Location"] == "/@newuser"
 
