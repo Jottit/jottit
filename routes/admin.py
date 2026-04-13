@@ -474,7 +474,8 @@ def settings_mcp():
     user_id, user = require_user()
     if not user:
         return redirect("/signin")
-    return render_template("settings_mcp.html", user=user)
+    base_url = request.url_root.rstrip("/")
+    return render_template("settings_mcp.html", user=user, base_url=base_url)
 
 
 @bp.route("/settings/tokens", methods=["GET", "POST"])

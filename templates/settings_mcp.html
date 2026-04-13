@@ -11,34 +11,37 @@
     <a href="/settings" class="panel-back">&larr; Settings</a>
     <h1 class="title">Connect an Agent</h1>
 
-    <p class="settings-mcp-intro">Connect an AI agent to your Jottit account via <a href="https://modelcontextprotocol.io" target="_blank">MCP</a>.</p>
+    <p class="settings-mcp-intro">Connect an AI agent to your Jottit account via <a href="https://modelcontextprotocol.io" target="_blank">MCP</a>. Your agent can create, read, and update pages on your profile.</p>
 
     <div class="settings-mcp-step">
-        <h3>1. Generate your config</h3>
-        <p>This creates an API token and gives you the JSON config to paste into your MCP client.</p>
+        <h3>Claude Code</h3>
+        <p>Add Jottit as a remote MCP server. Claude Code will handle authentication via OAuth.</p>
+        <div class="setup-code">
+            <pre>claude mcp add jottit --transport sse {{ base_url }}/mcp</pre>
+        </div>
+    </div>
+
+    <div class="settings-mcp-step">
+        <h3>Claude Desktop and other MCP clients</h3>
+        <p>Generate a config with an API token and add it to your client's configuration file.</p>
         <div class="setup-code setup-hidden" id="mcp-config-output">
             <pre id="mcp-config-text"></pre>
             <button class="setup-code-copy" id="mcp-copy-btn" title="Copy to clipboard">&#x2398;</button>
         </div>
-        <button class="btn btn-solid" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate MCP config</button>
+        <button class="btn btn--outline btn-sm" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate MCP config</button>
     </div>
 
     <div class="settings-mcp-step">
-        <h3>2. Add to your MCP client</h3>
-        <p>Paste the config into your client's configuration file:</p>
-        <ul>
-            <li><strong>Claude Desktop:</strong> Settings &gt; Developer &gt; Edit Config</li>
-            <li><strong>Claude Code:</strong> <code>.claude/settings.json</code></li>
-        </ul>
-    </div>
-
-    <div class="settings-mcp-step">
-        <h3>3. Start using it</h3>
-        <p>Your agent can now create, read, and update pages on your Jottit profile.</p>
+        <h3>CLI</h3>
+        <p>Publish pages from your terminal.</p>
+        <div class="setup-code">
+            <pre>curl -fsSL https://jottit.org/install-cli | sh
+jottit login
+jottit publish page.md</pre>
+        </div>
     </div>
 
     <div class="settings-mcp-footer">
-        <p>You can also install the MCP server manually: <code>pip install jottit-mcp</code></p>
         <p>Manage your API tokens in <a href="/settings/tokens">Settings &gt; API tokens</a>.</p>
     </div>
 </div>
