@@ -1476,7 +1476,8 @@
 
 .sidebar-link--special {
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
+    color: var(--muted);
 }
 
 .sidebar-create {
