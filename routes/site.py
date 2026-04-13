@@ -167,8 +167,10 @@ def new_page():
 
     if is_special_slug(slug):
         visibility = "unlisted"
+    elif owner_id or session.get("user_id"):
+        visibility = "private"
     else:
-        visibility = "listed" if owner_id else "unlisted"
+        visibility = "listed"
     slug = save_page(slug, content, visibility, subdomain_user_id)
 
     new_page_meta = get_page_meta(slug, subdomain_user_id)
