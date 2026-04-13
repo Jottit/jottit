@@ -147,7 +147,6 @@ def setup_mcp_config():
     if token is None:
         token, _ = create_api_token(user_id, "mcp-default")
 
-    username = user.get("username", "")
     config = {
         "mcpServers": {
             "jottit": {

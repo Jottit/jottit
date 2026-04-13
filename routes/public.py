@@ -191,7 +191,11 @@ def subdomain_home(user):
         owner_avatar_url = user.get("avatar")
         if not user.get("avatar") and not user.get("bio"):
             profile_incomplete = True
-    checklist = get_setup_checklist(user["id"]) if is_owner and not page_list and not index_html else None
+    checklist = (
+        get_setup_checklist(user["id"])
+        if is_owner and not page_list and not index_html
+        else None
+    )
     bio = user.get("bio")
     bio_html = render_bio(bio, g.url_prefix) if bio else ""
     return render_template(
