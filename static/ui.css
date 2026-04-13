@@ -1076,7 +1076,7 @@
 }
 
 .site-header {
-    background: var(--bg-raised);
+    background: #1a1f26;
     border-bottom: 1px solid var(--border);
 }
 
