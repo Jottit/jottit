@@ -47,42 +47,40 @@
         </div>
         {% endfor %}
         {% elif is_owner and checklist %}
-        <div class="setup-checklist">
-            <h2 class="setup-title">Get started</h2>
-            <p class="setup-subtitle">Your home for ideas. Here's how to add content.</p>
-            <div class="setup-items">
-                <div class="setup-item{% if checklist.has_pages %} setup-done{% endif %}">
-                    <span class="setup-check">{% if checklist.has_pages %}&#10003;{% endif %}</span>
-                    <div class="setup-item-content">
-                        <a href="{{ url_prefix }}/new-page/edit" class="setup-item-title">Write your first page</a>
-                        <p class="setup-item-desc">Create a page in the editor. Markdown in, beautiful page out.</p>
-                    </div>
+        <div class="setup-quickstart">
+            <div class="setup-section setup-section-highlight">
+                <h3 class="setup-section-title">Quick setup</h3>
+                <p class="setup-section-desc">Get started by <a href="{{ url_prefix }}/new-page/edit">creating a page</a> in the editor.</p>
+            </div>
+
+            <div class="setup-section">
+                <h3 class="setup-section-title">...or connect Claude via MCP</h3>
+                <p class="setup-section-desc">Add this to your Claude Desktop or Claude Code config:</p>
+                <div class="setup-code" id="mcp-config-output" style="display:none">
+                    <pre id="mcp-config-text"></pre>
+                    <button class="setup-code-copy" id="mcp-copy-btn" title="Copy to clipboard">&#x2398;</button>
                 </div>
-                <div class="setup-item{% if checklist.has_token %} setup-done{% endif %}">
-                    <span class="setup-check">{% if checklist.has_token %}&#10003;{% endif %}</span>
-                    <div class="setup-item-content">
-                        <button class="setup-item-title setup-mcp-btn" id="mcp-config-btn">Connect Claude via MCP</button>
-                        <p class="setup-item-desc">One click to get your MCP config. Paste it into Claude Desktop or Claude Code.</p>
-                        <div id="mcp-config-output" class="setup-config" style="display:none">
-                            <pre id="mcp-config-text"></pre>
-                            <button class="setup-copy-btn" id="mcp-copy-btn">Copy to clipboard</button>
-                        </div>
-                    </div>
+                <button class="btn btn--outline btn-sm" id="mcp-config-btn">Generate MCP config</button>
+            </div>
+
+            <div class="setup-section">
+                <h3 class="setup-section-title">...or publish from the command line</h3>
+                <div class="setup-code">
+                    <pre>pip install jottit
+jottit login
+jottit publish page.md</pre>
                 </div>
-                <div class="setup-item{% if checklist.has_token %} setup-done{% endif %}">
-                    <span class="setup-check">{% if checklist.has_token %}&#10003;{% endif %}</span>
-                    <div class="setup-item-content">
-                        <span class="setup-item-title">Install the CLI</span>
-                        <p class="setup-item-desc"><code>pip install jottit</code> &mdash; publish pages from your terminal.</p>
-                    </div>
+            </div>
+
+            <div class="setup-section">
+                <h3 class="setup-section-title">...or push via the API</h3>
+                <div class="setup-code">
+                    <pre>curl -X POST https://jottit.org/api/v1/pages \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "# Hello\n\nMy first page."}'</pre>
                 </div>
-                <div class="setup-item{% if checklist.has_token %} setup-done{% endif %}">
-                    <span class="setup-check">{% if checklist.has_token %}&#10003;{% endif %}</span>
-                    <div class="setup-item-content">
-                        <a href="/settings/tokens" class="setup-item-title">Create an API token</a>
-                        <p class="setup-item-desc">Push pages via the REST API.</p>
-                    </div>
-                </div>
+                <p class="setup-section-desc"><a href="/settings/tokens">Create an API token</a> to get started.</p>
             </div>
         </div>
         <script>
@@ -93,25 +91,24 @@
             var copyBtn = document.getElementById('mcp-copy-btn');
             if (!btn) return;
             btn.addEventListener('click', function() {
-                if (output.style.display !== 'none') { output.style.display = 'none'; return; }
                 btn.textContent = 'Loading...';
                 fetch('/setup/mcp-config', {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token() }}'}})
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         text.textContent = data.config_text;
                         output.style.display = 'block';
-                        btn.textContent = 'Connect Claude via MCP';
+                        btn.style.display = 'none';
                         if (navigator.clipboard) {
                             navigator.clipboard.writeText(data.config_text);
-                            copyBtn.textContent = 'Copied!';
-                            setTimeout(function() { copyBtn.textContent = 'Copy to clipboard'; }, 2000);
+                            copyBtn.title = 'Copied!';
+                            setTimeout(function() { copyBtn.title = 'Copy to clipboard'; }, 2000);
                         }
                     });
             });
             copyBtn.addEventListener('click', function() {
                 navigator.clipboard.writeText(text.textContent);
-                copyBtn.textContent = 'Copied!';
-                setTimeout(function() { copyBtn.textContent = 'Copy to clipboard'; }, 2000);
+                copyBtn.title = 'Copied!';
+                setTimeout(function() { copyBtn.title = 'Copy to clipboard'; }, 2000);
             });
         })();
         </script>
