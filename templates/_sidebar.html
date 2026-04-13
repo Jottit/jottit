@@ -1,10 +1,5 @@
 <aside class="sidebar">
     {% if is_owner %}
-    {% if profile_incomplete %}
-    <nav class="sidebar-section">
-        <p class="sidebar-hint">No bio or avatar yet. <a href="/settings/profile">Edit profile</a></p>
-    </nav>
-    {% endif %}
     {% if sidebar_pinned %}
     <nav class="sidebar-section">
         <h3 class="sidebar-heading">Pinned</h3>
@@ -32,7 +27,7 @@
     </nav>
     {% if not sidebar_has_token %}
     <nav class="sidebar-section">
-        <a href="/settings/mcp" class="sidebar-link sidebar-link--cta"><span class="sidebar-link-text">Connect an agent →</span></a>
+        <a href="/settings/mcp" class="action-link">Connect an agent →</a>
     </nav>
     {% endif %}
     {% if sidebar_special %}

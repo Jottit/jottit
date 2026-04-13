@@ -1029,16 +1029,19 @@
     margin: 0;
 }
 
-.profile-edit-link {
+.action-link {
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--brand-1);
-    margin-top: var(--space-2);
-    display: inline-block;
 }
 
-.profile-edit-link:hover {
+.action-link:hover {
     text-decoration: underline;
+}
+
+.profile-header .action-link {
+    margin-top: var(--space-2);
+    display: inline-block;
 }
 
 .profile-header--avatar .profile-bio,
@@ -1597,23 +1600,6 @@
     padding: 1px 5px;
     border-radius: 3px;
     font-size: var(--font-size-xs);
-}
-
-.sidebar-link--cta .sidebar-link-text {
-    color: var(--brand-1);
-    font-weight: 600;
-}
-
-.sidebar-hint {
-    font-size: var(--font-size-sm);
-    color: var(--muted);
-    font-style: italic;
-}
-
-.sidebar-hint a {
-    font-style: normal;
-    font-weight: 600;
-    color: var(--brand-1);
 }
 
 .sidebar-empty {
