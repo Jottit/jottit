@@ -13,16 +13,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 text.textContent = data.config_text;
                 output.classList.remove('setup-hidden');
                 btn.style.display = 'none';
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(data.config_text);
-                    copyBtn.title = 'Copied!';
-                    setTimeout(function() { copyBtn.title = 'Copy to clipboard'; }, 2000);
-                }
             });
     });
     copyBtn.addEventListener('click', function() {
-        navigator.clipboard.writeText(text.textContent);
-        copyBtn.title = 'Copied!';
-        setTimeout(function() { copyBtn.title = 'Copy to clipboard'; }, 2000);
+        navigator.clipboard.writeText(text.textContent).then(function() {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(function() { copyBtn.textContent = 'Copy prompt'; }, 2000);
+        });
     });
 });

@@ -14,9 +14,9 @@
     <p class="settings-mcp-intro">Copy this prompt and paste it into any AI agent. It will set up Jottit access automatically.</p>
 
     <div class="settings-mcp-step">
-        <div class="setup-code setup-hidden" id="mcp-config-output">
-            <pre id="mcp-config-text"></pre>
-            <button class="setup-code-copy" id="mcp-copy-btn" title="Copy to clipboard">&#x2398;</button>
+        <div class="setup-prompt setup-hidden" id="mcp-config-output">
+            <p id="mcp-config-text"></p>
+            <button class="setup-prompt-copy" id="mcp-copy-btn">Copy prompt</button>
         </div>
         <button class="btn btn-solid" id="mcp-config-btn" data-csrf="{{ csrf_token() }}">Generate setup prompt</button>
         <p class="settings-mcp-note">Creates an API token and generates a prompt you can paste into Claude, ChatGPT, Cursor, or any AI agent.</p>

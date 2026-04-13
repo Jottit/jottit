@@ -1623,6 +1623,38 @@
     font-size: var(--font-size-xs);
 }
 
+.setup-prompt {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    text-align: left;
+}
+
+.setup-prompt p {
+    margin: 0 0 var(--space-3) 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+.setup-prompt-copy {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.setup-prompt-copy:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
 .settings-mcp-note {
     font-size: var(--font-size-xs);
     color: var(--muted);
