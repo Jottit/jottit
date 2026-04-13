@@ -258,6 +258,8 @@
     font-size: var(--font-size-sm);
     color: var(--muted);
     margin-top: var(--space-3);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .home-create-link:hover {
