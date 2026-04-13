@@ -9,10 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     input.addEventListener('change', function() {
         if (!input.files || !input.files[0]) return;
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            preview.innerHTML = '<img src="' + e.target.result + '" class="setup-avatar-img">';
-        };
-        reader.readAsDataURL(input.files[0]);
+        var url = URL.createObjectURL(input.files[0]);
+        preview.innerHTML = '<img src="' + url + '" class="setup-avatar-img">';
     });
 });
