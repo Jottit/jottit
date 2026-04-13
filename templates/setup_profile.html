@@ -14,11 +14,11 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="setup-profile-card">
             <div class="setup-avatar-upload">
-                <div class="setup-avatar-preview" id="avatar-preview" onclick="document.getElementById('avatar-file').click()">
+                <div class="setup-avatar-preview" id="avatar-preview">
                     <span class="setup-avatar-initials">{{ username[0] | upper }}</span>
                 </div>
                 <label class="setup-avatar-label" for="avatar-file">Upload photo</label>
-                <input type="file" id="avatar-file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
+                <input type="file" id="avatar-file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" class="sr-only">
             </div>
             <div class="setup-profile-fields">
                 <input class="setup-name-input" type="text" name="name" placeholder="Your name" autofocus>
@@ -31,19 +31,5 @@
         </div>
     </form>
 </div>
-<script>
-(function() {
-    var input = document.getElementById('avatar-file');
-    var preview = document.getElementById('avatar-preview');
-    if (!input || !preview) return;
-    input.addEventListener('change', function() {
-        if (!input.files || !input.files[0]) return;
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            preview.innerHTML = '<img src="' + e.target.result + '" class="setup-avatar-img">';
-        };
-        reader.readAsDataURL(input.files[0]);
-    });
-})();
-</script>
+<script src="/static/setup-profile.js?v={{ asset_v }}" defer></script>
 {% endblock %}
