@@ -73,6 +73,46 @@ def test_agent_setup(client):
     assert "@" in data["welcome"]
 
 
+def test_agent_setup_includes_philosophy_and_workflow(client):
+    _, token = _setup_user_with_token()
+    r = client.get("/api/v1/agent-setup", headers=_auth(token))
+    data = r.get_json()
+    assert "philosophy" in data
+    assert "workflow" in data
+    assert "when_to_create" in data["workflow"]
+    assert "when_to_update" in data["workflow"]
+    assert data["workflow"]["default_visibility"] == "private"
+    assert "conventions" in data
+
+
+def test_agent_setup_conventions_include_agents_content(client):
+    user_id, token = _setup_user_with_token()
+    save_page("AGENTS", "# Agents\n\nBe concise.", "unlisted", user_id)
+    r = client.get("/api/v1/agent-setup", headers=_auth(token))
+    data = r.get_json()
+    agents = data["conventions"]["special_pages"]["AGENTS"]
+    assert agents["content"] == "# Agents\n\nBe concise."
+
+
+def test_agent_setup_conventions_empty_without_agents(client):
+    _, token = _setup_user_with_token()
+    r = client.get("/api/v1/agent-setup", headers=_auth(token))
+    data = r.get_json()
+    assert "AGENTS" in data["conventions"]["special_pages"]
+    assert "content" not in data["conventions"]["special_pages"]["AGENTS"]
+
+
+def test_agent_setup_visibility_states_correct(client):
+    _, token = _setup_user_with_token()
+    r = client.get("/api/v1/agent-setup", headers=_auth(token))
+    data = r.get_json()
+    body = data["endpoints"]["create_page"]["body"]
+    assert "private" in body["visibility"]
+    assert "unlisted" in body["visibility"]
+    assert "listed" in body["visibility"]
+    assert "pinned" in body["visibility"]
+
+
 def test_agent_setup_requires_auth(client):
     r = client.get("/api/v1/agent-setup")
     assert r.status_code == 401

@@ -62,6 +62,19 @@ def test_view_revision_nonexistent(client):
     assert r.status_code == 404
 
 
+# Private page revision is not accessible to non-owners
+def test_view_revision_private_blocked(client):
+    from db import find_or_create_user, set_user_username
+
+    user_id = find_or_create_user("revpriv@test.com")
+    set_user_username(user_id, "revprivuser")
+    save_page("secretrev", "# Secret\n\nHidden content", "private", user_id)
+    with client.session_transaction() as sess:
+        sess.clear()
+    r = client.get("/@revprivuser/secretrev/history/1")
+    assert r.status_code == 404
+
+
 # -- Change descriptions --
 
 

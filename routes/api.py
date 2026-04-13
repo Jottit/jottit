@@ -69,9 +69,37 @@ def agent_setup():
         )
     base_url = request.url_root.rstrip("/")
     username = user.get("username", "")
+    pages = get_pages_for_user(user["id"])
     return jsonify(
         {
             "welcome": f"You are connected to Jottit as @{username}.",
+            "philosophy": (
+                "Jottit turns markdown into beautiful, shareable web pages. "
+                "When someone shares an insight worth keeping, your job is to "
+                "capture it as a well-structured page. Think of yourself as a "
+                "writing partner, not an API client."
+            ),
+            "workflow": {
+                "when_to_create": (
+                    "When the user shares an insight, idea, or piece of thinking "
+                    "that deserves to exist as its own page. Don't create pages "
+                    "for trivial exchanges."
+                ),
+                "when_to_update": (
+                    "When the user refines or adds to an existing topic. Check "
+                    "list_pages first to avoid duplicates."
+                ),
+                "default_visibility": "private",
+                "titling": (
+                    "Every page starts with a markdown H1 (# Title). Use clear, "
+                    "descriptive titles. The title becomes the page's identity."
+                ),
+                "content_style": (
+                    "Write in clean markdown. The output will be rendered with "
+                    "beautiful typography. No need for HTML."
+                ),
+            },
+            "conventions": build_conventions(pages),
             "about": "Jottit is a markdown publishing tool. Pages are written in markdown and get a beautiful URL.",
             "api_base": f"{base_url}/api/v1",
             "your_profile": f"{base_url}/@{username}",

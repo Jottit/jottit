@@ -177,18 +177,21 @@ def setup_mcp_config():
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
-    token, _ = get_or_create_api_token(user_id, "mcp-default")
-    # If token already existed, we can't show the value (not stored).
-    # Create a new one with a unique name instead.
+    token, token_id = get_or_create_api_token(user_id, "mcp-default")
     if token is None:
+        # Token already exists but we can't show the stored value.
+        # Rotate: delete old, create new.
+        delete_api_token(token_id)
         token, _ = create_api_token(user_id, "mcp-default")
 
     base_url = request.url_root.rstrip("/")
     prompt = (
-        f"Connect to my Jottit account. "
+        f"You are connected to my Jottit, a place where ideas become "
+        f"beautiful pages on the web. When I share an insight worth keeping, "
+        f"capture it as a page. "
         f"Fetch {base_url}/api/v1/agent-setup with the header "
-        f"'Authorization: Bearer {token}' to learn how the API works. "
-        f"Then list my pages to confirm it works."
+        f"'Authorization: Bearer {token}' for API details and my conventions. "
+        f"Then list my pages to understand what's already there."
     )
     log_event(user_id, "token_generated")
     return jsonify({"config_text": prompt})

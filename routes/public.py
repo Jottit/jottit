@@ -587,6 +587,7 @@ def view_revision(slug, revision):
     page_meta = find_page(slug)
     if not page_meta:
         abort(404)
+    check_page_visibility(page_meta)
 
     row = get_revision(page_meta["id"], revision)
     if not row:
