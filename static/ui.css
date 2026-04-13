@@ -1039,9 +1039,14 @@
     text-decoration: underline;
 }
 
+.profile-identity {
+    max-width: var(--content-max-width);
+}
+
 .profile-edit {
     margin-left: auto;
     align-self: flex-start;
+    flex-shrink: 0;
 }
 
 .profile-header--avatar .profile-bio,
