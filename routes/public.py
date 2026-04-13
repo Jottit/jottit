@@ -165,7 +165,6 @@ def subdomain_home(user):
             # Owner sees their index regardless of visibility;
             # visitors only see it if listed or unlisted
             if is_owner or p["visibility"] in ("listed", "unlisted", "pinned"):
-                index_page = p
                 index_html = render_markdown(p["content"])
             break
 
