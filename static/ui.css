@@ -1592,6 +1592,18 @@
     font-weight: 600;
 }
 
+.sidebar-hint {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    font-style: italic;
+}
+
+.sidebar-hint a {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--brand-1);
+}
+
 .sidebar-empty {
     font-size: var(--font-size-sm);
     color: var(--muted);
