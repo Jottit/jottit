@@ -589,14 +589,17 @@
 /* Profile header (subdomain pages) */
 
 .profile-header {
-    max-width: calc(var(--content-max-width) + 220px + var(--space-8));
+    max-width: var(--content-max-width);
     margin: 0 auto;
-    padding-left: var(--space-10);
-    padding-right: var(--space-10);
+    padding-left: var(--space-5);
+    padding-right: var(--space-5);
 }
 
-.profile-header:has(+ .layout-single) {
-    max-width: var(--content-max-width);
+@media (min-width: 640px) {
+    .profile-header {
+        padding-left: var(--space-10);
+        padding-right: var(--space-10);
+    }
 }
 
 .profile-avatar {
@@ -981,7 +984,8 @@
     font-weight: 600;
 }
 
-.site-header-settings-link {
+.site-header-settings-link,
+.site-header-link {
     color: var(--muted);
     display: flex;
     align-items: center;
@@ -990,7 +994,8 @@
     text-decoration: none;
 }
 
-.site-header-settings-link:hover {
+.site-header-settings-link:hover,
+.site-header-link:hover {
     color: var(--text);
 }
 

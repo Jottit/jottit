@@ -162,32 +162,9 @@ def test_profile_page_shows_profile_header(client):
     assert b"Prof Page" in r.data
 
 
-# Owner sees sidebar on profile page
-def test_sidebar_visible_to_owner(client):
-    user_id = create_user_with_username(client, "side@example.com", "sideuser", "sp1")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/@sideuser")
-    assert r.status_code == 200
-    assert b"sidebar" in r.data
-    assert b"sp1" in r.data
-
-
-# Visitor sees profile header with identity but no sidebar
+# Visitor sees profile header with identity
 def test_profile_header_visible_to_visitor(client):
     create_user_with_username(client, "side2@example.com", "sideuser2", "sp2")
     r = client.get("/@sideuser2")
     assert r.status_code == 200
     assert b"profile-header" in r.data
-    assert b"sidebar" not in r.data
-    assert b"PAGES" not in r.data
-
-
-# Sidebar shown on individual page views for owner
-def test_sidebar_on_page_view(client):
-    user_id = create_user_with_username(client, "side3@example.com", "sideuser3", "sp3")
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-    r = client.get("/@sideuser3/sp3")
-    assert r.status_code == 200
-    assert b"sidebar" in r.data

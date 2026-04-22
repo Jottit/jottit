@@ -18,7 +18,7 @@
         <div class="profile-info">
             {% if site_title %}
             <h1 class="profile-name">{{ site_title }}</h1>
-            <div class="profile-username">@{{ sidebar_username }}</div>
+            <div class="profile-username">@{{ site_username }}</div>
             {% endif %}
             {% if bio_html %}
             <div class="profile-bio">{{ bio_html | safe }}</div>
@@ -26,14 +26,13 @@
         </div>
     </div>
 </header>
-<div class="{% if is_owner %}layout-with-sidebar{% else %}layout-single{% endif %}">
 <main class="page-main">
     <article class="page">
         {% if pages %}
         {% for page in pages %}
         <div class="page-listing-item">
             <a href="{{ url_prefix }}/{{ page.slug }}" class="page-listing-link">
-                <h2 class="page-listing-title">{% if page.pinned %}<svg class="pin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Pinned"><path d="M12 17v5"/><path d="M9 11l-4 4h14l-4-4V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg> {% endif %}{{ page.title }}</h2>
+                <h2 class="page-listing-title">{% if page.pinned %}<svg class="pin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Pinned"><path d="M12 17v5"/><path d="M9 11l-4 4h14l-4-4V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"/></svg> {% endif %}{{ page.title or 'Untitled page' }}{% if is_owner %}{% if page.is_special %} <span class="pill pill--muted">system</span>{% elif page.visibility == 'unlisted' %} <span class="pill pill--muted">unlisted</span>{% endif %}{% endif %}</h2>
                 <time class="page-listing-date" datetime="{{ page.updated_at | isoformat }}">{{ page.updated_at | relative_time }} · {{ page.reading_time }} min read</time>
                 {% if page.description %}
                 <p class="page-listing-desc">{{ page.description }}</p>
@@ -47,6 +46,4 @@
     </article>
     {% include "_page_footer.html" %}
 </main>
-{% if is_owner %}{% include "_sidebar.html" %}{% endif %}
-</div>
 {% endblock %}

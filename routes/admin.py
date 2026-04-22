@@ -9,7 +9,6 @@ from db import (
     delete_user,
     find_or_create_user,
     get_api_tokens,
-    get_pages_for_user,
     get_user,
     update_user_avatar,
     update_user_email,
@@ -28,7 +27,6 @@ from utils import RESERVED_USERNAMES, valid_email, valid_username
 from routes import (
     bp,
     limiter,
-    BASE_DOMAIN,
     LICENSES,
     profile_url,
     require_user,
@@ -91,33 +89,6 @@ def signin_verify():
 def signout():
     session.pop("user_id", None)
     return redirect("/")
-
-
-@bp.route("/pages")
-def user_pages():
-    from routes.public import _build_page_item, sidebar_vars, compute_initials
-
-    user_id, user = require_user()
-    if not user:
-        return redirect("/signin")
-    pages = get_pages_for_user(user_id)
-    page_list = [_build_page_item(p) for p in pages]
-    username = user.get("username")
-    site_title = user.get("name") or username
-    return render_template(
-        "pages.html",
-        pages=page_list,
-        site_title=site_title,
-        is_owner=True,
-        avatar_url=user.get("avatar"),
-        owner_initials=compute_initials(user),
-        owner_avatar_url=user.get("avatar"),
-        profile_incomplete=not user.get("avatar") and not user.get("bio"),
-        license_info=LICENSES.get(user.get("license") or ""),
-        profile_url=profile_url(username) if username else None,
-        base_url=request.scheme + "://" + BASE_DOMAIN,
-        **sidebar_vars(user_id, username, is_owner=True),
-    )
 
 
 @bp.route("/settings")

@@ -269,8 +269,8 @@ def test_new_page_without_custom_slug(client):
     assert len(slug) == 6
 
 
-# AGENTS shown in sidebar special section
-def test_agents_shown_in_sidebar(client):
+# AGENTS appears on the owner's profile
+def test_agents_shown_on_owner_profile(client):
     user_id = create_user_with_username(client, "pf@example.com", "pfuser", "pfpage")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
@@ -297,6 +297,6 @@ def test_rename_away_from_agents_md(client):
         sess["user_id"] = user_id
     client.post("/@rauser/rapage/rename", data={"new_slug": "AGENTS"})
     client.post("/@rauser/AGENTS/rename", data={"new_slug": "normal-page"})
-    # Should now appear in profile listing
+    # Should now appear in profile listing (no longer forced unlisted)
     r = client.get("/@rauser")
     assert b"normal-page" in r.data

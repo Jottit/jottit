@@ -121,56 +121,26 @@ def _build_page_item(p):
     }
 
 
-def sidebar_vars(user_id, username, active_slug=None, is_owner=False):
-    all_pages = get_pages_for_user(user_id)
-    pages = [p for p in all_pages if not is_special_slug(p["slug"])]
-    special = [
-        {"slug": p["slug"], "title": get_title(p["content"]) or p["slug"]}
-        for p in all_pages
-        if is_special_slug(p["slug"])
-    ]
-    pinned = []
-    recent = []
-    pinned_slugs = set()
-    for p in pages:
-        title = get_title(p["content"]) if p["content"] else None
-        item = {"slug": p["slug"], "title": title or "Untitled"}
-        if p["visibility"] == "pinned":
-            pinned.append(item)
-            pinned_slugs.add(p["slug"])
-    for p in pages:
-        title = get_title(p["content"]) if p["content"] else None
-        recent.append({"slug": p["slug"], "title": title or "Untitled"})
-        if len(recent) >= 5:
-            break
-    return {
-        "sidebar_pinned": pinned,
-        "sidebar_recent": recent,
-        "sidebar_special": special,
-        "sidebar_total": len(pages),
-        "sidebar_active_slug": active_slug,
-        "sidebar_username": username,
-    }
-
-
 def subdomain_home(user):
+    is_owner = session.get("user_id") == user["id"]
     pages = get_pages_for_user(user["id"])
     pinned = []
-    listed = []
+    rest = []
     for p in pages:
-        if is_special_slug(p["slug"]):
-            continue
-        if p["visibility"] not in ("listed", "pinned"):
-            continue
+        if not is_owner:
+            if is_special_slug(p["slug"]) or p["visibility"] not in (
+                "listed",
+                "pinned",
+            ):
+                continue
         item = _build_page_item(p)
         if p["visibility"] == "pinned":
             pinned.append(item)
         else:
-            listed.append(item)
-    page_list = pinned + listed
+            rest.append(item)
+    page_list = pinned + rest
 
     site_title = user.get("name") or user.get("username")
-    is_owner = session.get("user_id") == user["id"]
     owner_initials = None
     owner_avatar_url = None
     profile_incomplete = False
@@ -196,7 +166,6 @@ def subdomain_home(user):
         license_info=LICENSES.get(user.get("license") or ""),
         profile_url=profile_url(user["username"]) if user.get("username") else None,
         base_url=f"{request.scheme}://{BASE_DOMAIN}",
-        **sidebar_vars(user["id"], user.get("username", ""), is_owner=is_owner),
     )
 
 
@@ -495,16 +464,6 @@ def view_page(slug):
         reading_time=reading_time(row["content"]),
         ai_assisted=row.get("ai_assisted", False),
         page_source=row.get("source", "web"),
-        **(
-            sidebar_vars(
-                page_meta["user_id"],
-                (subdomain_user or g.current_user or {}).get("username", ""),
-                active_slug=slug,
-                is_owner=True,
-            )
-            if is_owner
-            else {}
-        ),
     )
     response = current_app.make_response(resp)
     if not is_owner and not show_actions and row["visibility"] != "private":

@@ -1,7 +1,6 @@
 import json
 
 from db import (
-    claim_page,
     create_verification_code,
     find_or_create_user,
     get_page_meta,
@@ -296,35 +295,6 @@ def test_check_username_empty(client):
     r = client.get("/api/check-username?username=")
     data = json.loads(r.data)
     assert data["available"] is False
-
-
-# -- /pages page --
-
-
-# Pages page lists all of the signed-in user's pages
-def test_pages_page_lists_all(client):
-    user_id = find_or_create_user("pageslist@example.com")
-    for i in range(5):
-        slug = f"pl{i}"
-        save_page(slug, f"# Page {i}\n\nContent", False)
-        page_meta = get_page_meta(slug)
-        claim_page(page_meta["id"], user_id)
-
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
-
-    r = client.get("/pages")
-    assert r.status_code == 200
-    body = r.data.decode()
-    for i in range(5):
-        assert f"pl{i}" in body
-
-
-# Pages page redirects to sign-in when logged out
-def test_pages_page_requires_signin(client):
-    r = client.get("/pages")
-    assert r.status_code == 302
-    assert "/signin" in r.headers["Location"]
 
 
 # -- Delete account --

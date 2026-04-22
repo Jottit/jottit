@@ -20,10 +20,6 @@
 </a>
 {% endif %}
 <main class="page-main">
-    {% if is_owner %}
-    <div class="layout-with-sidebar">
-    <div class="page-content">
-    {% endif %}
     <article class="page h-entry">
         {% if content_title %}<div class="e-content-title">{{ content_title | safe }}</div>{% endif %}
         {% if site_title %}
@@ -64,11 +60,6 @@
     </div>
     {% endif %}
     {% include "_page_footer.html" %}
-    {% if is_owner %}
-    </div>
-    {% include "_sidebar.html" %}
-    </div>
-    <script src="/static/listing.js?v={{ asset_v }}"></script>
-    {% endif %}
+    {% if is_owner %}<script src="/static/listing.js?v={{ asset_v }}"></script>{% endif %}
 </main>
 {% endblock %}

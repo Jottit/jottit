@@ -2,6 +2,7 @@ from db import (
     claim_page,
     find_or_create_user,
     get_page_meta,
+    get_user,
     save_page,
     set_user_username,
 )
@@ -269,19 +270,13 @@ def test_homepage_logged_out_shows_landing(client):
     assert "Create a page" in body
 
 
-# /pages requires sign-in
-def test_pages_requires_signin(client):
-    r = client.get("/pages")
-    assert r.status_code == 302
-    assert "/signin" in r.headers["Location"]
-
-
-# /pages shows all pages for signed-in user
-def test_pages_shows_all_pages(client):
+# Owner profile shows all pages including unlisted
+def test_owner_profile_shows_all_pages(client):
     user_id = _setup_user_with_pages(client)
+    user = get_user(user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.get("/pages")
+    r = client.get(f"/@{user['username']}")
     assert r.status_code == 200
     assert b"Public One" in r.data
     assert b"Pinned Post" in r.data
