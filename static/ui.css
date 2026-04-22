@@ -825,6 +825,7 @@
 
 .site-header {
     border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-8);
 }
 
 .site-header-inner {
