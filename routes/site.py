@@ -53,7 +53,6 @@ from routes import (
     bp,
     limiter,
     VISIBILITY_OPTIONS,
-    _set_profile_user,
     base_url,
     can_edit,
     find_page,
@@ -77,39 +76,6 @@ def check_username_route():
     if not check_username_available(username):
         return {"available": False, "error": "That username is already taken."}
     return {"available": True}
-
-
-# --- @username routes for site actions ---
-
-
-@bp.route("/@<username>/new", methods=["GET", "POST"])
-def profile_new_page(username):
-    _set_profile_user(username)
-    return new_page()
-
-
-@bp.route("/@<username>/<slug>/edit", methods=["GET", "POST"])
-def profile_edit_page(username, slug):
-    _set_profile_user(username)
-    return edit_page(slug)
-
-
-@bp.route("/@<username>/<slug>/delete", methods=["GET", "POST"])
-def profile_delete_page(username, slug):
-    _set_profile_user(username)
-    return delete_page_route(slug)
-
-
-@bp.route("/@<username>/<slug>/visibility", methods=["POST"])
-def profile_update_visibility(username, slug):
-    _set_profile_user(username)
-    return update_visibility(slug)
-
-
-@bp.route("/@<username>/<slug>/export")
-def profile_export_page(username, slug):
-    _set_profile_user(username)
-    return export_page_route(slug)
 
 
 @bp.route("/new", methods=["GET", "POST"])
@@ -302,13 +268,9 @@ def edit_page(slug):
     return resp
 
 
-@bp.route("/@<username>/<slug>/rename", methods=["POST"])
 @bp.route("/<slug>/rename", methods=["POST"])
-def rename_page_route(slug, username=None):
+def rename_page_route(slug):
     subdomain_user = g.subdomain_user
-    if username:
-        _set_profile_user(username)
-        subdomain_user = g.subdomain_user
 
     effective_user_id = (
         subdomain_user["id"] if subdomain_user else session.get("user_id")
@@ -437,7 +399,7 @@ def _finish_claim(slug, page_meta, user_id, username):
     session.pop("claim_email", None)
     session.pop("claim_verified", None)
     session.pop("claim_name", None)
-    return redirect(f"/@{username}")
+    return redirect(profile_url(username))
 
 
 @bp.route("/<slug>/claim/setup", methods=["GET", "POST"])

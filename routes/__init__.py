@@ -67,16 +67,7 @@ def base_url(path=""):
 
 
 def profile_url(username, path=""):
-    return f"/@{username}{path}"
-
-
-def _set_profile_user(username):
-    user = get_user_by_username(username)
-    if not user:
-        abort(404)
-    g.subdomain_user = user
-    g.url_prefix = f"/@{username}"
-    return user
+    return f"{request.scheme}://{username}.{BASE_DOMAIN}{path}"
 
 
 def find_page(slug):
@@ -158,11 +149,12 @@ def resolve_subdomain():
     if subdomain == "www":
         return redirect(f"{request.scheme}://{BASE_DOMAIN}{request.full_path}", 301)
     if subdomain:
-        path = request.full_path.rstrip("?")
-        if path == "/":
-            path = ""
-        return redirect(f"{request.scheme}://{BASE_DOMAIN}/@{subdomain}{path}", 301)
-    g.subdomain_user = None
+        user = get_user_by_username(subdomain)
+        if not user:
+            abort(404)
+        g.subdomain_user = user
+    else:
+        g.subdomain_user = None
     g.url_prefix = ""
 
 

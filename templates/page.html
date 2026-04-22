@@ -25,10 +25,10 @@
         {% if site_title %}
         <header class="page-byline h-card">
             {% if avatar_url %}
-            <a href="{{ url_prefix }}"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="page-byline-avatar u-photo"></a>
+            <a href="/"><img src="{{ avatar_url }}" alt="{{ site_title }}" class="page-byline-avatar u-photo"></a>
             {% endif %}
             <div class="page-byline-body">
-                <a class="page-byline-name p-name u-url" href="{{ url_prefix }}">{{ site_title }}</a>
+                <a class="page-byline-name p-name u-url" href="/">{{ site_title }}</a>
                 {% if updated_at %}<time class="page-byline-meta dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>{% endif %}
             </div>
         </header>

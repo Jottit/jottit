@@ -76,7 +76,7 @@ def test_settings_username_page(client):
     r = client.get("/settings/username")
     assert r.status_code == 200
     assert b"Username" in r.data
-    assert b"jottit.org/@" in r.data
+    assert b".jottit.org" in r.data
 
 
 # Saving username

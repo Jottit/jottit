@@ -5,7 +5,7 @@ from db import (
     rename_page,
     save_page,
 )
-from conftest import create_user_with_username
+from conftest import create_user_with_username, sd
 
 
 # Rename endpoint returns the new slug
@@ -13,7 +13,9 @@ def test_rename_returns_new_slug(client):
     user_id = create_user_with_username(client, "rn@example.com", "rnuser", "oldname")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@rnuser/oldname/rename", data={"new_slug": "newname"})
+    r = client.post(
+        "/oldname/rename", data={"new_slug": "newname"}, base_url=sd("rnuser")
+    )
     assert r.status_code == 200
     data = r.get_json()
     assert data["ok"] is True
@@ -25,8 +27,8 @@ def test_old_slug_redirects_after_rename(client):
     user_id = create_user_with_username(client, "rd@example.com", "rduser", "before")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@rduser/before/rename", data={"new_slug": "after"})
-    r = client.get("/@rduser/before")
+    client.post("/before/rename", data={"new_slug": "after"}, base_url=sd("rduser"))
+    r = client.get("/before", base_url=sd("rduser"))
     assert r.status_code == 301
     assert "/after" in r.headers["Location"]
 
@@ -36,11 +38,11 @@ def test_multiple_renames_all_redirect(client):
     user_id = create_user_with_username(client, "mr@example.com", "mruser", "first")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@mruser/first/rename", data={"new_slug": "second"})
-    client.post("/@mruser/second/rename", data={"new_slug": "third"})
-    r1 = client.get("/@mruser/first")
+    client.post("/first/rename", data={"new_slug": "second"}, base_url=sd("mruser"))
+    client.post("/second/rename", data={"new_slug": "third"}, base_url=sd("mruser"))
+    r1 = client.get("/first", base_url=sd("mruser"))
     assert r1.status_code == 301
-    r2 = client.get("/@mruser/second")
+    r2 = client.get("/second", base_url=sd("mruser"))
     assert r2.status_code == 301
     assert "/third" in r2.headers["Location"]
 
@@ -50,7 +52,9 @@ def test_rename_rejects_dots(client):
     user_id = create_user_with_username(client, "dt@example.com", "dtuser", "dottest")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@dtuser/dottest/rename", data={"new_slug": "bad.slug"})
+    r = client.post(
+        "/dottest/rename", data={"new_slug": "bad.slug"}, base_url=sd("dtuser")
+    )
     assert r.status_code == 400
     assert r.get_json()["error"]
 
@@ -71,7 +75,9 @@ def test_rename_rejects_taken(client):
     save_page("taken2", "# Other\n\nPage", "listed", user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@tkuser/taken1/rename", data={"new_slug": "taken2"})
+    r = client.post(
+        "/taken1/rename", data={"new_slug": "taken2"}, base_url=sd("tkuser")
+    )
     assert r.status_code == 400
     assert "taken" in r.get_json()["error"].lower()
 
@@ -79,7 +85,9 @@ def test_rename_rejects_taken(client):
 # Unauthenticated users cannot rename owned pages
 def test_rename_requires_auth(client):
     create_user_with_username(client, "au@example.com", "auuser", "authtest")
-    r = client.post("/@auuser/authtest/rename", data={"new_slug": "hacked"})
+    r = client.post(
+        "/authtest/rename", data={"new_slug": "hacked"}, base_url=sd("auuser")
+    )
     assert r.status_code == 403
 
 
@@ -88,7 +96,7 @@ def test_rename_rejects_empty(client):
     user_id = create_user_with_username(client, "em@example.com", "emuser", "emtest")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@emuser/emtest/rename", data={"new_slug": ""})
+    r = client.post("/emtest/rename", data={"new_slug": ""}, base_url=sd("emuser"))
     assert r.status_code == 400
 
 
@@ -97,7 +105,9 @@ def test_rename_same_slug_noop(client):
     user_id = create_user_with_username(client, "no@example.com", "nouser", "nochange")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@nouser/nochange/rename", data={"new_slug": "nochange"})
+    r = client.post(
+        "/nochange/rename", data={"new_slug": "nochange"}, base_url=sd("nouser")
+    )
     assert r.status_code == 200
     assert r.get_json()["ok"] is True
 
@@ -116,12 +126,15 @@ def test_rename_then_publish_keeps_new_slug(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     # Rename via the chip
-    r = client.post("/@rpuser/oldslug/rename", data={"new_slug": "newslug"})
+    r = client.post(
+        "/oldslug/rename", data={"new_slug": "newslug"}, base_url=sd("rpuser")
+    )
     assert r.get_json()["ok"] is True
     # Publish via the edit form (what the browser does after rename)
     r = client.post(
-        "/@rpuser/newslug/edit",
+        "/newslug/edit",
         data={"title": "Updated Title", "content": "Updated body"},
+        base_url=sd("rpuser"),
     )
     assert r.status_code == 302
     assert "/newslug" in r.headers["Location"]
@@ -135,10 +148,11 @@ def test_rename_to_short_slug_not_overridden_by_auto_rename(client):
     user_id = create_user_with_username(client, "ar@example.com", "aruser", "artest")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@aruser/artest/rename", data={"new_slug": "mypost"})
+    client.post("/artest/rename", data={"new_slug": "mypost"}, base_url=sd("aruser"))
     r = client.post(
-        "/@aruser/mypost/edit",
+        "/mypost/edit",
         data={"title": "A Long Title", "content": "Body"},
+        base_url=sd("aruser"),
     )
     assert r.status_code == 302
     # Should stay at "mypost", NOT auto-rename to "a-long-title"
@@ -151,12 +165,13 @@ def test_root_domain_old_slug_redirects_owned_page(client):
     user_id = create_user_with_username(client, "rd2@example.com", "rd2user", "first")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@rd2user/first/rename", data={"new_slug": "second"})
-    client.post("/@rd2user/second/rename", data={"new_slug": "third"})
+    client.post("/first/rename", data={"new_slug": "second"}, base_url=sd("rd2user"))
+    client.post("/second/rename", data={"new_slug": "third"}, base_url=sd("rd2user"))
     # Access intermediate slug on root domain
     r = client.get("/second")
     assert r.status_code == 301
-    assert "/@rd2user/third" in r.headers["Location"]
+    assert "rd2user.jottit.localhost" in r.headers["Location"]
+    assert "/third" in r.headers["Location"]
 
 
 # Slug reuse: redirect resolves to the most recent page
@@ -165,15 +180,15 @@ def test_slug_reuse_redirect_resolves_to_latest(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     # Page A: alpha -> beta -> gamma
-    client.post("/@suuser/alpha/rename", data={"new_slug": "beta"})
-    client.post("/@suuser/beta/rename", data={"new_slug": "gamma"})
+    client.post("/alpha/rename", data={"new_slug": "beta"}, base_url=sd("suuser"))
+    client.post("/beta/rename", data={"new_slug": "gamma"}, base_url=sd("suuser"))
     # Page B takes "beta" and renames to "delta"
     save_page("beta", "# Page B\n\nContent", "listed", user_id)
     page_b = get_page_meta("beta", user_id)
     rename_page(page_b["id"], "delta")
     # Lookup for "beta" should resolve to "delta" (page B), not "gamma" (page A)
     assert find_slug_redirect("beta", user_id) == "delta"
-    r = client.get("/@suuser/beta")
+    r = client.get("/beta", base_url=sd("suuser"))
     assert r.status_code == 301
     assert "/delta" in r.headers["Location"]
 
@@ -195,14 +210,14 @@ def test_ambiguous_old_slug_returns_404(client):
     user_a = create_user_with_username(client, "aa@example.com", "auser", "astart")
     with client.session_transaction() as sess:
         sess["user_id"] = user_a
-    client.post("/@auser/astart/rename", data={"new_slug": "shared"})
-    client.post("/@auser/shared/rename", data={"new_slug": "a-final"})
+    client.post("/astart/rename", data={"new_slug": "shared"}, base_url=sd("auser"))
+    client.post("/shared/rename", data={"new_slug": "a-final"}, base_url=sd("auser"))
     # User B: bstart -> shared -> b-final
     user_b = create_user_with_username(client, "bb@example.com", "buser", "bstart")
     with client.session_transaction() as sess:
         sess["user_id"] = user_b
-    client.post("/@buser/bstart/rename", data={"new_slug": "shared"})
-    client.post("/@buser/shared/rename", data={"new_slug": "b-final"})
+    client.post("/bstart/rename", data={"new_slug": "shared"}, base_url=sd("buser"))
+    client.post("/shared/rename", data={"new_slug": "b-final"}, base_url=sd("buser"))
     # Root-domain /shared is ambiguous — two different owners had it
     r = client.get("/shared")
     assert r.status_code == 404
@@ -213,7 +228,9 @@ def test_rename_to_agents_md(client):
     user_id = create_user_with_username(client, "ag@example.com", "aguser", "agtest")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@aguser/agtest/rename", data={"new_slug": "AGENTS"})
+    r = client.post(
+        "/agtest/rename", data={"new_slug": "AGENTS"}, base_url=sd("aguser")
+    )
     assert r.status_code == 200
     data = r.get_json()
     assert data["ok"] is True
@@ -227,8 +244,8 @@ def test_agents_md_viewable_at_canonical_url(client):
     user_id = create_user_with_username(client, "av@example.com", "avuser", "avtest")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@avuser/avtest/rename", data={"new_slug": "AGENTS"})
-    r = client.get("/@avuser/AGENTS")
+    client.post("/avtest/rename", data={"new_slug": "AGENTS"}, base_url=sd("avuser"))
+    r = client.get("/AGENTS", base_url=sd("avuser"))
     assert r.status_code == 200
     assert b"Test" in r.data
 
@@ -236,7 +253,7 @@ def test_agents_md_viewable_at_canonical_url(client):
 # Normal .md representation still works for ordinary slugs
 def test_normal_md_representation_still_works(client):
     create_user_with_username(client, "md@example.com", "mduser", "mypage")
-    r = client.get("/@mduser/mypage.md")
+    r = client.get("/mypage.md", base_url=sd("mduser"))
     assert r.status_code == 200
     assert r.content_type.startswith("text/markdown")
 
@@ -244,7 +261,7 @@ def test_normal_md_representation_still_works(client):
 # Normal .txt representation still works for ordinary slugs
 def test_normal_txt_representation_still_works(client):
     create_user_with_username(client, "tx@example.com", "txuser", "txpage")
-    r = client.get("/@txuser/txpage.txt")
+    r = client.get("/txpage.txt", base_url=sd("txuser"))
     assert r.status_code == 200
     assert r.content_type.startswith("text/plain")
 
@@ -274,8 +291,8 @@ def test_agents_shown_on_owner_profile(client):
     user_id = create_user_with_username(client, "pf@example.com", "pfuser", "pfpage")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@pfuser/pfpage/rename", data={"new_slug": "AGENTS"})
-    r = client.get("/@pfuser")
+    client.post("/pfpage/rename", data={"new_slug": "AGENTS"}, base_url=sd("pfuser"))
+    r = client.get("/", base_url=sd("pfuser"))
     assert r.status_code == 200
     assert b"AGENTS" in r.data
 
@@ -285,7 +302,7 @@ def test_agents_md_forced_unlisted(client):
     user_id = create_user_with_username(client, "ul@example.com", "uluser", "ulpage")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@uluser/ulpage/rename", data={"new_slug": "AGENTS"})
+    client.post("/ulpage/rename", data={"new_slug": "AGENTS"}, base_url=sd("uluser"))
     page = get_page_meta("AGENTS", user_id)
     assert page["visibility"] == "unlisted"
 
@@ -295,8 +312,10 @@ def test_rename_away_from_agents_md(client):
     user_id = create_user_with_username(client, "ra@example.com", "rauser", "rapage")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@rauser/rapage/rename", data={"new_slug": "AGENTS"})
-    client.post("/@rauser/AGENTS/rename", data={"new_slug": "normal-page"})
+    client.post("/rapage/rename", data={"new_slug": "AGENTS"}, base_url=sd("rauser"))
+    client.post(
+        "/AGENTS/rename", data={"new_slug": "normal-page"}, base_url=sd("rauser")
+    )
     # Should now appear in profile listing (no longer forced unlisted)
-    r = client.get("/@rauser")
+    r = client.get("/", base_url=sd("rauser"))
     assert b"normal-page" in r.data

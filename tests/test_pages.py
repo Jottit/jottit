@@ -1,3 +1,4 @@
+from conftest import sd
 from db import (
     claim_page,
     find_or_create_user,
@@ -253,7 +254,7 @@ def _setup_user_with_pages(client):
 # Public visitor sees no tabs on profile, only listed and pinned
 def test_public_profile_shows_no_tabs(client):
     _setup_user_with_pages(client)
-    r = client.get("/@tabuser")
+    r = client.get("/", base_url=sd("tabuser"))
     body = r.data.decode()
     assert "tab--active" not in body
     assert "Public One" in body
@@ -276,7 +277,7 @@ def test_owner_profile_shows_all_pages(client):
     user = get_user(user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.get(f"/@{user['username']}")
+    r = client.get("/", base_url=sd(user["username"]))
     assert r.status_code == 200
     assert b"Public One" in r.data
     assert b"Pinned Post" in r.data

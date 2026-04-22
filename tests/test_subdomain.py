@@ -1,4 +1,4 @@
-from conftest import create_user_with_username
+from conftest import create_user_with_username, sd
 from db import (
     claim_page,
     create_verification_code,
@@ -13,12 +13,13 @@ from db import (
 # -- Profile routing --
 
 
-# Visiting a claimed page's slug on the main domain redirects to /@username
+# Visiting a claimed page's slug on the main domain redirects to the subdomain
 def test_slug_redirects_to_profile(client):
     create_user_with_username(client, "sd@example.com", "mysite", "sd1")
     r = client.get("/sd1")
     assert r.status_code == 302
-    assert "/@mysite/sd1" in r.headers["Location"]
+    assert "mysite.jottit.localhost" in r.headers["Location"]
+    assert "/sd1" in r.headers["Location"]
 
 
 # Profile homepage lists the user's pages
@@ -30,7 +31,7 @@ def test_profile_home_lists_pages(client):
 
     update_user_settings(user_id, "Sub User", "subuser")
 
-    r = client.get("/@subuser")
+    r = client.get("/", base_url=sd("subuser"))
     assert r.status_code == 200
     assert b"Sub User" in r.data
     assert b"subp1" in r.data
@@ -40,7 +41,7 @@ def test_profile_home_lists_pages(client):
 # Profile serves the correct page content
 def test_profile_serves_page(client):
     create_user_with_username(client, "sdp@example.com", "sdpuser", "sdpage")
-    r = client.get("/@sdpuser/sdpage")
+    r = client.get("/sdpage", base_url=sd("sdpuser"))
     assert r.status_code == 200
     assert b"Content" in r.data
 
@@ -49,7 +50,7 @@ def test_profile_serves_page(client):
 def test_profile_page_shows_site_title(client):
     user_id = create_user_with_username(client, "sdt@example.com", "sdtuser", "sdtpage")
     update_user_settings(user_id, "My Site Title", "sdtuser")
-    r = client.get("/@sdtuser/sdtpage")
+    r = client.get("/sdtpage", base_url=sd("sdtuser"))
     assert r.status_code == 200
     body = r.data.decode()
     assert "My Site Title" in body
@@ -61,7 +62,7 @@ def test_profile_page_shows_site_title(client):
 def test_profile_404_for_other_users_page(client):
     create_user_with_username(client, "sdp1@example.com", "user1", "page1")
     create_user_with_username(client, "sdp2@example.com", "user2", "page2")
-    r = client.get("/@user1/page2")
+    r = client.get("/page2", base_url=sd("user1"))
     assert r.status_code == 404
 
 
@@ -79,7 +80,7 @@ def test_old_slug_redirects_after_claim_rename(client):
     r = client.get("/xk9f")
     assert r.status_code == 301
     assert "/my-great-post" in r.headers["Location"]
-    assert "/@rediruser" in r.headers["Location"]
+    assert "rediruser.jottit.localhost" in r.headers["Location"]
 
 
 # Old slug redirects work on profiles too
@@ -91,7 +92,7 @@ def test_old_slug_redirects_on_profile(client):
     page = get_page_meta("old-slug", user_id)
 
     rename_page(page["id"], "new-title")
-    r = client.get("/@subredir/old-slug")
+    r = client.get("/old-slug", base_url=sd("subredir"))
     assert r.status_code == 301
     assert "/new-title" in r.headers["Location"]
 
@@ -128,7 +129,9 @@ def test_update_visibility(client):
     user_id = create_user_with_username(client, "list2@example.com", "listuser2", "lp2")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.post("/@listuser2/lp2/visibility", data={"visibility": "unlisted"})
+    r = client.post(
+        "/lp2/visibility", data={"visibility": "unlisted"}, base_url=sd("listuser2")
+    )
     assert r.status_code == 302
     page_meta = get_page_meta("lp2", user_id)
     assert page_meta["visibility"] == "unlisted"
@@ -139,10 +142,12 @@ def test_unlisted_page_hidden_from_profile(client):
     user_id = create_user_with_username(client, "list3@example.com", "listuser3", "lp3")
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@listuser3/lp3/visibility", data={"visibility": "unlisted"})
+    client.post(
+        "/lp3/visibility", data={"visibility": "unlisted"}, base_url=sd("listuser3")
+    )
     with client.session_transaction() as sess:
         sess.clear()
-    r = client.get("/@listuser3")
+    r = client.get("/", base_url=sd("listuser3"))
     assert b"lp3" not in r.data
 
 
@@ -158,8 +163,10 @@ def test_pinned_page_shown_first(client):
         sess["user_id"] = user_id
     # lp4b is newer, so it would normally appear first
     # Pin lp4a so it appears before lp4b
-    client.post("/@listuser4/lp4a/visibility", data={"visibility": "pinned"})
-    r = client.get("/@listuser4")
+    client.post(
+        "/lp4a/visibility", data={"visibility": "pinned"}, base_url=sd("listuser4")
+    )
+    r = client.get("/", base_url=sd("listuser4"))
     body = r.data.decode()
     assert "lp4a" in body
     assert "lp4b" in body
@@ -176,8 +183,10 @@ def test_pinned_page_shows_pin_icon(client):
     claim_page(page_meta2["id"], user_id)
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    client.post("/@pinicon/pip1/visibility", data={"visibility": "pinned"})
-    r = client.get("/@pinicon")
+    client.post(
+        "/pip1/visibility", data={"visibility": "pinned"}, base_url=sd("pinicon")
+    )
+    r = client.get("/", base_url=sd("pinicon"))
     body = r.data.decode()
     assert 'class="pin-icon"' in body
     assert body.count('class="pin-icon"') == 1
@@ -186,7 +195,9 @@ def test_pinned_page_shows_pin_icon(client):
 # Non-owner gets 403 when trying to change visibility
 def test_non_owner_cannot_update_visibility(client):
     create_user_with_username(client, "list5@example.com", "listuser5", "lp5")
-    r = client.post("/@listuser5/lp5/visibility", data={"visibility": "unlisted"})
+    r = client.post(
+        "/lp5/visibility", data={"visibility": "unlisted"}, base_url=sd("listuser5")
+    )
     assert r.status_code == 403
 
 
@@ -205,10 +216,10 @@ def test_two_users_same_slug(client):
     assert meta1["id"] != meta2["id"]
 
     # Each profile shows the correct page
-    r = client.get("/@alice/about")
+    r = client.get("/about", base_url=sd("alice"))
     assert r.status_code == 200
 
-    r = client.get("/@bob/about")
+    r = client.get("/about", base_url=sd("bob"))
     assert r.status_code == 200
 
 
@@ -218,11 +229,12 @@ def test_profile_new_page_gets_nice_slug(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     r = client.post(
-        "/@niceslug/randomslug/edit",
+        "/randomslug/edit",
         data={"title": "About", "content": "My about page"},
+        base_url=sd("niceslug"),
     )
     assert r.status_code == 302
-    assert r.headers["Location"] == "/@niceslug/about"
+    assert r.headers["Location"].endswith("/about")
     meta = get_page_meta("about", user_id)
     assert meta is not None
 
@@ -233,11 +245,12 @@ def test_profile_new_page_gets_about_slug(client):
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
     r = client.post(
-        "/@aboutuser/new",
+        "/new",
         data={"title": "About", "content": "My about page"},
+        base_url=sd("aboutuser"),
     )
     assert r.status_code == 302
-    assert r.headers["Location"] == "/@aboutuser/about"
+    assert r.headers["Location"].endswith("/about")
     meta = get_page_meta("about", user_id)
     assert meta is not None
 
@@ -249,24 +262,25 @@ def test_owner_visiting_nonexistent_page_redirects_to_edit(client):
     )
     with client.session_transaction() as sess:
         sess["user_id"] = user_id
-    r = client.get("/@owner404/newpage")
+    r = client.get("/newpage", base_url=sd("owner404"))
     assert r.status_code == 302
-    assert r.headers["Location"] == "/@owner404/newpage/edit"
+    assert r.headers["Location"].endswith("/newpage/edit")
 
 
 # Non-owner visiting a nonexistent slug on a profile gets 404
 def test_nonowner_visiting_nonexistent_page_gets_404(client):
     create_user_with_username(client, "vis404@example.com", "vis404", "exists2")
-    r = client.get("/@vis404/nope")
+    r = client.get("/nope", base_url=sd("vis404"))
     assert r.status_code == 404
 
 
-# Visiting a claimed page's slug on the main domain redirects to /@owner
+# Visiting a claimed page's slug on the main domain redirects to subdomain
 def test_main_domain_slug_redirects_to_owner(client):
     create_user_with_username(client, "redir@example.com", "redir", "mypage")
     r = client.get("/mypage")
     assert r.status_code == 302
-    assert "/@redir/mypage" in r.headers["Location"]
+    assert "redir.jottit.localhost" in r.headers["Location"]
+    assert "/mypage" in r.headers["Location"]
 
 
 # License appears in the page footer on profiles
@@ -274,15 +288,14 @@ def test_license_shows_in_page_footer(client):
     user_id = create_user_with_username(client, "licfoot@example.com", "licfoot", "lf1")
     update_user_settings(user_id, "Lic Footer", "licfoot", license="cc-by-sa-4.0")
 
-    r = client.get("/@licfoot/lf1")
+    r = client.get("/lf1", base_url=sd("licfoot"))
     assert r.status_code == 200
     assert b"CC BY-SA 4.0" in r.data
     assert b"creativecommons.org" in r.data
 
 
-# Old subdomain URLs redirect to /@username equivalents
-def test_subdomain_redirects_to_profile(client):
+# Requesting a page on a subdomain now serves 200 directly (no redirect to /@username)
+def test_subdomain_serves_page_directly(client):
     create_user_with_username(client, "legacy@example.com", "legacyuser", "lp1")
-    r = client.get("/lp1", headers={"Host": "legacyuser.jottit.localhost:8000"})
-    assert r.status_code == 301
-    assert "/@legacyuser" in r.headers["Location"]
+    r = client.get("/lp1", base_url=sd("legacyuser"))
+    assert r.status_code == 200

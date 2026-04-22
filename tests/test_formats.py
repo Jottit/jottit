@@ -1,6 +1,6 @@
 import pytest
 
-from conftest import create_user_with_username
+from conftest import create_user_with_username, sd
 from db import (
     find_or_create_user,
     get_page_meta,
@@ -84,12 +84,12 @@ def test_txt_converts_headings(client):
     assert "<h1" not in body
 
 
-# -- /@<username>/<slug>.md --
+# -- subdomain /{slug}.md --
 
 
 def test_profile_md_returns_raw_markdown(client):
     create_user_with_username(client, "md@example.com", "mduser", "mdpage")
-    r = client.get("/@mduser/mdpage.md")
+    r = client.get("/mdpage.md", base_url=sd("mduser"))
     assert r.status_code == 200
     assert r.content_type == "text/markdown; charset=utf-8"
     assert b"# Test" in r.data
@@ -97,16 +97,16 @@ def test_profile_md_returns_raw_markdown(client):
 
 def test_profile_md_nonexistent_returns_404(client):
     create_user_with_username(client, "md2@example.com", "md2user", "md2page")
-    r = client.get("/@md2user/nope.md")
+    r = client.get("/nope.md", base_url=sd("md2user"))
     assert r.status_code == 404
 
 
-# -- /@<username>/<slug>.txt --
+# -- subdomain /{slug}.txt --
 
 
 def test_profile_txt_returns_plain_text(client):
     create_user_with_username(client, "txt@example.com", "txtuser", "txtpage")
-    r = client.get("/@txtuser/txtpage.txt")
+    r = client.get("/txtpage.txt", base_url=sd("txtuser"))
     assert r.status_code == 200
     assert r.content_type == "text/plain; charset=utf-8"
     assert b"Content" in r.data
@@ -114,7 +114,7 @@ def test_profile_txt_returns_plain_text(client):
 
 def test_profile_txt_nonexistent_returns_404(client):
     create_user_with_username(client, "txt2@example.com", "txt2user", "txt2page")
-    r = client.get("/@txt2user/nope.txt")
+    r = client.get("/nope.txt", base_url=sd("txt2user"))
     assert r.status_code == 404
 
 
@@ -125,14 +125,16 @@ def test_claimed_page_redirects_md_to_profile(client):
     create_user_with_username(client, "rmd@example.com", "rmduser", "rmdpage")
     r = client.get("/rmdpage.md")
     assert r.status_code == 302
-    assert "/@rmduser/rmdpage.md" in r.headers["Location"]
+    assert "rmduser.jottit.localhost" in r.headers["Location"]
+    assert "/rmdpage.md" in r.headers["Location"]
 
 
 def test_claimed_page_redirects_txt_to_profile(client):
     create_user_with_username(client, "rtxt@example.com", "rtxtuser", "rtxtpage")
     r = client.get("/rtxtpage.txt")
     assert r.status_code == 302
-    assert "/@rtxtuser/rtxtpage.txt" in r.headers["Location"]
+    assert "rtxtuser.jottit.localhost" in r.headers["Location"]
+    assert "/rtxtpage.txt" in r.headers["Location"]
 
 
 def test_original_slug_redirect_preserves_md_suffix(client):
@@ -141,7 +143,7 @@ def test_original_slug_redirect_preserves_md_suffix(client):
     )
     page_meta = get_page_meta("oldname", user_id)
     rename_page(page_meta["id"], "newname")
-    r = client.get("/@osluguser/oldname.md")
+    r = client.get("/oldname.md", base_url=sd("osluguser"))
     assert r.status_code == 301
     assert "newname.md" in r.headers["Location"]
 
@@ -152,7 +154,7 @@ def test_original_slug_redirect_preserves_txt_suffix(client):
     )
     page_meta = get_page_meta("oldtxt", user_id)
     rename_page(page_meta["id"], "newtxt")
-    r = client.get("/@oslug2user/oldtxt.txt")
+    r = client.get("/oldtxt.txt", base_url=sd("oslug2user"))
     assert r.status_code == 301
     assert "newtxt.txt" in r.headers["Location"]
 

@@ -49,7 +49,6 @@ from routes import (
     bp,
     BASE_DOMAIN,
     LICENSES,
-    _set_profile_user,
     account_link_vars,
     compute_initials,
     find_page,
@@ -76,6 +75,9 @@ _VISIBILITY_TABS = ("all", "unlisted", "listed", "pinned")
 
 @bp.route("/")
 def home():
+    if g.subdomain_user:
+        return subdomain_home(g.subdomain_user)
+
     if "user_id" not in session:
         return render_template("home.html", **account_link_vars())
 
@@ -169,67 +171,17 @@ def subdomain_home(user):
     )
 
 
-# --- @username routes ---
+# --- Legacy /@username redirects (moved to subdomains 2026-04-22) ---
 
 
-@bp.route("/@<username>")
-def profile_home(username):
-    user = _set_profile_user(username)
-    return subdomain_home(user)
-
-
-@bp.route("/@<username>/<slug>")
-def profile_view_page(username, slug):
-    _set_profile_user(username)
-    return view_page(slug)
-
-
-@bp.route("/@<username>/<slug>.md")
-def profile_view_page_md(username, slug):
-    _set_profile_user(username)
-    return view_page_md(slug)
-
-
-@bp.route("/@<username>/<slug>.txt")
-def profile_view_page_txt(username, slug):
-    _set_profile_user(username)
-    return view_page_txt(slug)
-
-
-@bp.route("/@<username>/<slug>/history")
-def profile_page_history(username, slug):
-    _set_profile_user(username)
-    return page_history(slug)
-
-
-@bp.route("/@<username>/<slug>/history/<int:revision>")
-def profile_view_revision(username, slug, revision):
-    _set_profile_user(username)
-    return view_revision(slug, revision)
-
-
-@bp.route("/@<username>/<slug>/feed.xml")
-def profile_rss_feed(username, slug):
-    _set_profile_user(username)
-    return rss_feed(slug)
-
-
-@bp.route("/@<username>/<slug>/feed.json")
-def profile_json_feed(username, slug):
-    _set_profile_user(username)
-    return json_feed(slug)
-
-
-@bp.route("/@<username>/feed.xml")
-def profile_site_rss_feed(username):
-    _set_profile_user(username)
-    return site_rss_feed()
-
-
-@bp.route("/@<username>/feed.json")
-def profile_site_json_feed(username):
-    _set_profile_user(username)
-    return site_json_feed()
+@bp.route("/@<username>", defaults={"rest": ""})
+@bp.route("/@<username>/<path:rest>")
+def legacy_at_username_redirect(username, rest):
+    path = f"/{rest}" if rest else "/"
+    query = request.query_string.decode()
+    if query:
+        path = f"{path}?{query}"
+    return redirect(profile_url(username, path), 301)
 
 
 @bp.route("/about")
@@ -616,7 +568,7 @@ def sitemap():
     ]
     for page in pages:
         if page["username"]:
-            loc = f"https://{BASE_DOMAIN}/@{page['username']}/{page['slug']}"
+            loc = f"https://{page['username']}.{BASE_DOMAIN}/{page['slug']}"
         else:
             loc = f"https://{BASE_DOMAIN}/{page['slug']}"
         lastmod = page["updated_at"].strftime("%Y-%m-%d")

@@ -1,7 +1,7 @@
 import io
 from unittest.mock import patch
 
-from conftest import create_user_with_username
+from conftest import create_user_with_username, sd
 from db import (
     find_or_create_user,
     get_user,
@@ -142,7 +142,7 @@ def test_profile_home_no_avatar_graceful(client):
     user_id = create_user_with_username(client, "noav@example.com", "noavuser", "na1")
     update_user_settings(user_id, "No Avatar", "noavuser")
 
-    r = client.get("/@noavuser")
+    r = client.get("/", base_url=sd("noavuser"))
     assert r.status_code == 200
     assert b"u-photo" not in r.data
     assert b"No Avatar" in r.data
@@ -156,7 +156,7 @@ def test_profile_page_shows_profile_header(client):
     update_user_settings(user_id, "Prof Page", "profpage", "Writer")
     update_user_avatar(user_id, "/uploads/test/avatar.jpg")
 
-    r = client.get("/@profpage/pp1")
+    r = client.get("/pp1", base_url=sd("profpage"))
     assert r.status_code == 200
     assert b"site-header" in r.data
     assert b"Prof Page" in r.data
@@ -165,6 +165,6 @@ def test_profile_page_shows_profile_header(client):
 # Visitor sees profile header with identity
 def test_profile_header_visible_to_visitor(client):
     create_user_with_username(client, "side2@example.com", "sideuser2", "sp2")
-    r = client.get("/@sideuser2")
+    r = client.get("/", base_url=sd("sideuser2"))
     assert r.status_code == 200
     assert b"profile-header" in r.data

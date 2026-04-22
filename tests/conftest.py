@@ -68,3 +68,8 @@ def create_user_with_username(client, email, username, slug):
     page_meta = get_page_meta(slug)
     claim_page(page_meta["id"], user_id)
     return user_id
+
+
+def sd(username):
+    """Base URL for requests on a user's subdomain (test host)."""
+    return f"http://{username}.jottit.localhost:8000"
