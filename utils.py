@@ -218,6 +218,13 @@ def relative_time(value):
     return f"{years} year{'s' if years != 1 else ''} ago"
 
 
+def reading_time(content):
+    if not content:
+        return 0
+    words = len(content.split())
+    return max(1, round(words / 250))
+
+
 def html_to_text(html):
     """Convert rendered HTML to readable plain text.
 

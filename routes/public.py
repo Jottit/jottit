@@ -41,6 +41,7 @@ from utils import (
     get_title,
     html_to_text,
     is_special_slug,
+    reading_time,
     render_bio,
     render_markdown,
 )
@@ -112,6 +113,7 @@ def _build_page_item(p):
         "slug": p["slug"],
         "title": title or "",
         "description": get_description(p["content"], max_length=350),
+        "reading_time": reading_time(p["content"]),
         "updated_at": p["updated_at"],
         "visibility": p["visibility"],
         "pinned": p["visibility"] == "pinned",
@@ -490,6 +492,7 @@ def view_page(slug):
         license_info=license_info,
         is_special=is_special_slug(slug),
         visibility=page_meta["visibility"],
+        reading_time=reading_time(row["content"]),
         ai_assisted=row.get("ai_assisted", False),
         page_source=row.get("source", "web"),
         **(
