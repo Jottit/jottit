@@ -177,8 +177,7 @@ def save_page(
 def get_page(page_id):
     with get_db() as conn:
         return conn.execute(
-            """SELECT r.content, p.visibility, r.created_at,
-                      p.comments_enabled, p.notify_on_comments
+            """SELECT r.content, p.visibility, r.created_at
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
                WHERE p.id = %s
@@ -191,7 +190,6 @@ def get_page_full(page_id):
     with get_db() as conn:
         return conn.execute(
             """SELECT r.content, p.visibility, r.created_at, r.source, r.ai_assisted,
-                      p.comments_enabled, p.notify_on_comments,
                       (SELECT COUNT(*) FROM revisions r2 WHERE r2.page_id = p.id) AS revision_count
                FROM revisions r
                JOIN pages p ON r.page_id = p.id
@@ -692,87 +690,3 @@ def get_user_by_token_hash(token_hash):
             )
             conn.commit()
         return row
-
-
-# --- Comments ---
-
-
-def create_comment(page_id, user_id, body, ip_hash, parent_id=None):
-    with get_db() as conn:
-        if parent_id is not None:
-            parent = conn.execute(
-                "SELECT id, parent_id FROM comments WHERE id = %s AND page_id = %s",
-                (parent_id, page_id),
-            ).fetchone()
-            if not parent:
-                return None
-            if parent["parent_id"] is not None:
-                return None
-        row = conn.execute(
-            """INSERT INTO comments (page_id, parent_id, user_id, body, ip_hash)
-               VALUES (%s, %s, %s, %s, %s)
-               RETURNING id, created_at""",
-            (page_id, parent_id, user_id, body, ip_hash),
-        ).fetchone()
-        conn.commit()
-        return row
-
-
-def get_comments(page_id, include_hidden=False):
-    with get_db() as conn:
-        hidden_filter = "" if include_hidden else "AND c.is_hidden = FALSE"
-        rows = conn.execute(
-            f"""SELECT c.id, c.parent_id, c.user_id, c.body,
-                       c.is_hidden, c.created_at,
-                       u.name AS author_name, u.username, u.avatar
-                FROM comments c
-                JOIN users u ON c.user_id = u.id
-                WHERE c.page_id = %s {hidden_filter}
-                ORDER BY c.created_at ASC""",
-            (page_id,),
-        ).fetchall()
-        return rows
-
-
-def get_comment(comment_id):
-    with get_db() as conn:
-        return conn.execute(
-            "SELECT id, page_id, parent_id, user_id FROM comments WHERE id = %s",
-            (comment_id,),
-        ).fetchone()
-
-
-def delete_comment(comment_id, user_id):
-    with get_db() as conn:
-        conn.execute(
-            "DELETE FROM comments WHERE id = %s AND user_id = %s",
-            (comment_id, user_id),
-        )
-        conn.commit()
-
-
-def hide_comment(comment_id, page_id):
-    with get_db() as conn:
-        conn.execute(
-            "UPDATE comments SET is_hidden = NOT is_hidden WHERE id = %s AND page_id = %s",
-            (comment_id, page_id),
-        )
-        conn.commit()
-
-
-def count_comments_by_ip(ip_hash):
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT COUNT(*) as cnt FROM comments WHERE ip_hash = %s AND created_at > NOW() - INTERVAL '1 hour'",
-            (ip_hash,),
-        ).fetchone()
-        return row["cnt"]
-
-
-def get_comment_count(page_id):
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT COUNT(*) as cnt FROM comments WHERE page_id = %s AND is_hidden = FALSE",
-            (page_id,),
-        ).fetchone()
-        return row["cnt"]

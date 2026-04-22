@@ -18,7 +18,6 @@ from flask import (
 )
 
 from db import (
-    get_comments,
     get_feed_entries,
     get_feed_entries_for_user,
     get_page,
@@ -402,9 +401,7 @@ def view_page_txt(slug):
 
 
 @bp.route("/<slug>")
-def view_page(
-    slug, comment_errors=None, comment_body="", comment_email="", comment_author_name=""
-):
+def view_page(slug):
     result = _resolve_page(slug)
     if not isinstance(result, tuple):
         return result
@@ -468,27 +465,6 @@ def view_page(
 
     revision_count = get_revision_count(page_meta["id"])
 
-    comments_enabled = row.get("comments_enabled", True)
-    comments = []
-    reply_to = None
-    if comments_enabled:
-        comments = get_comments(page_meta["id"], include_hidden=is_owner)
-        reply_to_param = request.args.get("reply_to")
-        if reply_to_param:
-            try:
-                reply_to = int(reply_to_param)
-            except (ValueError, TypeError):
-                pass
-
-    # Thread comments: top-level first, replies nested under parents
-    threaded = []
-    replies_by_parent = {}
-    for c in comments:
-        if c["parent_id"] is None:
-            threaded.append(c)
-        else:
-            replies_by_parent.setdefault(c["parent_id"], []).append(c)
-
     resp = render_template(
         "page.html",
         content_title=content_title,
@@ -516,14 +492,6 @@ def view_page(
         visibility=page_meta["visibility"],
         ai_assisted=row.get("ai_assisted", False),
         page_source=row.get("source", "web"),
-        comments_enabled=comments_enabled,
-        comments=threaded,
-        replies_by_parent=replies_by_parent,
-        reply_to=reply_to,
-        comment_errors=comment_errors,
-        comment_body=comment_body,
-        comment_email=comment_email,
-        comment_author_name=comment_author_name,
         **(
             sidebar_vars(
                 page_meta["user_id"],

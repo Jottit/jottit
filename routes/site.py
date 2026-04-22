@@ -1,4 +1,3 @@
-import hashlib
 import io
 import re
 import zipfile
@@ -18,21 +17,15 @@ from flask import (
 from db import (
     check_username_available,
     claim_page,
-    count_comments_by_ip,
-    create_comment,
     create_page_secret,
-    create_verification_code,
-    delete_comment,
     delete_page,
     find_or_create_user,
     find_page_owner_for_redirect,
-    get_comment,
     get_export_pages,
     get_export_pages_for_user,
     get_page,
     get_page_meta,
     get_user,
-    hide_comment,
     rename_page,
     save_page,
     set_user_username,
@@ -56,9 +49,7 @@ from utils import (
     valid_slug,
     valid_username,
 )
-from mail import send_comment_notification, send_verification_email
 from routes import (
-    BASE_DOMAIN,
     bp,
     limiter,
     VISIBILITY_OPTIONS,
@@ -617,222 +608,3 @@ def export_all():
         content_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{name}.zip"'},
     )
-
-
-# --- Comments ---
-
-MAX_COMMENT_LENGTH = 2000
-
-
-def _ip_hash():
-    ip = request.remote_addr or "unknown"
-    return hashlib.sha256(ip.encode()).hexdigest()
-
-
-@bp.route("/@<username>/<slug>/comment", methods=["POST"])
-def profile_submit_comment(username, slug):
-    _set_profile_user(username)
-    return submit_comment(slug)
-
-
-@bp.route("/@<username>/<slug>/comment/verify", methods=["POST"])
-def profile_verify_comment(username, slug):
-    _set_profile_user(username)
-    return verify_comment(slug)
-
-
-@bp.route("/@<username>/<slug>/comment/<int:comment_id>/hide", methods=["POST"])
-def profile_toggle_hide_comment(username, slug, comment_id):
-    _set_profile_user(username)
-    return toggle_hide_comment(slug, comment_id)
-
-
-@bp.route("/@<username>/<slug>/comment/<int:comment_id>/delete", methods=["POST"])
-def profile_delete_comment(username, slug, comment_id):
-    _set_profile_user(username)
-    return delete_comment_route(slug, comment_id)
-
-
-@bp.route("/<slug>/comment/<int:comment_id>/delete", methods=["POST"])
-def delete_comment_route(slug, comment_id):
-    page_meta = find_page(slug)
-    if not page_meta:
-        abort(404)
-
-    user_id = session.get("user_id")
-    if not user_id:
-        abort(403)
-
-    comment = get_comment(comment_id)
-    if not comment or comment["page_id"] != page_meta["id"]:
-        abort(404)
-
-    # Author of comment or page owner can delete
-    if comment.get("user_id") != user_id and not can_edit(page_meta):
-        abort(403)
-
-    delete_comment(comment_id, comment["user_id"])
-    return redirect(f"{g.url_prefix}/{slug}#comments")
-
-
-@bp.route("/<slug>/comment", methods=["POST"])
-@limiter.limit("10/minute")
-def submit_comment(slug):
-    page_meta = find_page(slug)
-    if not page_meta:
-        abort(404)
-
-    page = get_page(page_meta["id"])
-    if not page:
-        abort(404)
-    if not page.get("comments_enabled", True):
-        abort(403)
-
-    body = request.form.get("body", "").strip()
-    parent_id = request.form.get("parent_id", "").strip()
-    parent_id = int(parent_id) if parent_id else None
-
-    errors = []
-    if not body:
-        errors.append("Comment cannot be empty.")
-    if len(body) > MAX_COMMENT_LENGTH:
-        errors.append(f"Comment must be {MAX_COMMENT_LENGTH} characters or fewer.")
-
-    ip = _ip_hash()
-    if count_comments_by_ip(ip) >= 5:
-        errors.append("Too many comments. Please try again later.")
-
-    if parent_id is not None:
-        parent = get_comment(parent_id)
-        if not parent or parent["page_id"] != page_meta["id"]:
-            errors.append("Invalid reply target.")
-        elif parent["parent_id"] is not None:
-            errors.append("Cannot reply to a reply.")
-
-    if errors:
-        from routes.public import view_page
-
-        return view_page(slug, comment_errors=errors, comment_body=body)
-
-    # Signed-in users skip email verification
-    user = g.current_user
-    if user:
-        result = create_comment(page_meta["id"], user["id"], body, ip, parent_id)
-        if not result:
-            abort(400)
-
-        if page_meta["user_id"] and page_meta["user_id"] != user["id"]:
-            if page.get("notify_on_comments", True):
-                owner = get_user(page_meta["user_id"])
-                if owner:
-                    page_url = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}/{slug}"
-                    display_name = user.get("name") or user.get("username") or "Someone"
-                    send_comment_notification(
-                        owner["email"], page_url, display_name, body
-                    )
-
-        return redirect(f"{g.url_prefix}/{slug}#comment-{result['id']}")
-
-    return render_template(
-        "comment_verify.html",
-        slug=slug,
-        body=body,
-        parent_id=parent_id or "",
-    )
-
-
-@bp.route("/<slug>/comment/verify", methods=["POST"])
-@limiter.limit("10/minute")
-def verify_comment(slug):
-    page_meta = find_page(slug)
-    if not page_meta:
-        abort(404)
-
-    body = request.form.get("body", "").strip()
-    email = request.form.get("email", "").strip().lower()
-    author_name = request.form.get("author_name", "").strip()
-    parent_id = request.form.get("parent_id", "").strip()
-    parent_id = int(parent_id) if parent_id else None
-    code = request.form.get("code", "").strip()
-    step = request.form.get("step", "email")
-
-    if not body or len(body) > MAX_COMMENT_LENGTH:
-        abort(400)
-
-    if step == "email":
-        if not email or not valid_email(email):
-            return render_template(
-                "comment_verify.html",
-                slug=slug,
-                body=body,
-                email=email,
-                author_name=author_name,
-                parent_id=parent_id or "",
-                error="Please enter a valid email address.",
-            )
-        verification_code = create_verification_code(email, "comment")
-        send_verification_email(email, verification_code)
-        return render_template(
-            "comment_verify.html",
-            slug=slug,
-            body=body,
-            email=email,
-            author_name=author_name,
-            parent_id=parent_id or "",
-            step="code",
-        )
-
-    if not verify_code(email, code, "comment"):
-        return render_template(
-            "comment_verify.html",
-            slug=slug,
-            body=body,
-            email=email,
-            author_name=author_name,
-            parent_id=parent_id or "",
-            step="code",
-            error="Invalid or expired code. Please try again.",
-        )
-
-    # Email verified — sign them in (find or create user)
-    user_id = find_or_create_user(email)
-    if author_name:
-        user = get_user(user_id)
-        if user and not user.get("name"):
-            update_user_settings(user_id, author_name, user.get("username") or "")
-    session["user_id"] = user_id
-
-    ip = _ip_hash()
-    result = create_comment(page_meta["id"], user_id, body, ip, parent_id)
-    if not result:
-        abort(400)
-
-    # Build redirect URL — use @username path if page is claimed
-    redirect_url = f"{g.url_prefix}/{slug}#comment-{result['id']}"
-    if not g.url_prefix and page_meta["user_id"]:
-        owner = get_user(page_meta["user_id"])
-        if owner and owner.get("username"):
-            redirect_url = f"/@{owner['username']}/{slug}#comment-{result['id']}"
-
-    if page_meta["user_id"] and page_meta["user_id"] != user_id:
-        page = get_page(page_meta["id"])
-        if page and page.get("notify_on_comments", True):
-            owner = get_user(page_meta["user_id"])
-            if owner:
-                page_url = f"{request.scheme}://{BASE_DOMAIN}{g.url_prefix}/{slug}"
-                display_name = author_name or email.split("@")[0]
-                send_comment_notification(owner["email"], page_url, display_name, body)
-
-    return redirect(redirect_url)
-
-
-@bp.route("/<slug>/comment/<int:comment_id>/hide", methods=["POST"])
-def toggle_hide_comment(slug, comment_id):
-    page_meta = find_page(slug)
-    if not page_meta:
-        abort(404)
-    if not can_edit(page_meta):
-        abort(403)
-
-    hide_comment(comment_id, page_meta["id"])
-    return redirect(f"{g.url_prefix}/{slug}#comment-{comment_id}")
