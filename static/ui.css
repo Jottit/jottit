@@ -692,18 +692,10 @@
 /* Individual page — compact byline breadcrumb */
 
 .page-byline {
-    max-width: var(--content-max-width);
-    margin: 0 auto;
-    padding: 0 var(--space-5);
     display: flex;
     align-items: center;
     gap: var(--space-3);
-}
-
-@media (min-width: 640px) {
-    .page-byline {
-        padding: 0 var(--space-10);
-    }
+    margin-bottom: var(--space-6);
 }
 
 .page-byline-avatar {
