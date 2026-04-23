@@ -105,7 +105,7 @@
 .public-hero-title {
     font-family: var(--font-sans);
     font-size: clamp(40px, 5.5vw, 68px);
-    font-weight: 700;
+    font-weight: 500;
     line-height: 1.08;
     letter-spacing: -0.025em;
     color: var(--paper-ink);
@@ -115,7 +115,7 @@
 
 .public-hero-title em {
     font-style: italic;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 /* Section — two-column grid (label left, content right), matches landing */

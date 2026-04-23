@@ -31,7 +31,7 @@
 .landing-title {
     font-family: var(--font-sans);
     font-size: clamp(40px, 5.5vw, 80px);
-    font-weight: 700;
+    font-weight: 500;
     line-height: 1.05;
     letter-spacing: -0.025em;
     color: var(--paper-ink);
@@ -40,7 +40,7 @@
 
 .landing-title em {
     font-style: italic;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .landing-cta {
