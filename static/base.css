@@ -161,13 +161,16 @@ a {
 /* Components */
 
 .btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: var(--space-2) var(--space-5);
+    font-family: var(--font-sans);
     font-size: var(--font-size-sm);
     font-weight: 500;
+    text-decoration: none;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
-    transition: opacity 0.15s, border-color 0.15s;
+    transition: background 0.15s, color 0.15s, opacity 0.15s, border-color 0.15s;
 }
 
 .btn:hover {
@@ -196,8 +199,9 @@ a {
 }
 
 .btn-lg {
-    padding: var(--space-2) var(--space-5);
+    padding: 14px 28px;
     font-size: var(--font-size-md);
+    gap: 10px;
 }
 
 .btn--primary {
@@ -208,6 +212,23 @@ a {
 .btn-publish {
     background: var(--brand-1);
     color: #fff;
+}
+
+.btn-publish:hover {
+    background: var(--brand-2);
+    opacity: 1;
+}
+
+.btn--brand-outline {
+    background: transparent;
+    color: var(--brand-1);
+    border-color: var(--brand-1);
+}
+
+.btn--brand-outline:hover {
+    background: var(--brand-1);
+    color: #fff;
+    opacity: 1;
 }
 
 .btn--sm {
