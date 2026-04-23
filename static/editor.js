@@ -120,29 +120,11 @@ setTimeout(function() {
 
 var form = document.querySelector('.editor-form');
 if (form) {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
+    form.addEventListener('submit', function() {
         var btn = document.querySelector('.btn-publish');
         btn.disabled = true;
         btn.textContent = 'Publishing\u2026';
-
-        function resetButton() {
-            btn.disabled = false;
-            btn.textContent = 'Publish';
-        }
-
-        fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            redirect: 'follow'
-        }).then(function(response) {
-            if (response.ok) {
-                clearDraft();
-                window.location.href = response.url;
-            } else {
-                resetButton();
-            }
-        }).catch(resetButton);
+        clearDraft();
     });
 }
 
