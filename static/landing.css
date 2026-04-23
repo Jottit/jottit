@@ -1,0 +1,478 @@
+/* =========================================================
+   Landing page — editorial / literary (V1 direction).
+   Serif hero, sans-caps small labels, monospace eyebrows.
+   Light-only.
+   ========================================================= */
+
+.landing-page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #f5f2ea;
+    color: #1a1a1a;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 18px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+.landing-page a { color: inherit; }
+
+/* Skip link */
+.landing-skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: #1a1a1a;
+    color: #f5f2ea;
+    padding: 8px 16px;
+    z-index: 10;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+}
+.landing-skip:focus { left: 16px; top: 16px; }
+
+/* ---------- Top bar ---------- */
+.landing-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 60px;
+    width: 100%;
+}
+
+.landing-brand {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: #1a7a5a;
+    background: linear-gradient(90deg, #1a7a5a, #2a9470, #4cc99a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.landing-top-nav {
+    display: flex;
+    gap: 36px;
+    align-items: center;
+}
+
+.landing-top-nav a,
+.landing-top-nav .signin-link {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #1a1a1a;
+    text-decoration: none;
+}
+
+.landing-top-nav a:hover { opacity: 0.6; }
+
+/* Override global .signin-link absolute positioning */
+.landing-top .signin-link {
+    position: static;
+    top: auto;
+    right: auto;
+}
+
+.landing-top .signin-link a {
+    color: #1a1a1a;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.landing-top .admin-avatar-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+}
+
+/* ---------- Hero ---------- */
+.landing-hero {
+    padding: 96px 60px 72px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.landing-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(44px, 7vw, 100px);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    color: #1a1a1a;
+    margin: 0 0 40px;
+}
+
+.landing-title em {
+    font-style: italic;
+    font-weight: 400;
+}
+
+.landing-cta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+a.landing-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #1a7a5a;
+    color: #ffffff;
+    padding: 14px 28px;
+    border-radius: 50px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 150ms ease-out, transform 150ms ease-out;
+}
+
+a.landing-btn .arrow { font-weight: 400; }
+a.landing-btn:hover {
+    background: #2a9470;
+    transform: translateY(-1px);
+}
+a.landing-btn:focus-visible {
+    outline: 2px solid #1a7a5a;
+    outline-offset: 3px;
+}
+
+.landing-hint {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: #8b8478;
+    letter-spacing: 0.02em;
+}
+
+/* ---------- Section wrapper ---------- */
+.landing-section {
+    border-top: 1px solid #e4decf;
+    padding: 72px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.landing-section-label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8b8478;
+    margin: 0 0 48px;
+    padding-left: 16px;
+    position: relative;
+}
+
+.landing-section-label::before {
+    content: "§";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 13px;
+    letter-spacing: 0;
+    color: #8b8478;
+}
+
+/* ---------- How it works (three columns) ---------- */
+.landing-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 56px;
+    max-width: 1000px;
+}
+
+.landing-step-num {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: #8b8478;
+    margin: 0 0 16px;
+    display: block;
+}
+
+.landing-step h3 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: #1a1a1a;
+    margin: 0 0 14px;
+    line-height: 1.15;
+}
+
+.landing-step p {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.55;
+    color: #555;
+    margin: 0;
+}
+
+/* ---------- Origin (label | prose, simple) ---------- */
+.landing-origin {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 40px 56px;
+    max-width: 1000px;
+    align-items: start;
+}
+
+.landing-origin .landing-section-label {
+    margin: 0;
+    padding-top: 4px;
+}
+
+.landing-origin-body p {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 19px;
+    line-height: 1.65;
+    color: #1a1a1a;
+    margin: 0 0 24px;
+}
+
+.landing-origin-body p:last-child { margin-bottom: 0; }
+
+.landing-origin-body em { font-style: italic; }
+
+.landing-origin-body a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.landing-origin-sig {
+    margin: 32px 0 0 !important;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: 17px !important;
+    line-height: 1.45 !important;
+    color: #1a1a1a !important;
+}
+
+.landing-origin-sig a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.landing-origin-closing {
+    margin-top: 32px !important;
+    padding-top: 24px;
+    border-top: 1px solid #e4decf;
+    font-size: 15px !important;
+    color: #555 !important;
+    font-style: italic;
+}
+
+/* ---------- Portable (same 200px | content grid as Philosophy) ---------- */
+.landing-portable {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 40px 56px;
+    max-width: 1000px;
+    align-items: start;
+}
+
+.landing-portable .landing-section-label {
+    margin: 0;
+    padding-top: 4px;
+}
+
+.landing-portable-intro {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 19px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    margin: 0 0 32px;
+}
+
+.landing-portable-intro em { font-style: italic; }
+
+.landing-portable-list {
+    margin: 0;
+}
+
+.landing-portable-list dt {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 6px;
+}
+
+.landing-portable-list dd {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.55;
+    color: #555;
+    margin: 0 0 24px;
+}
+
+.landing-portable-list dd:last-of-type { margin-bottom: 0; }
+
+.landing-portable-list dd code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+    background: #ede9e0;
+    padding: 1px 6px;
+    border-radius: 2px;
+    color: #1a1a1a;
+}
+
+/* ---------- Final CTA ---------- */
+.landing-final-cta {
+    padding: 96px 60px;
+    text-align: center;
+    border-top: 1px solid #e4decf;
+    width: 100%;
+}
+
+.landing-final-cta-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(32px, 4.5vw, 48px);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: #1a1a1a;
+    margin: 0 0 36px;
+}
+
+/* ---------- FAQ ---------- */
+.landing-faq dl {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 0 72px;
+    max-width: 1000px;
+    margin: 0;
+}
+
+.landing-faq dt {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 19px;
+    font-weight: 400;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 28px 0;
+    border-top: 1px solid #e4decf;
+}
+
+.landing-faq dl > dt:first-of-type,
+.landing-faq dl > dd:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+
+.landing-faq dd {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.55;
+    color: #555;
+    margin: 0;
+    padding: 28px 0;
+    border-top: 1px solid #e4decf;
+}
+
+.landing-faq dd p {
+    margin: 0 0 12px;
+}
+
+.landing-faq dd p:last-child { margin-bottom: 0; }
+
+.landing-faq dd code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+    background: #ede9e0;
+    padding: 1px 6px;
+    border-radius: 2px;
+    color: #1a1a1a;
+}
+
+.landing-faq dd a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ---------- Footer ---------- */
+.landing-footer {
+    border-top: 1px solid #e4decf;
+    padding: 40px 60px;
+    width: 100%;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8b8478;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.landing-footer-links {
+    display: flex;
+    gap: 24px;
+}
+
+.landing-footer-links a {
+    color: #8b8478;
+    text-decoration: none;
+}
+
+.landing-footer-links a:hover { color: #1a1a1a; }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .landing-page *,
+    .landing-page *::before,
+    .landing-page *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+    .landing-steps { grid-template-columns: 1fr; gap: 40px; }
+    .landing-origin,
+    .landing-portable {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    .landing-final-cta { padding: 64px 24px; }
+    .landing-faq dl {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .landing-faq dt { padding-bottom: 12px; }
+    .landing-faq dd {
+        border-top: none;
+        padding-top: 0;
+        padding-bottom: 28px;
+    }
+    .landing-faq dl > dt:first-of-type { padding-top: 0; }
+}
+
+@media (max-width: 640px) {
+    .landing-top { padding: 20px 24px; }
+    .landing-top-nav { gap: 20px; }
+    .landing-hero { padding: 56px 24px 72px; }
+    .landing-section { padding: 56px 24px; }
+    .landing-footer {
+        padding: 28px 24px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .landing-pullquote { font-size: 18px; }
+}
