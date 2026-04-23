@@ -205,26 +205,7 @@
 }
 
 .public-section-grid {
-    display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: 48px;
-    max-width: 1000px;
-    align-items: start;
-}
-
-.public-section-grid:not(:has(.public-section-kicker)) {
-    grid-template-columns: 1fr;
     max-width: 780px;
-}
-
-.public-section-kicker {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #8b8478;
-    margin: 0;
-    padding-top: 12px;
 }
 
 .public-section-headline {
@@ -303,44 +284,6 @@
 
 .public-timeline-body p { margin: 0; }
 
-/* Pull-quote section (Aaron quote on About) */
-.public-pullquote {
-    padding: 72px 60px 96px;
-    border-top: 1px solid #e4decf;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-    text-align: center;
-}
-
-.public-pullquote-body {
-    font-family: Georgia, "Times New Roman", serif;
-    font-style: italic;
-    font-size: clamp(22px, 2.8vw, 28px);
-    line-height: 1.45;
-    color: #1a1a1a;
-    max-width: 800px;
-    margin: 0 auto 20px;
-}
-
-.public-pullquote-cite {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #8b8478;
-}
-
-/* Signature + closing credit blocks (reusable across pages) */
-.public-signature {
-    font-family: Georgia, "Times New Roman", serif;
-    font-style: italic;
-    font-size: 17px;
-    line-height: 1.45;
-    color: #1a1a1a;
-    margin: 40px 0 0;
-}
-
 .public-closing {
     margin-top: 28px;
     padding-top: 24px;
@@ -402,40 +345,24 @@
         grid-template-columns: 1fr;
         gap: 12px;
     }
-    .public-section-kicker { padding-top: 0; }
-    .public-pullquote { padding: 56px 24px 72px; }
     .public-footer {
         padding: 28px 24px;
         flex-direction: column;
         align-items: flex-start;
     }
-    .public-header { padding: 20px 24px !important; }
-    .public-header-nav { gap: 16px; }
-    .public-header-nav > a:not(.public-header-btn):not(.signin-link) { display: none; }
+    .public-header {
+        padding: 20px 24px !important;
+        flex-wrap: wrap;
+        row-gap: 12px;
+    }
+    .public-header .public-header-logo { font-size: 22px; }
+    .public-header-nav { gap: 12px; }
+    .public-header-nav > a:not(.signin-link) { display: none; }
     .public-timeline-entry {
         grid-template-columns: 1fr;
         gap: 4px;
     }
     .public-timeline-year { padding-top: 0; }
-}
-
-/* Preserve legacy .public-main / .public-content for any other templates */
-.public-main {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 72px var(--space-5) 96px;
-}
-
-.public-content {
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.25rem;
-    line-height: 1.65;
-    color: #1a1a1a;
-}
-
-.public-content a {
-    color: inherit;
-    text-decoration: underline;
 }
 
 /* Homepage */
