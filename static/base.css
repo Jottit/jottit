@@ -186,9 +186,14 @@ a {
 
 @media (max-width: 640px) {
     .btn-icon-mobile {
-        display: inline;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1em;
+        height: 1em;
         font-size: 1.4em;
         line-height: 1;
+        transform: translateY(-1px);
     }
     .btn-label-desktop { display: none; }
     .btn:has(.btn-icon-mobile) {
