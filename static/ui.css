@@ -1031,13 +1031,12 @@
 }
 
 .site-header-spacer {
-    display: none;
+    display: flex;
     flex: 1;
     min-width: 0;
 }
 
 .site-header-spacer:last-child {
-    display: flex;
     justify-content: flex-end;
 }
 
@@ -1196,10 +1195,6 @@
 }
 
 @media (min-width: 640px) {
-    .site-header-spacer {
-        display: block;
-    }
-
     .site-header-inner {
         padding: var(--space-5) var(--space-10);
     }
