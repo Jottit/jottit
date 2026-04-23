@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Sponsor · Jottit{% endblock %}
+{% block meta_description %}Help keep Jottit independent, open source, and free of ads, tracking, and algorithms.{% endblock %}
+{% block og_title %}Sponsor · Jottit{% endblock %}
+{% block og_description %}Help keep Jottit independent, open source, and free of ads, tracking, and algorithms.{% endblock %}
+
+{% block body %}
+<a class="public-skip" href="#main">Skip to content</a>
+
+<div class="public-page">
+  {% include "_header.html" %}
+
+  <main id="main">
+    <section class="public-hero">
+      <h1 class="public-hero-title">Sponsor Jottit</h1>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">Why sponsor</h2>
+          <p>Jottit is free to use and not a business. That's deliberate. It means nobody has to pay, and it also means there's no revenue to fund the work.</p>
+          <p class="public-section-italic">If you want to help keep Jottit independent and honest, sponsorship is how.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">What it pays for</h2>
+          <p>Hosting, domains, and the unglamorous infrastructure that keeps pages online. Time to fix bugs, add the small handful of features that still matter, and keep the thing maintained over the long term.</p>
+          <p>Nothing exotic. Just the cost of keeping a small, careful tool alive on the open web.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">What doesn't change</h2>
+          <p>Jottit's promises hold regardless of who sponsors: no ads, no tracking, no algorithmic feeds, no AI writing assistance, no paywalls, no sponsored content, no tiered features. Sponsors are thanked, not given special treatment.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">How to sponsor</h2>
+          <p>The easiest way is <a href="https://github.com/sponsors/jottit">GitHub Sponsors</a>. Any amount helps, and you can cancel anytime.</p>
+          <p>If GitHub Sponsors doesn't work for you — company procurement, different payment method, one-off support — <a href="mailto:hello@jottit.org">email me</a> and we'll figure something out.</p>
+
+          <p class="public-closing">Thank you, Paul Graham. And thank you, whoever you are, for reading this far.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="public-footer">
+    <span>Jottit · 2007 · 2026</span>
+    <div class="public-footer-links">
+      <a href="/about">About</a>
+      <a href="/sponsor">Sponsor</a>
+      <a href="/talk">Talk to us</a>
+      <a href="https://github.com/Jottit/jottit">Source</a>
+    </div>
+  </footer>
+</div>
+{% endblock %}

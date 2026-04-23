@@ -15,7 +15,10 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {% if is_new %}<input type="hidden" name="slug" id="new-page-slug" value="">{% endif %}
                 <label for="title" class="sr-only">Title</label>
-                <input class="editor-title" id="title" type="text" name="title" placeholder="Title" value="{{ title }}" {% if not title %}autofocus{% endif %}>
+                <div class="editor-title-row">
+                    <span class="editor-title-hash" aria-hidden="true"># </span>
+                    <input class="editor-title" id="title" type="text" name="title" placeholder="Title" value="{{ title }}" {% if not title %}autofocus{% endif %}>
+                </div>
                 <label for="content" class="sr-only">Content</label>
                 <textarea class="editor-content" id="content" name="content" placeholder="Write something...&#10;&#10;**bold**  *italic*  [link](url)  ## heading" {% if title and not content %}autofocus{% endif %}>{{ content }}</textarea>
             </form>

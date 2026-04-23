@@ -1,22 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Talk to us — Jottit{% endblock %}
-{% block meta_description %}Get in touch with the Jottit team. We love hearing how you're using Jottit.{% endblock %}
-{% block og_title %}Talk to us — Jottit{% endblock %}
-{% block og_description %}Get in touch with the Jottit team. We love hearing how you're using Jottit.{% endblock %}
+{% block title %}Talk to us · Jottit{% endblock %}
+{% block meta_description %}Reach out to the Jottit team. Email, Mastodon, Micro.blog.{% endblock %}
+{% block og_title %}Talk to us · Jottit{% endblock %}
+{% block og_description %}Reach out to the Jottit team. Email, Mastodon, Micro.blog.{% endblock %}
 
 {% block body %}
-{% include "_header.html" %}
+<a class="public-skip" href="#main">Skip to content</a>
 
-<main class="public-main">
-    <div class="public-content">
-        <h1>Talk to us</h1>
-        <p>We love hearing how you're using Jottit, what you're building, and where things feel rough. Reach out any time and the core team will reply directly. We typically reply within 24 hours.</p>
-        <h2>Email</h2>
-        <p><a href="mailto:hello@jottit.org">hello@jottit.org</a> is the quickest way to get support, suggest features, or check in about contributions and integrations.</p>
-        <h2>Social</h2>
-        <p>You can also find us on <a href="https://mastodon.social/@simoncarstensen">Mastodon</a> and <a href="https://micro.blog/simonbc">Micro.blog</a>.</p>
+<div class="public-page">
+  {% include "_header.html" %}
+
+  <main id="main">
+    <section class="public-hero">
+      <h1 class="public-hero-title">Talk to us</h1>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">What to say</h2>
+          <p>I love hearing how people use Jottit, what they're building with it, and where the thing feels rough. Bug reports, feature ideas, integration questions, contributions, or just a hello — all welcome.</p>
+          <p class="public-section-italic">I read everything and usually reply within a day.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">Email</h2>
+          <p><a href="mailto:hello@jottit.org">hello@jottit.org</a> is the quickest way to get in touch.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">Elsewhere</h2>
+          <p>You can also find me on <a href="https://mastodon.social/@simoncarstensen">Mastodon</a> and <a href="https://micro.blog/simonbc">Micro.blog</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="public-footer">
+    <span>Jottit · 2007 · 2026</span>
+    <div class="public-footer-links">
+      <a href="/about">About</a>
+      <a href="/sponsor">Sponsor</a>
+      <a href="/talk">Talk to us</a>
+      <a href="https://github.com/Jottit/jottit">Source</a>
     </div>
-</main>
-{% include "_footer.html" %}
+  </footer>
+</div>
 {% endblock %}

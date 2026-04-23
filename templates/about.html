@@ -1,22 +1,89 @@
 {% extends "base.html" %}
 
-{% block title %}About — Jottit{% endblock %}
-{% block meta_description %}Jottit is the simplest way to put a page on the web. Built by Aaron Swartz and Simon Carstensen in 2007, rebuilt from scratch in 2026.{% endblock %}
-{% block og_title %}About — Jottit{% endblock %}
-{% block og_description %}Jottit is the simplest way to put a page on the web. Built by Aaron Swartz and Simon Carstensen in 2007, rebuilt from scratch in 2026.{% endblock %}
+{% block title %}About · Jottit{% endblock %}
+{% block meta_description %}Jottit is a page on the web. Co-created with Aaron Swartz in 2007, rebuilt from scratch in 2026. Same idea, same name.{% endblock %}
+{% block og_title %}About · Jottit{% endblock %}
+{% block og_description %}Jottit is a page on the web. Co-created with Aaron Swartz in 2007, rebuilt from scratch in 2026.{% endblock %}
 
 {% block body %}
-{% include "_header.html" %}
+<a class="public-skip" href="#main">Skip to content</a>
 
-<main class="public-main">
-    <div class="public-content">
-        <h1>About Jottit</h1>
-        <p><a href="https://en.wikipedia.org/wiki/Aaron_Swartz">Aaron Swartz</a> and <a href="https://simonbc.com">Simon Carstensen</a> met through Y Combinator's first batch in 2005 and together built Infogami, a tool to make it easy to create websites. From that work came the original Jottit in 2007, a simple way for anyone to make a page on the web.</p>
-        <p>After Aaron's death in 2013, the original Jottit eventually went offline.</p>
-        <p>In 2026, Simon rebuilt it from scratch. Same idea, same name. You type, you publish, you have a page. No tracking, no followers, no algorithms. Just your words on a small site that is yours.</p>
-        <p>Jottit is open source, built on web standards, and free to use. You can see how it works, fork it, or run your own version.</p>
-        <p>If you'd like to support its development or help keep it independent, visit the <a href="https://github.com/sponsors/jottit">sponsor page</a> or email <a href="mailto:hello@jottit.org">hello@jottit.org</a>.</p>
+<div class="public-page">
+  {% include "_header.html" %}
+
+  <main id="main">
+    <section class="public-hero">
+      <h1 class="public-hero-title">About Jottit</h1>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">What</h2>
+          <p>Jottit is a page on the web. You type markdown, pick a URL, and you have a page. No account. No algorithm deciding who reads it. No dashboard between you and your words.</p>
+          <p class="public-section-italic">That was the whole idea in 2007. It's still the whole idea.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">A short history</h2>
+          <div class="public-timeline">
+            <div class="public-timeline-entry">
+              <p class="public-timeline-year">2005</p>
+              <div class="public-timeline-body">
+                <p><a href="https://en.wikipedia.org/wiki/Aaron_Swartz">Aaron Swartz</a> and Simon Carstensen meet through Y Combinator's first batch. They build Infogami together, a tool for making websites easy.</p>
+              </div>
+            </div>
+
+            <div class="public-timeline-entry">
+              <p class="public-timeline-year">2007</p>
+              <div class="public-timeline-body">
+                <p>The original Jottit ships. A textarea, a save button, a URL. Thousands of tiny sites get made.</p>
+              </div>
+            </div>
+
+            <div class="public-timeline-entry">
+              <p class="public-timeline-year">2013</p>
+              <div class="public-timeline-body">
+                <p>After Aaron's death, the site is kept running out of respect. It quietly falls offline some years later. The domain stays. The idea stays.</p>
+              </div>
+            </div>
+
+            <div class="public-timeline-entry">
+              <p class="public-timeline-year">2026</p>
+              <div class="public-timeline-body">
+                <p>Simon rebuilds Jottit from scratch. Same idea, same name. The stack is new; the promise is the same. Your words, your URL, yours.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-section">
+      <div class="public-section-grid">
+        <div class="public-section-body">
+          <h2 class="public-section-headline">Elsewhere</h2>
+          <p>To contact the project, see <a href="/talk">talk to us</a>. If you'd like to help keep Jottit independent, there's a <a href="/sponsor">sponsor page</a>. The source is on <a href="https://github.com/Jottit/jottit">GitHub</a> under AGPL.</p>
+
+          <p class="public-closing">Open source (AGPL). Funded by Paul Graham. Built in memory of Aaron Swartz.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="public-footer">
+    <span>Jottit · 2007 · 2026</span>
+    <div class="public-footer-links">
+      <a href="/about">About</a>
+      <a href="/sponsor">Sponsor</a>
+      <a href="/talk">Talk to us</a>
+      <a href="https://github.com/Jottit/jottit">Source</a>
     </div>
-</main>
-{% include "_footer.html" %}
+  </footer>
+</div>
 {% endblock %}

@@ -194,6 +194,11 @@ def talk():
     return render_template("talk.html", **account_link_vars())
 
 
+@bp.route("/sponsor")
+def sponsor():
+    return render_template("sponsor.html", **account_link_vars())
+
+
 def _resolve_page(slug, suffix=""):
     """Resolve a page slug, handling redirects and lookups.
 

@@ -41,83 +41,367 @@
     opacity: 0.7;
 }
 
-/* About header */
+/* Public page header (about, talk, sponsor) — matches landing */
 
 .public-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--space-5);
-    padding: var(--space-5) var(--space-8);
-    border-bottom: 1px solid var(--subtle);
+    padding: 28px 60px;
+    width: 100%;
 }
 
 .public-header .public-header-logo {
-    margin-right: auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 26px;
     font-weight: 800;
-    font-size: var(--font-size-xl);
     letter-spacing: -0.02em;
-    background: linear-gradient(90deg, var(--brand-1), var(--brand-2), var(--brand-3));
+    line-height: 1;
+    background: linear-gradient(90deg, #1a7a5a, #2a9470, #4cc99a);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    color: #1a7a5a;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* Override global .signin-link absolute positioning inside public-header */
+.public-header .signin-link {
+    position: static;
+    top: auto;
+    right: auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    color: #555;
+}
+
+.public-header .signin-link a {
+    color: #1a1a1a;
+    font-weight: 500;
     text-decoration: none;
 }
 
-.public-header a,
-.public-header .link-btn {
-    font-size: 1rem;
-    color: var(--text);
+.public-header .admin-avatar-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+}
+
+.public-header-nav {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    min-height: 32px;
+}
+
+.public-header-nav a,
+.public-header-nav .signin-link {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #1a1a1a;
     text-decoration: none;
 }
 
-.signin-link,
-.signin-link a {
-    font-size: var(--font-size-sm);
+.public-header-nav a:hover { opacity: 0.6; }
+
+.public-header-nav a.public-header-btn {
+    background: #1a7a5a;
+    color: #ffffff;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    transition: background 150ms ease-out;
 }
 
-.public-header a:hover,
-.public-header .link-btn:hover {
-    opacity: 0.7;
+.public-header-nav a.public-header-btn:hover {
+    background: #2a9470;
+    opacity: 1;
 }
 
-/* Public pages (about, sponsor, etc.) */
+.landing-page .public-header-btn { display: none; }
 
-.public-main {
-    max-width: var(--content-max-width);
+/* Public content pages (about, talk, sponsor) — editorial system matching landing */
+
+.public-page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #f5f2ea;
+    color: #1a1a1a;
+    font-family: Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.public-page a { color: inherit; }
+
+/* Hero — serif title at the top of each content page */
+.public-hero {
+    padding: 72px 60px 48px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: var(--space-10) var(--space-5) var(--space-5);
+    width: 100%;
 }
 
-@media (min-width: 640px) {
-    .public-main {
-        padding: 80px var(--space-10) var(--space-10);
+.public-hero-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(40px, 5.5vw, 68px);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    color: #1a1a1a;
+    margin: 0;
+    max-width: 900px;
+}
+
+.public-hero-title em {
+    font-style: italic;
+    font-weight: 400;
+}
+
+/* Section — two-column grid (label left, content right), matches landing */
+.public-section {
+    border-top: 1px solid #e4decf;
+    padding: 56px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.public-section-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 48px;
+    max-width: 1000px;
+    align-items: start;
+}
+
+.public-section-grid:not(:has(.public-section-kicker)) {
+    grid-template-columns: 1fr;
+    max-width: 780px;
+}
+
+.public-section-kicker {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8b8478;
+    margin: 0;
+    padding-top: 12px;
+}
+
+.public-section-headline {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: clamp(24px, 2.4vw, 28px);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: #1a1a1a;
+    margin: 0 0 24px;
+}
+
+.public-section-body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 19px;
+    line-height: 1.65;
+    color: #1a1a1a;
+}
+
+.public-section-body > p {
+    margin: 0 0 20px;
+}
+
+.public-section-body > p:last-child { margin-bottom: 0; }
+
+.public-section-body em { font-style: italic; }
+
+.public-section-body a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.public-section-body code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85em;
+    background: #ede9e0;
+    padding: 1px 6px;
+    border-radius: 2px;
+    color: #1a1a1a;
+}
+
+.public-section-italic {
+    font-style: italic;
+    color: #555;
+    margin-top: 20px !important;
+}
+
+/* Timeline (used on About page) */
+.public-timeline {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+}
+
+.public-timeline-entry {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 32px;
+    align-items: start;
+}
+
+.public-timeline-year {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    color: #8b8478;
+    padding-top: 6px;
+    white-space: nowrap;
+}
+
+.public-timeline-body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 18px;
+    line-height: 1.6;
+    color: #1a1a1a;
+}
+
+.public-timeline-body p { margin: 0; }
+
+/* Pull-quote section (Aaron quote on About) */
+.public-pullquote {
+    padding: 72px 60px 96px;
+    border-top: 1px solid #e4decf;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+}
+
+.public-pullquote-body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: clamp(22px, 2.8vw, 28px);
+    line-height: 1.45;
+    color: #1a1a1a;
+    max-width: 800px;
+    margin: 0 auto 20px;
+}
+
+.public-pullquote-cite {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8b8478;
+}
+
+/* Signature + closing credit blocks (reusable across pages) */
+.public-signature {
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.45;
+    color: #1a1a1a;
+    margin: 40px 0 0;
+}
+
+.public-closing {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #e4decf;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: 15px;
+    color: #555;
+}
+
+/* Footer matching landing */
+.public-footer {
+    border-top: 1px solid #e4decf;
+    padding: 40px 60px;
+    width: 100%;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8b8478;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.public-footer-links {
+    display: flex;
+    gap: 24px;
+}
+
+.public-footer-links a {
+    color: #555;
+    text-decoration: none;
+}
+
+.public-footer-links a:hover { color: #1a1a1a; }
+
+/* Skip link */
+.public-skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: #1a1a1a;
+    color: #f5f2ea;
+    padding: 8px 16px;
+    z-index: 10;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+}
+.public-skip:focus { left: 16px; top: 16px; }
+
+/* Responsive */
+@media (max-width: 860px) {
+    .public-hero { padding: 48px 24px 32px; }
+    .public-section { padding: 40px 24px; }
+    .public-section-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
+    .public-section-kicker { padding-top: 0; }
+    .public-pullquote { padding: 56px 24px 72px; }
+    .public-footer {
+        padding: 28px 24px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .public-header { padding: 20px 24px !important; }
+    .public-header-nav { gap: 16px; }
+    .public-header-nav > a:not(.public-header-btn):not(.signin-link) { display: none; }
+    .public-header-nav > span.signin-link { display: none; }
+    .public-timeline-entry {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    .public-timeline-year { padding-top: 0; }
+}
+
+/* Preserve legacy .public-main / .public-content for any other templates */
+.public-main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 72px var(--space-5) 96px;
 }
 
 .public-content {
+    font-family: Georgia, "Times New Roman", serif;
     font-size: 1.25rem;
-    line-height: 1.7;
-    color: var(--text);
-}
-
-.public-content h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: -0.015em;
-    margin-bottom: 2.5rem;
-}
-
-.public-content h2 {
-    font-size: 1.625rem;
-    font-weight: 700;
-    line-height: 1.25;
-    margin-top: 2.5rem;
-    margin-bottom: 0.75rem;
-}
-
-.public-content p {
-    margin-bottom: 1.5rem;
+    line-height: 1.65;
+    color: #1a1a1a;
 }
 
 .public-content a {
@@ -353,13 +637,29 @@
     padding: var(--space-10) var(--space-8);
 }
 
+.editor-title-row {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: var(--space-5);
+}
+
+.editor-title-hash {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--placeholder);
+    user-select: none;
+    margin-right: var(--space-3);
+}
+
 .editor-title {
-    font-size: 2.25rem;
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
     font-weight: 700;
     border: none;
     outline: none;
     background: transparent;
-    margin-bottom: var(--space-5);
 }
 
 .editor-title::placeholder {

@@ -39,7 +39,12 @@
 }
 
 .e-content-title h1 {
-    margin-bottom: var(--space-5);
+    font-family: var(--site-font-body);
+    font-size: clamp(36px, 4.5vw, 52px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    margin-bottom: var(--space-9);
 }
 
 .page-meta {

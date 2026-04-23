@@ -26,7 +26,7 @@ function updatePreview() {
     var title = titleInput.value;
     var body = contentInput.value;
     var html = '';
-    if (title) html += '<h1>' + title.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</h1>';
+    if (title) html += '<div class="e-content-title"><h1>' + title.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</h1></div>';
     if (body) html += smartypants(marked.parse(body));
     preview.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
 }
