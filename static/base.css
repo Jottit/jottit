@@ -191,6 +191,12 @@ a {
         line-height: 1;
     }
     .btn-label-desktop { display: none; }
+    .btn:has(.btn-icon-mobile) {
+        width: 35px;
+        height: 35px;
+        padding: 0;
+        justify-content: center;
+    }
 }
 
 .btn:hover {
