@@ -22,6 +22,17 @@ function smartypants(html) {
     return parts.join('');
 }
 
+// Mirrors utils.py slugify: lowercase, strip non [a-z0-9\s-], collapse
+// whitespace and hyphens. Used to auto-derive the slug from the title
+// on new pages so users see their URL form as they type.
+function slugify(s) {
+    return s.toLowerCase().trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 function updatePreview() {
     var title = titleInput.value;
     var body = contentInput.value;
@@ -197,6 +208,21 @@ if (slugChip && slugPopover) {
 
     var newPageSlugInput = document.getElementById('new-page-slug');
     var isNewPage = !!newPageSlugInput;
+    var slugManuallySet = false;
+
+    // Auto-derive the slug from the title as the user types. Stops once
+    // they pick their own slug via the popover below.
+    if (isNewPage && titleInput) {
+        var autoSlugFromTitle = function() {
+            if (slugManuallySet) return;
+            var derived = slugify(titleInput.value);
+            newPageSlugInput.value = derived;
+            currentSlug = derived;
+            slugChip.textContent = derived ? '/' + derived : '/set-slug';
+        };
+        titleInput.addEventListener('input', autoSlugFromTitle);
+        autoSlugFromTitle();
+    }
 
     slugForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -220,6 +246,7 @@ if (slugChip && slugPopover) {
             slugChip.textContent = '/' + newSlug;
             slugPopover.hidden = true;
             slugError.hidden = true;
+            slugManuallySet = true;
             return;
         }
 
