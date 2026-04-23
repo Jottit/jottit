@@ -127,6 +127,36 @@
 
 .landing-page .public-header-btn { display: none; }
 
+.public-header-nav a.signin-btn {
+    border: 1px solid #1a7a5a;
+    color: #1a7a5a;
+    padding: 7px 17px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    transition: background 150ms ease-out, color 150ms ease-out;
+}
+
+.public-header-nav a.signin-btn:hover {
+    background: #1a7a5a;
+    color: #ffffff;
+    opacity: 1;
+}
+
+.landing-page .public-header-nav a.signin-btn {
+    background: #1a7a5a;
+    color: #ffffff;
+    border: none;
+    padding: 8px 18px;
+}
+
+.landing-page .public-header-nav a.signin-btn:hover {
+    background: #2a9470;
+    color: #ffffff;
+}
+
 /* Public content pages (about, talk, sponsor) — editorial system matching landing */
 
 .public-page {
@@ -382,7 +412,6 @@
     .public-header { padding: 20px 24px !important; }
     .public-header-nav { gap: 16px; }
     .public-header-nav > a:not(.public-header-btn):not(.signin-link) { display: none; }
-    .public-header-nav > span.signin-link { display: none; }
     .public-timeline-entry {
         grid-template-columns: 1fr;
         gap: 4px;
