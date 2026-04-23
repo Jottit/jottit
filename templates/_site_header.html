@@ -7,18 +7,18 @@
         <div class="site-header-spacer">
             {% if is_owner %}
             <div class="site-header-actions">
-                <a href="{{ url_prefix }}/new" class="btn btn-publish btn--sm site-header-create">Create a page</a>
+                <a href="{{ url_prefix }}/new" class="btn btn-publish btn--sm site-header-create"><span class="btn-icon-mobile">+</span><span class="btn-label-desktop">Create a page</span></a>
                 <a href="{{ base_url|default('', true) }}/settings" class="site-header-avatar-link" title="Settings">{% if owner_avatar_url %}<img src="{{ owner_avatar_url }}" alt="" class="site-header-user-avatar">{% elif owner_initials %}<span class="site-header-user-initials">{{ owner_initials }}</span>{% endif %}</a>
             </div>
             {% elif session.get('user_id') %}
             <div class="site-header-actions">
-                <a href="{{ base_url|default('', true) }}/new" class="btn btn--outline btn--sm">Create a page</a>
+                <a href="{{ base_url|default('', true) }}/new" class="btn btn--outline btn--sm"><span class="btn-icon-mobile">+</span><span class="btn-label-desktop">Create a page</span></a>
                 <a href="{{ base_url|default('', true) }}/settings" class="site-header-avatar-link" title="Settings">{% if g.current_user and g.current_user.avatar %}<img src="{{ g.current_user.avatar }}" alt="" class="site-header-user-avatar">{% elif g.current_user %}<span class="site-header-user-initials">{{ (g.current_user.name or g.current_user.username or '?')[:2] | upper }}</span>{% endif %}</a>
             </div>
             {% else %}
             <div class="site-header-actions">
                 <a href="{{ base_url|default('', true) }}/signin" class="site-header-settings-link">Sign in</a>
-                <a href="{{ base_url|default('', true) }}/new" class="btn btn--outline btn--sm">Create a page</a>
+                <a href="{{ base_url|default('', true) }}/new" class="btn btn--outline btn--sm"><span class="btn-icon-mobile">+</span><span class="btn-label-desktop">Create a page</span></a>
             </div>
             {% endif %}
         </div>

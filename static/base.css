@@ -174,10 +174,23 @@ a {
     font-family: var(--font-sans);
     font-size: var(--font-size-sm);
     font-weight: 500;
+    white-space: nowrap;
     text-decoration: none;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
     transition: background 0.15s, color 0.15s, opacity 0.15s, border-color 0.15s;
+}
+
+/* Responsive icon/label swap inside buttons */
+.btn-icon-mobile { display: none; }
+
+@media (max-width: 640px) {
+    .btn-icon-mobile {
+        display: inline;
+        font-size: 1.4em;
+        line-height: 1;
+    }
+    .btn-label-desktop { display: none; }
 }
 
 .btn:hover {
