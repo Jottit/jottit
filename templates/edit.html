@@ -13,7 +13,7 @@
         <div class="editor-pane">
             <form id="editor-form" class="editor-form" method="post" action="{% if slug %}{{ url_prefix }}/{{ slug }}/edit{% else %}{{ url_prefix }}/new{% endif %}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                {% if is_new %}<input type="hidden" name="slug" id="new-page-slug" value="">{% endif %}
+                {% if is_new and session.get('user_id') %}<input type="hidden" name="slug" id="new-page-slug" value="">{% endif %}
                 <label for="title" class="sr-only">Title</label>
                 <div class="editor-title-row">
                     <span class="editor-title-hash" aria-hidden="true"># </span>
@@ -33,6 +33,7 @@
             <button class="btn btn-publish" type="submit" form="editor-form">Publish</button>
             <a href="{% if is_new %}/{% else %}{{ url_prefix }}/{{ slug }}{% endif %}" class="btn btn--outline">Cancel</a>
         </div>
+        {% if session.get('user_id') %}
         <div class="popover-wrapper">
             <button type="button" class="chip" id="slug-chip">{{ ('/' + slug) if slug else '/set-slug' }}</button>
             <div class="popover" id="slug-popover" hidden>
@@ -46,6 +47,7 @@
                 </form>
             </div>
         </div>
+        {% endif %}
     </footer>
 </div>
 <script src="/static/editor.js?v={{ asset_v }}"></script>

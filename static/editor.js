@@ -24,7 +24,7 @@ function smartypants(html) {
 
 // Mirrors utils.py slugify: lowercase, strip non [a-z0-9\s-], collapse
 // whitespace and hyphens. Used to auto-derive the slug from the title
-// on new pages so users see their URL form as they type.
+// on new pages so signed-in users see their URL form as they type.
 function slugify(s) {
     return s.toLowerCase().trim()
         .replace(/[^a-z0-9\s-]/g, '')
