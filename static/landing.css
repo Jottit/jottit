@@ -29,18 +29,18 @@
 }
 
 .landing-title {
-    font-family: var(--site-font-body);
+    font-family: var(--font-sans);
     font-size: clamp(40px, 5.5vw, 80px);
-    font-weight: 400;
+    font-weight: 700;
     line-height: 1.05;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.025em;
     color: var(--paper-ink);
     margin: 0 0 40px;
 }
 
 .landing-title em {
     font-style: italic;
-    font-weight: 400;
+    font-weight: 700;
 }
 
 .landing-cta {
