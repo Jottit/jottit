@@ -324,7 +324,7 @@
     text-decoration: underline;
 }
 
-.page-listing-title {
+.page h2.page-listing-title {
     position: relative;
     font-family: var(--site-font-body);
     font-size: 1.625rem;
@@ -333,11 +333,6 @@
     letter-spacing: -0.015em;
     color: var(--site-color-heading);
     margin: 0;
-}
-
-.page h2.page-listing-title {
-    margin-top: 0;
-    margin-bottom: 0;
 }
 
 .page .page-listing-desc {
