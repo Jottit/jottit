@@ -1501,11 +1501,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 3px 4px 1px;
+    padding: 2px 5px 1px;
     border: 1px solid currentColor;
     border-radius: 2px;
-    font-size: 0.78em;
-    letter-spacing: 0;
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
     line-height: 1;
 }
 
