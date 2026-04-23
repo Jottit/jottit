@@ -59,6 +59,7 @@ function saveDraft() {
 
 function clearDraft() {
     localStorage.removeItem(storageKey);
+    localStorage.removeItem(cursorKey);
 }
 
 function saveCursor() {
