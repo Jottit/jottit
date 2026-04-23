@@ -40,9 +40,9 @@
 
 .e-content-title h1 {
     font-family: var(--site-font-heading);
-    font-size: clamp(36px, 4.5vw, 52px);
+    font-size: clamp(28px, 3vw, 36px);
     font-weight: 700;
-    line-height: 1.1;
+    line-height: 1.15;
     letter-spacing: -0.02em;
     margin-bottom: var(--space-9);
 }
