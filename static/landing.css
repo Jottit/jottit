@@ -18,20 +18,6 @@
 
 .landing-page a { color: inherit; }
 
-/* Skip link */
-.landing-skip {
-    position: absolute;
-    left: -9999px;
-    top: 0;
-    background: var(--paper-ink);
-    color: var(--paper-bg);
-    padding: 8px 16px;
-    z-index: 10;
-    font-family: var(--font-sans);
-    font-size: 13px;
-}
-.landing-skip:focus { left: 16px; top: 16px; }
-
 /* ---------- Top bar ---------- */
 
 /* ---------- Hero ---------- */
@@ -136,8 +122,9 @@
     margin: 0;
 }
 
-/* ---------- Origin (label | prose, simple) ---------- */
-.landing-origin {
+/* ---------- Origin + Portable share a label-prose two-column grid ---------- */
+.landing-origin,
+.landing-portable {
     display: grid;
     grid-template-columns: 200px 1fr;
     gap: 40px 56px;
@@ -188,15 +175,6 @@
     font-size: 15px !important;
     color: var(--text-secondary) !important;
     font-style: italic;
-}
-
-/* ---------- Portable (same 200px | content grid as Philosophy) ---------- */
-.landing-portable {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 40px 56px;
-    max-width: 1000px;
-    align-items: start;
 }
 
 .landing-portable .landing-section-label {
@@ -320,35 +298,6 @@
     text-underline-offset: 3px;
 }
 
-/* ---------- Footer ---------- */
-.landing-footer {
-    border-top: 1px solid var(--paper-border);
-    padding: 40px 60px;
-    width: 100%;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--paper-muted);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.landing-footer-links {
-    display: flex;
-    gap: 24px;
-}
-
-.landing-footer-links a {
-    color: var(--paper-muted);
-    text-decoration: none;
-}
-
-.landing-footer-links a:hover { color: var(--paper-ink); }
-
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
     .landing-page *,
@@ -384,9 +333,4 @@
 @media (max-width: 640px) {
     .landing-hero { padding: 56px 24px 72px; }
     .landing-section { padding: 56px 24px; }
-    .landing-footer {
-        padding: 28px 24px;
-        flex-direction: column;
-        align-items: flex-start;
-    }
 }
