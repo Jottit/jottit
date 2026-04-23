@@ -1,3 +1,6 @@
+import time
+from email.utils import parsedate_to_datetime
+
 import pytest
 
 from conftest import create_user_with_username, sd
@@ -172,6 +175,60 @@ def test_txt_has_cache_header_for_public_page(client):
     client.post("/cachetxt/edit", data={"title": "T", "content": "C"})
     r = client.get("/cachetxt.txt")
     assert "public" in r.headers.get("Cache-Control", "")
+
+
+# -- CORS / Last-Modified / 304 --
+
+
+def test_md_has_cors_header(client):
+    client.post("/corsmd/edit", data={"title": "T", "content": "C"})
+    r = client.get("/corsmd.md")
+    assert r.headers.get("Access-Control-Allow-Origin") == "*"
+
+
+def test_md_has_cors_header_on_subdomain(client):
+    create_user_with_username(client, "cors@example.com", "corsuser", "corspage")
+    r = client.get("/corspage.md", base_url=sd("corsuser"))
+    assert r.headers.get("Access-Control-Allow-Origin") == "*"
+
+
+def test_md_has_last_modified_header(client):
+    client.post("/lmmd/edit", data={"title": "T", "content": "C"})
+    r = client.get("/lmmd.md")
+    assert r.headers.get("Last-Modified")
+    # Parseable as an HTTP date
+    assert parsedate_to_datetime(r.headers["Last-Modified"]) is not None
+
+
+def test_md_returns_304_when_not_modified(client):
+    client.post("/notmodmd/edit", data={"title": "T", "content": "C"})
+    r = client.get("/notmodmd.md")
+    last_modified = r.headers["Last-Modified"]
+    r2 = client.get("/notmodmd.md", headers={"If-Modified-Since": last_modified})
+    assert r2.status_code == 304
+    assert r2.data == b""
+    assert r2.headers.get("Access-Control-Allow-Origin") == "*"
+
+
+def test_md_returns_200_after_edit(client):
+    client.post("/editmd/edit", data={"title": "T", "content": "original"})
+    r = client.get("/editmd.md")
+    old_last_modified = r.headers["Last-Modified"]
+    assert b"original" in r.data
+    # HTTP dates have second resolution; sleep past the current second so the
+    # new revision's timestamp is strictly later than old_last_modified.
+    time.sleep(1.1)
+    client.post("/editmd/edit", data={"title": "T", "content": "updated"})
+    r2 = client.get("/editmd.md", headers={"If-Modified-Since": old_last_modified})
+    assert r2.status_code == 200
+    assert b"updated" in r2.data
+
+
+def test_md_malformed_if_modified_since_returns_200(client):
+    client.post("/badhdrmd/edit", data={"title": "T", "content": "C"})
+    r = client.get("/badhdrmd.md", headers={"If-Modified-Since": "not a valid date"})
+    assert r.status_code == 200
+    assert b"C" in r.data
 
 
 # -- Dotted slug collision prevention --

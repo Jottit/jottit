@@ -180,6 +180,27 @@ def test_non_owner_cannot_delete(client):
     assert r.headers["Location"] in ("/del2", "/")
 
 
+# -- View as Markdown affordance --
+
+
+def test_page_view_has_view_source_link(client):
+    client.post("/vsrc/edit", data={"title": "Hello", "content": "World"})
+    r = client.get("/vsrc")
+    body = r.data.decode()
+    assert 'href="/vsrc.md"' in body
+    assert "View as Markdown" in body
+
+
+def test_page_view_source_link_on_subdomain(client):
+    from conftest import create_user_with_username, sd
+
+    create_user_with_username(client, "vs@example.com", "vsuser", "vspage")
+    r = client.get("/vspage", base_url=sd("vsuser"))
+    body = r.data.decode()
+    assert 'href="/vspage.md"' in body
+    assert "View as Markdown" in body
+
+
 # -- Export --
 
 

@@ -28,11 +28,29 @@
             {% endif %}
             <div class="page-byline-body">
                 <a class="page-byline-name p-name u-url" href="/">{{ site_title }}</a>
-                {% if updated_at %}<time class="page-byline-meta dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>{% endif %}
+                {% if updated_at %}
+                <div class="page-byline-meta">
+                    <time class="dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>
+                    <a class="page-meta-source" href="{{ url_prefix }}/{{ slug }}.md">
+                        <span class="page-meta-md" aria-hidden="true">MD</span>
+                        <span>View as Markdown</span>
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </header>
         {% elif updated_at %}
-        <time class="page-meta dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>
+        <div class="page-meta">
+            <time class="dt-published" datetime="{{ updated_at | isoformat }}">{{ updated_at | relative_time }} · {{ reading_time }} min read</time>
+            <span class="page-meta-sep" aria-hidden="true"> · </span>
+            <a class="page-meta-source" href="{{ url_prefix }}/{{ slug }}.md">
+                <svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+                    <rect x="2.5" y="2" width="11" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+                    <text x="8" y="10.5" text-anchor="middle" font-size="5" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="currentColor">MD</text>
+                </svg>
+                <span>View as Markdown</span>
+            </a>
+        </div>
         {% endif %}
         <div class="e-content">{{ content_body | safe }}</div>
         <a class="u-url" href="{{ url_prefix }}/{{ slug }}" hidden></a>

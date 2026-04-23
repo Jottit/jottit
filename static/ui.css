@@ -1602,6 +1602,39 @@
     }
 }
 
+/* "View as Markdown" — inline link inside the page meta line, visually
+   separated with a thin vertical rule so it reads as a distinct action
+   rather than another piece of metadata. */
+
+.page-meta-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 0.85em;
+    padding-left: 0.85em;
+    border-left: 1px solid currentColor;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+}
+
+.page-meta-source:hover {
+    color: var(--site-color-text);
+}
+
+.page-meta-md {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 4px 1px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    font-size: 0.78em;
+    letter-spacing: 0;
+    line-height: 1;
+}
+
 /* Page actions (owner only) */
 
 .page-actions {

@@ -1,7 +1,8 @@
 import json
 import os
 from collections import Counter
-from email.utils import format_datetime
+from datetime import timezone
+from email.utils import format_datetime, parsedate_to_datetime
 from xml.sax.saxutils import escape as xml_escape
 
 from flask import (
@@ -287,14 +288,40 @@ def _resolve_page(slug, suffix=""):
 
 
 def _format_response(page_meta, row, content_type, body):
-    """Build a response for an alternate representation (.md, .txt)."""
+    """Build a response for an alternate representation (.md, .txt).
+
+    Adds CORS, Last-Modified, and If-Modified-Since handling so the
+    representation is usable by third-party tools and cachable by proxies.
+    """
     is_owner = (
         session.get("user_id") == page_meta["user_id"]
         and page_meta["user_id"] is not None
     )
+    last_modified = row.get("created_at")
+    if last_modified is not None:
+        last_modified = last_modified.astimezone(timezone.utc)
+        last_modified_header = format_datetime(last_modified, usegmt=True)
+    else:
+        last_modified_header = None
+    ims = request.headers.get("If-Modified-Since")
+    if last_modified is not None and ims:
+        try:
+            ims_dt = parsedate_to_datetime(ims)
+        except (TypeError, ValueError):
+            ims_dt = None
+        if ims_dt is not None and last_modified.replace(
+            microsecond=0
+        ) <= ims_dt.replace(microsecond=0):
+            not_modified = make_response("", 304)
+            not_modified.headers["Last-Modified"] = last_modified_header
+            not_modified.headers["Access-Control-Allow-Origin"] = "*"
+            return not_modified
     response = make_response(body)
     response.headers["Content-Type"] = content_type
-    if not is_owner and row["visibility"] != "private":
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    if last_modified_header:
+        response.headers["Last-Modified"] = last_modified_header
+    if not is_owner:
         response.headers["Cache-Control"] = "public, max-age=60"
     return response
 
@@ -423,7 +450,7 @@ def view_page(slug):
         page_source=row.get("source", "web"),
     )
     response = current_app.make_response(resp)
-    if not is_owner and not show_actions and row["visibility"] != "private":
+    if not is_owner and not show_actions:
         response.headers["Cache-Control"] = "public, max-age=60"
     return response
 
