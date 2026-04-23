@@ -92,7 +92,7 @@
     -webkit-font-smoothing: antialiased;
 }
 
-.public-page a { color: inherit; }
+.public-page a:not(.btn) { color: inherit; }
 
 /* Hero — serif title at the top of each content page */
 .public-hero {

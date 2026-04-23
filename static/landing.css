@@ -16,7 +16,7 @@
     -webkit-font-smoothing: antialiased;
 }
 
-.landing-page a { color: inherit; }
+.landing-page a:not(.btn) { color: inherit; }
 
 /* ---------- Top bar ---------- */
 
