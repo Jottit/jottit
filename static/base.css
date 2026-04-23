@@ -343,7 +343,7 @@ a {
 .title {
     font-size: var(--font-size-2xl);
     font-weight: 700;
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-8);
     text-align: center;
 }
 
