@@ -45,6 +45,7 @@ from utils import (
     reading_time,
     render_bio,
     render_markdown,
+    valid_username,
 )
 from routes import (
     bp,
@@ -178,6 +179,8 @@ def subdomain_home(user):
 @bp.route("/@<username>", defaults={"rest": ""})
 @bp.route("/@<username>/<path:rest>")
 def legacy_at_username_redirect(username, rest):
+    if not valid_username(username):
+        abort(404)
     path = f"/{rest}" if rest else "/"
     query = request.query_string.decode()
     if query:

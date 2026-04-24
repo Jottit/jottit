@@ -299,3 +299,18 @@ def test_subdomain_serves_page_directly(client):
     create_user_with_username(client, "legacy@example.com", "legacyuser", "lp1")
     r = client.get("/lp1", base_url=sd("legacyuser"))
     assert r.status_code == 200
+
+
+# Legacy /@username URLs 301-redirect to the user's subdomain
+def test_legacy_at_username_redirects_to_subdomain(client):
+    r = client.get("/@someone")
+    assert r.status_code == 301
+    assert "someone.jottit.localhost" in r.headers["Location"]
+
+
+# Legacy /@username route rejects malformed usernames instead of crashing
+# (e.g. a trailing dot would produce an empty DNS label in the redirect URL).
+def test_legacy_at_username_rejects_invalid_username(client):
+    for bad in ("sbc.", "sbc..", "foo.bar", ".sbc", "-sbc", "UPPER"):
+        r = client.get(f"/@{bad}")
+        assert r.status_code == 404, f"expected 404 for /@{bad}, got {r.status_code}"
