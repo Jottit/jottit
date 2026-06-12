@@ -1,53 +1,114 @@
 /* =========================================================
-   Landing page — editorial / literary (V1 direction).
-   Serif hero, sans-caps small labels, monospace eyebrows.
-   Light-only.
+   Landing page — a Jottit page about Jottit.
+   A single narrow column of serif type on paper, read like
+   a published page. Document-first, inspired by bearblog.dev.
+   Light-only, no JS.
    ========================================================= */
 
-.landing-page {
+.landing {
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
     background: var(--paper-bg);
     color: var(--paper-ink);
     font-family: var(--site-font-body);
-    font-size: 18px;
-    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
 }
 
-.landing-page a:not(.btn) { color: inherit; }
-
 /* ---------- Top bar ---------- */
-
-/* ---------- Hero ---------- */
-.landing-hero {
-    padding: 96px 60px 72px;
-    max-width: 900px;
-    margin: 0 auto;
+.landing-top {
     width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 28px 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
+.landing-wordmark {
+    font-family: var(--font-sans);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    background: linear-gradient(90deg, var(--brand-1), var(--brand-2), var(--brand-3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: var(--brand-1);
+    text-decoration: none;
+}
+
+/* ---------- Document column ---------- */
+.landing-doc {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 56px 24px 88px;
+    flex: 1;
+    font-size: 19px;
+    line-height: 1.65;
+    color: var(--paper-ink);
+}
+
+.landing-doc > p {
+    margin: 0 0 24px;
+}
+
+.landing-doc a:not(.btn) {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+}
+
+.landing-doc a:not(.btn):hover { color: var(--brand-1); }
+
+.landing-doc em { font-style: italic; }
+
+.landing-doc code {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    background: var(--paper-code-bg);
+    padding: 1px 6px;
+    border-radius: 2px;
+}
+
+.landing-doc hr {
+    border: none;
+    border-top: 1px solid var(--paper-border);
+    margin: 44px 0;
+}
+
+/* ---------- Hero ---------- */
 .landing-title {
     font-family: var(--font-sans);
-    font-size: clamp(40px, 5.5vw, 80px);
-    font-weight: 500;
-    line-height: 1.05;
-    letter-spacing: -0.025em;
+    font-size: clamp(38px, 8vw, 54px);
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
     color: var(--paper-ink);
-    margin: 0 0 40px;
+    margin: 4px 0 28px;
 }
 
 .landing-title em {
     font-style: italic;
-    font-weight: 500;
+    font-weight: 700;
+}
+
+.landing-lede {
+    font-size: 21px;
+    line-height: 1.55;
+    margin: 0 0 28px !important;
 }
 
 .landing-cta {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 18px;
     flex-wrap: wrap;
+    margin: 0 !important;
 }
 
 .landing-hint {
@@ -57,280 +118,129 @@
     letter-spacing: 0.02em;
 }
 
-/* ---------- Section wrapper ---------- */
-.landing-section {
-    border-top: 1px solid var(--paper-border);
-    padding: 72px 60px;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-.landing-section-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--paper-muted);
-    margin: 0 0 48px;
-    padding-left: 16px;
-    position: relative;
-}
-
-.landing-section-label::before {
-    content: "§";
-    position: absolute;
-    left: 0;
-    top: 0;
-    font-family: var(--site-font-body);
-    font-size: 13px;
-    letter-spacing: 0;
-    color: var(--paper-muted);
-}
-
-/* ---------- How it works (three columns) ---------- */
-.landing-steps {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 56px;
-    max-width: 1000px;
-}
-
-.landing-step-num {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--paper-muted);
-    margin: 0 0 16px;
-    display: block;
-}
-
-.landing-step h3 {
+/* ---------- Section headings ---------- */
+.landing-doc h2 {
     font-family: var(--font-sans);
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
-    letter-spacing: -0.015em;
-    color: var(--paper-ink);
-    margin: 0 0 14px;
+    letter-spacing: -0.02em;
     line-height: 1.2;
-}
-
-.landing-step p {
-    font-family: var(--site-font-body);
-    font-size: 16px;
-    line-height: 1.55;
-    color: var(--text-secondary);
-    margin: 0;
-}
-
-/* ---------- Origin + Portable share a label-prose two-column grid ---------- */
-.landing-origin,
-.landing-portable {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 40px 56px;
-    max-width: 1000px;
-    align-items: start;
-}
-
-.landing-origin .landing-section-label {
-    margin: 0;
-    padding-top: 4px;
-}
-
-.landing-origin-body p {
-    font-family: var(--site-font-body);
-    font-size: 19px;
-    line-height: 1.65;
     color: var(--paper-ink);
-    margin: 0 0 24px;
+    margin: 0 0 18px;
 }
 
-.landing-origin-body p:last-child { margin-bottom: 0; }
-
-.landing-origin-body em { font-style: italic; }
-
-.landing-origin-body a {
-    text-decoration: underline;
-    text-underline-offset: 3px;
+/* ---------- Feature list ---------- */
+.landing-list-label {
+    margin: 0 0 12px !important;
 }
 
-.landing-origin-sig {
-    margin: 32px 0 0 !important;
-    font-family: var(--site-font-body);
+.landing-list {
+    margin: 0;
+    padding-left: 1.3em;
+    list-style: disc;
+}
+
+.landing-list li {
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+
+.landing-list li::marker {
+    color: var(--paper-muted);
+}
+
+/* ---------- Origin ---------- */
+.landing-sig {
     font-style: italic;
-    font-size: 17px !important;
-    line-height: 1.45 !important;
-    color: var(--paper-ink) !important;
+    font-size: 17px;
+    line-height: 1.4;
+    margin: 28px 0 0 !important;
 }
 
-.landing-origin-sig a {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-.landing-origin-closing {
-    margin-top: 32px !important;
-    padding-top: 24px;
-    border-top: 1px solid var(--paper-border);
-    font-size: 15px !important;
-    color: var(--text-secondary) !important;
-    font-style: italic;
-}
-
-.landing-portable .landing-section-label {
-    margin: 0;
-    padding-top: 4px;
-}
-
-.landing-portable-intro {
-    font-family: var(--site-font-body);
-    font-size: 19px;
-    line-height: 1.6;
-    color: var(--paper-ink);
-    margin: 0 0 32px;
-}
-
-.landing-portable-intro em { font-style: italic; }
-
-.landing-portable-list {
-    margin: 0;
-}
-
-.landing-portable-list dt {
-    font-family: var(--font-sans);
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    color: var(--paper-ink);
-    margin: 0 0 6px;
-}
-
-.landing-portable-list dd {
-    font-family: var(--site-font-body);
-    font-size: 16px;
-    line-height: 1.55;
+.landing-fine {
+    margin: 20px 0 0 !important;
+    font-size: 15px;
+    line-height: 1.5;
     color: var(--text-secondary);
-    margin: 0 0 24px;
-}
-
-.landing-portable-list dd:last-of-type { margin-bottom: 0; }
-
-.landing-portable-list dd code {
-    font-family: var(--font-mono);
-    font-size: 0.9em;
-    background: var(--paper-code-bg);
-    padding: 1px 6px;
-    border-radius: 2px;
-    color: var(--paper-ink);
-}
-
-/* ---------- Final CTA ---------- */
-.landing-final-cta {
-    padding: 96px 60px;
-    text-align: center;
-    border-top: 1px solid var(--paper-border);
-    width: 100%;
-}
-
-.landing-final-cta-title {
-    font-family: var(--font-sans);
-    font-size: clamp(28px, 3.6vw, 36px);
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    line-height: 1.15;
-    color: var(--paper-ink);
-    margin: 0 0 36px;
+    font-style: italic;
 }
 
 /* ---------- FAQ ---------- */
-.landing-faq dl {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 0 72px;
-    max-width: 1000px;
+.landing-faq {
     margin: 0;
 }
 
 .landing-faq dt {
     font-family: var(--font-sans);
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.01em;
     color: var(--paper-ink);
-    margin: 0;
-    padding: 28px 0;
-    border-top: 1px solid var(--paper-border);
+    margin: 24px 0 6px;
 }
 
-.landing-faq dl > dt:first-of-type,
-.landing-faq dl > dd:first-of-type {
-    border-top: none;
-    padding-top: 0;
+.landing-faq dt:first-child {
+    margin-top: 0;
 }
 
 .landing-faq dd {
-    font-family: var(--site-font-body);
-    font-size: 16px;
+    margin: 0;
+    font-size: 17px;
     line-height: 1.55;
     color: var(--text-secondary);
-    margin: 0;
-    padding: 28px 0;
-    border-top: 1px solid var(--paper-border);
 }
 
-.landing-faq dd p {
-    margin: 0 0 12px;
-}
-
-.landing-faq dd p:last-child { margin-bottom: 0; }
-
-.landing-faq dd code {
-    font-family: var(--font-mono);
-    font-size: 0.9em;
-    background: var(--paper-code-bg);
-    padding: 1px 6px;
-    border-radius: 2px;
+/* ---------- Final CTA ---------- */
+.landing-final {
+    font-family: var(--font-sans);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
     color: var(--paper-ink);
+    margin: 0 0 24px !important;
 }
 
-.landing-faq dd a {
-    text-decoration: underline;
-    text-underline-offset: 3px;
+/* ---------- Footer ---------- */
+.landing-footer {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+    border-top: 1px solid var(--paper-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--paper-muted);
+    text-align: center;
+}
+
+.landing-footer a {
+    color: var(--paper-muted);
+    text-decoration: none;
+}
+
+.landing-footer a:hover {
+    color: var(--paper-ink);
 }
 
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-    .landing-page *,
-    .landing-page *::before,
-    .landing-page *::after {
+    .landing *,
+    .landing *::before,
+    .landing *::after {
         transition: none !important;
         animation: none !important;
     }
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 960px) {
-    .landing-steps { grid-template-columns: 1fr; gap: 40px; }
-    .landing-origin,
-    .landing-portable {
-        grid-template-columns: 1fr;
-        gap: 24px;
-    }
-    .landing-final-cta { padding: 64px 24px; }
-    .landing-faq dl {
-        grid-template-columns: 1fr;
-        gap: 0;
-    }
-    .landing-faq dt { padding-bottom: 12px; }
-    .landing-faq dd {
-        border-top: none;
-        padding-top: 0;
-        padding-bottom: 28px;
-    }
-    .landing-faq dl > dt:first-of-type { padding-top: 0; }
-}
-
 @media (max-width: 640px) {
-    .landing-hero { padding: 56px 24px 72px; }
-    .landing-section { padding: 56px 24px; }
+    .landing-doc { padding: 40px 24px 72px; }
+    .landing-title { font-size: clamp(34px, 11vw, 46px); }
+    .landing-lede { font-size: 19px; }
 }
