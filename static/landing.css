@@ -52,11 +52,11 @@
 }
 
 .landing-title {
-    font-family: var(--site-font-body);
-    font-size: clamp(40px, 8vw, 58px);
+    font-family: var(--font-sans);
+    font-size: clamp(38px, 8vw, 54px);
     font-weight: 700;
-    line-height: 1.08;
-    letter-spacing: -0.01em;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
     color: var(--paper-ink);
     margin: 0 0 28px;
 }
