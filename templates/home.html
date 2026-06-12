@@ -23,74 +23,18 @@
   </header>
 
   <main id="main" class="landing-doc">
-    <h1 class="landing-title">Write markdown.<br>Get a page.<br><em>Own the URL.</em></h1>
+    <div class="landing-hero">
+      <h1 class="landing-title">Write markdown.<br>Get a page.<br><em>Own the URL.</em></h1>
 
-    <p class="landing-lede">Jottit is the simplest way to put a page on the web. Write something in markdown, and it lives at a URL that belongs to you. No accounts, no setup, no platform between you and what you make.</p>
+      <p class="landing-lede">Jottit is the simplest way to put a page on the web. Write something in markdown, and it lives at a URL that belongs to you. No accounts, no setup, no platform between you and what you make.</p>
 
-    <p class="landing-cta">
-      <a href="/new" class="btn btn-publish btn-lg">Create a page <span class="arrow">→</span></a>
-      {% if not signed_in %}
-      <span class="landing-hint">no sign-up required</span>
-      {% endif %}
-    </p>
-
-    <hr>
-
-    <p>You type markdown in a split-pane editor: source on the left, the finished page on the right. A random URL is pre-filled. Edit it, then publish. The page is yours the moment you hit save. Come back anytime with your email and a six-digit code. No passwords.</p>
-
-    <p class="landing-list-label">What you get:</p>
-    <ul class="landing-list">
-      <li>A beautiful page from plain markdown: serif type, a real reading width, and nothing else in the way.</li>
-      <li>A URL that belongs to you, or your own space at <code>yourname.jottit.org</code>.</li>
-      <li>Public or private, listed or hidden. Your call, changed anytime.</li>
-      <li>Every page exportable as markdown, anytime. Append <code>.md</code> to any URL for the raw source.</li>
-      <li>No ads, no trackers, no algorithmic feed, no AI writing, no engagement metrics.</li>
-      <li>Open source under AGPL. Fork it, self-host it, or just read how it works.</li>
-      <li>A REST API, an MCP endpoint for AI agents, and a command-line tool, if they're useful to you.</li>
-    </ul>
-
-    <hr>
-
-    <h2>Where this came from</h2>
-    <p>I miss when the web was <em>pages</em>. You could make something, view source, tinker. My kids don't know that web. Jottit is my attempt to bring some of it back.</p>
-
-    <p>I met <a href="https://en.wikipedia.org/wiki/Aaron_Swartz">Aaron Swartz</a> through Y Combinator's first batch in 2005. We built Infogami together, a tool for making websites easy. The original Jottit came out of that work in 2007, a simple way for anyone to put a page on the web.</p>
-
-    <p>After Aaron's death in 2013, the original Jottit eventually went offline. In 2026 I rebuilt it from scratch. Same idea, same name. Write something, and it lives at a URL that belongs to you.</p>
-
-    <p class="landing-sig">Simon Carstensen<br>Copenhagen, 2026</p>
-
-    <p class="landing-fine">Open source (AGPL). Funded by Paul Graham. Built in memory of Aaron Swartz.</p>
-
-    <hr>
-
-    <h2>Questions</h2>
-    <dl class="landing-faq">
-      <dt>Do I need an account?</dt>
-      <dd>No. Create a page right away. When you want to keep editing from another device or attach a name to it, enter your email. You'll get a six-digit code. No passwords.</dd>
-
-      <dt>Can I use my own domain?</dt>
-      <dd>Not yet. Your pages live at <code>jottit.org</code>, or at your own subdomain (<code>yourname.jottit.org</code>). Custom domains aren't supported in v1.</dd>
-
-      <dt>What happens to my pages if Jottit shuts down?</dt>
-      <dd>Jottit is open source under AGPL. You can self-host or fork. Your pages are plain markdown. Download them anytime and move them anywhere.</dd>
-
-      <dt>Will you add ads, tracking, or AI writing?</dt>
-      <dd>No. No analytics, no algorithmic feeds, no likes, no paywalls, no engagement metrics, no AI writing assistance, no SEO gimmicks. Saying no is how we keep it honest.</dd>
-
-      <dt>Who runs this?</dt>
-      <dd><a href="https://simonbc.com">Simon Carstensen</a> in Copenhagen. Jottit was co-created with Aaron Swartz in 2007 and rebuilt from scratch in 2026. Funded by Paul Graham.</dd>
-
-      <dt>Can my Jottit URL sign me in elsewhere?</dt>
-      <dd>Yes. Your profile URL works as an IndieAuth identity. Use it to sign in to other indieweb sites that support the protocol.</dd>
-    </dl>
-
-    <hr>
-
-    <p class="landing-final">Make a page. It takes a minute.</p>
-    <p class="landing-cta">
-      <a href="/new" class="btn btn-publish btn-lg">Create a page <span class="arrow">→</span></a>
-    </p>
+      <p class="landing-cta">
+        <a href="/new" class="btn btn-publish btn-lg">Create a page <span class="arrow">→</span></a>
+        {% if not signed_in %}
+        <span class="landing-hint">no sign-up required</span>
+        {% endif %}
+      </p>
+    </div>
   </main>
 
   <footer class="landing-footer">
