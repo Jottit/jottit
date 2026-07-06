@@ -300,25 +300,25 @@ def _format_response(page_meta, row, content_type, body):
         session.get("user_id") == page_meta["user_id"]
         and page_meta["user_id"] is not None
     )
-    last_modified = row.get("created_at")
-    if last_modified is not None:
-        last_modified = last_modified.astimezone(timezone.utc)
+    created_at = row.get("created_at")
+    last_modified = None
+    last_modified_header = None
+    if created_at is not None:
+        last_modified = created_at.astimezone(timezone.utc).replace(microsecond=0)
         last_modified_header = format_datetime(last_modified, usegmt=True)
-    else:
-        last_modified_header = None
+
     ims = request.headers.get("If-Modified-Since")
     if last_modified is not None and ims:
         try:
             ims_dt = parsedate_to_datetime(ims)
         except (TypeError, ValueError):
             ims_dt = None
-        if ims_dt is not None and last_modified.replace(
-            microsecond=0
-        ) <= ims_dt.replace(microsecond=0):
+        if ims_dt is not None and last_modified <= ims_dt:
             not_modified = make_response("", 304)
             not_modified.headers["Last-Modified"] = last_modified_header
             not_modified.headers["Access-Control-Allow-Origin"] = "*"
             return not_modified
+
     response = make_response(body)
     response.headers["Content-Type"] = content_type
     response.headers["Access-Control-Allow-Origin"] = "*"
