@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
 {% block title %}Jottit{% endblock %}
-{% block meta_description %}Write markdown. Get a page. Own the URL. Jottit is the simplest way to put a page on the web, with no platform between you and what you make.{% endblock %}
+{% block meta_description %}Jottit is the simplest way to put a page on the web.{% endblock %}
 {% block og_title %}Jottit{% endblock %}
-{% block og_description %}Write markdown. Get a page. Own the URL.{% endblock %}
+{% block og_description %}Put a page on the web.{% endblock %}
 {% block twitter_title %}Jottit{% endblock %}
-{% block twitter_description %}Write markdown. Get a page. Own the URL.{% endblock %}
+{% block twitter_description %}Put a page on the web.{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/landing.css?v={{ asset_v }}">
@@ -17,119 +17,15 @@
 <div class="landing-page">
   {% include "_header.html" %}
 
-  <main id="main">
-    <section class="landing-hero">
-      <h1 class="landing-title">Write markdown.<br>Get a page.<br><em>Own the URL.</em></h1>
-      <div class="landing-cta">
-        <a href="/new" class="btn btn-publish btn-lg">Create a page <span class="arrow">→</span></a>
-        {% if not signed_in %}
-        <span class="landing-hint">no sign-up required</span>
-        {% endif %}
-      </div>
-    </section>
-
-    <section class="landing-section">
-      <p class="landing-section-label">How it works</p>
-      <div class="landing-steps">
-        <article class="landing-step">
-          <span class="landing-step-num">01</span>
-          <h3>Type markdown.</h3>
-          <p>Headings, lists, links. The way writing was always supposed to be. Split-pane editor: markdown on the left, the finished page on the right.</p>
-        </article>
-        <article class="landing-step">
-          <span class="landing-step-num">02</span>
-          <h3>Claim a URL.</h3>
-          <p>A random slug is pre-filled. Edit it, then publish. No sign-up. The page is yours the moment you hit save.</p>
-        </article>
-        <article class="landing-step">
-          <span class="landing-step-num">03</span>
-          <h3>Share, edit, keep.</h3>
-          <p>Come back anytime with your email. You'll get a six-digit code. Private or public. Yours forever.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="landing-section">
-      <div class="landing-origin">
-        <p class="landing-section-label">Origin</p>
-        <div class="landing-origin-body">
-          <p>I miss when the web was <em>pages</em>. You could make something, view source, tinker. My kids don't know that web. Jottit is my attempt to bring some of it back.</p>
-
-          <p>I met <a href="https://en.wikipedia.org/wiki/Aaron_Swartz">Aaron Swartz</a> through Y Combinator's first batch in 2005. We built Infogami together, a tool for making websites easy. The original Jottit came out of that work in 2007. A simple way for anyone to put a page on the web.</p>
-
-          <p>After Aaron's death in 2013, the original Jottit eventually went offline. In 2026 I rebuilt it from scratch. Same idea, same name. Write something, and it lives at a URL that belongs to you. No platform between you and what you make.</p>
-
-          <p class="landing-origin-sig">
-            Simon Carstensen<br>
-            Copenhagen, 2026
-          </p>
-
-          <p class="landing-origin-closing">Open source (AGPL). Funded by Paul Graham. Built in memory of Aaron Swartz.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="landing-section">
-      <div class="landing-portable">
-        <p class="landing-section-label">Portable</p>
-        <div class="landing-portable-body">
-          <p class="landing-portable-intro">Your writing belongs to you. Whatever you make on Jottit, you can take with you whenever you want.</p>
-          <dl class="landing-portable-list">
-            <dt>Export.</dt>
-            <dd>Download every page you've written as a zip of markdown files, anytime. Or append <code>.md</code> to any page URL to read the raw source, like <code>jottit.org/your-page.md</code>.</dd>
-
-            <dt>Your own subdomain.</dt>
-            <dd>Pages can live at <code>yourname.jottit.org</code> if you want your own space.</dd>
-
-            <dt>Open source.</dt>
-            <dd>Jottit is AGPL-licensed. Fork it, run your own, or just read how it works.</dd>
-
-            <dt>Tools.</dt>
-            <dd>There's a REST API, an MCP endpoint for AI agents, and a command-line tool. Use them if they're useful to you.</dd>
-          </dl>
-        </div>
-      </div>
-    </section>
-
-    <section class="landing-section landing-faq">
-      <p class="landing-section-label">Questions</p>
-      <dl>
-        <dt>Do I need an account?</dt>
-        <dd>
-          <p>No. Create a page right away. When you want to keep editing from another device or attach a name to it, enter your email. You'll get a six-digit code. No passwords.</p>
-        </dd>
-
-        <dt>Can I use my own domain?</dt>
-        <dd>
-          <p>Not yet. Your pages live at <code>jottit.org</code>, or at your own subdomain (<code>yourname.jottit.org</code>). Custom domains aren't supported in v1.</p>
-        </dd>
-
-        <dt>What happens to my pages if Jottit shuts down?</dt>
-        <dd>
-          <p>Jottit is open source under AGPL. You can self-host or fork. Your pages are plain markdown. Download them anytime and move them anywhere.</p>
-        </dd>
-
-        <dt>Will you add ads, tracking, or AI writing?</dt>
-        <dd>
-          <p>No. No analytics, no algorithmic feeds, no likes, no paywalls, no engagement metrics, no AI writing assistance, no SEO gimmicks. Saying no is how we keep it honest.</p>
-        </dd>
-
-        <dt>Who runs this?</dt>
-        <dd>
-          <p><a href="https://simonbc.com">Simon Carstensen</a> in Copenhagen. Jottit was co-created with Aaron Swartz in 2007 and rebuilt from scratch in 2026. Funded by Paul Graham.</p>
-        </dd>
-
-        <dt>Can my Jottit URL sign me in elsewhere?</dt>
-        <dd>
-          <p>Yes. Your profile URL works as an IndieAuth identity. Use it to sign in to other indieweb sites that support the protocol.</p>
-        </dd>
-      </dl>
-    </section>
-
-    <section class="landing-final-cta">
-      <h2 class="landing-final-cta-title">Make a page. It takes a minute.</h2>
+  <main id="main" class="landing-main">
+    <div class="landing-logo" aria-label="Jottit">Jottit</div>
+    <p class="landing-tagline">Put a page on the web.</p>
+    <div class="landing-cta">
       <a href="/new" class="btn btn-publish btn-lg">Create a page <span class="arrow">→</span></a>
-    </section>
+      {% if not signed_in %}
+      <span class="landing-hint">no sign-up required</span>
+      {% endif %}
+    </div>
   </main>
 
   <footer class="public-footer">

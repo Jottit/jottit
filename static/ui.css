@@ -236,12 +236,14 @@
 
 .public-footer-links {
     display: flex;
+    flex-wrap: wrap;
     gap: 24px;
 }
 
 .public-footer-links a {
     color: var(--text-secondary);
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .public-footer-links a:hover { color: var(--paper-ink); }
