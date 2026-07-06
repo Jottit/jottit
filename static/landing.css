@@ -93,7 +93,7 @@
 .landing-section {
     border-top: 1px solid var(--paper-border);
     padding: 72px 60px;
-    max-width: 900px;
+    max-width: var(--page-max-width);
     margin: 0 auto;
     width: 100%;
 }

@@ -78,7 +78,6 @@
 
 .public-header-nav a:not(.btn):hover { opacity: 0.6; }
 
-.landing-page .public-header-nav .btn-publish { display: none; }
 
 /* Public content pages (about, talk, sponsor) — editorial system matching landing */
 
@@ -97,7 +96,7 @@
 /* Hero — serif title at the top of each content page */
 .public-hero {
     padding: 72px 60px 48px;
-    max-width: 1200px;
+    max-width: var(--page-max-width);
     margin: 0 auto;
     width: 100%;
 }
@@ -122,7 +121,7 @@
 .public-section {
     border-top: 1px solid var(--paper-border);
     padding: 56px 60px;
-    max-width: 1200px;
+    max-width: var(--page-max-width);
     margin: 0 auto;
     width: 100%;
 }
